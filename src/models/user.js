@@ -1,0 +1,57 @@
+import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
+import bcrypt from 'bcrypt';
+import crypto from 'crypto';
+
+const userSchema = new mongoose.Schema({
+    name: {type: String,required: true},
+    email: {type: String,required: true,unique: true,trim: true},
+    password: {type: String,required: true},
+    country: {type: String,required: true},
+    station_name: {type: String,required: true},
+    website_url: {type: String,required: false,default: undefined},
+    timezone: {type: String,required: true},
+    avatar: {
+        public_id: {type: String,default: undefined},
+        url: {type: String,default: undefined}
+    },
+    subscription: {
+        subscription_id: {type: String,default: undefined},
+        date: {type: Date, default: undefined},
+    },
+    isSubscriber: {type: Boolean, default: false },
+    resetPasswordToken: {type: String,default: undefined},
+    resetPasswordExpire: {type: Date,default: undefined}
+},{timestamps: true});
+
+
+userSchema.pre('save',async function(next){
+    if(this.isModified('password')){
+        this.password = await bcrypt.hash(this.password,10);
+    }
+    next();
+});
+
+userSchema.methods.getJWTToken = function (){
+    return jwt.sign({_id:this._id},process.env.JWT_SECRET,{
+        expiresIn: `${process.env.TOEKN_EXPIRE}d`
+    })
+}
+
+userSchema.methods.comparePass = async function(password){
+    return await bcrypt.compare(password,this.password);
+}
+
+
+userSchema.methods.getResetToken = function(){
+    const resetToken = crypto.randomBytes(20).toString('hex');
+
+    this.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
+
+    return resetToken;
+}
+
+mongoose.models = {};
+
+export default mongoose.model('user',userSchema);

@@ -16,12 +16,55 @@
   }
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+::-webkit-scrollbar {
+  width: 7px;
+}
+
+::-webkit-scrollbar-track
+{
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb
+{
+  @apply bg-indigo-500 rounded-md transition-all;
+   cursor: pointer !important;
+}
+
+::-webkit-scrollbar-thumb:hover
+{
+  @apply bg-indigo-600;
+}
+
+.section
+{
+  @apply px-2 py-8
+}
+
+.main-heading
+{
+  @apply text-3xl text-black pb-3 relative;
+}
+
+.main-heading::before
+{
+  content: '';
+  @apply absolute bottom-0 left-0 w-3 h-3 rounded-full bg-indigo-600;
+}
+
+.main-heading::after
+{
+  content: '';
+  @apply absolute bottom-1 left-2 w-[100%] h-1 rounded-full bg-gradient-to-r from-indigo-600  to-transparent;
+}
+
+.sub-heading
+{
+  @apply text-2xl;
+}
+
+
+.para
+{
+  @apply text-gray-600;
 }

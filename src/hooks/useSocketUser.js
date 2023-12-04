@@ -20,7 +20,42 @@ const useSocket = (streamId,audioRef) => {
 	const [owner,setOwner] = useState('');
 	const ownerRef = useRef();
 	const [roomActive,setRoomActive] = useState(false);
+	const [scheduleActive,setScheduleActive] = useState(false);
+	const [isLive,setIsLive] = useState(false);
 
+
+
+	async function handlePlaySchedule (){
+
+		let res = await fetch(`${process.env.NEXT_PUBLIC_SOCKET_URL}/start-time/${streamId}`);
+		res = await res.json();
+			
+		if(res.starttime){
+			// const startTime = +res.headers.get('Start-Time') || null;
+			let startTime = res.starttime;
+			if(startTime){
+				const ellipTime = ((new Date().getTime()) - startTime)/1000;
+				audioRef.current.currentTime = ellipTime;
+			}
+		}else{
+			console.log('schedule-unactive');
+			setRoomActive(false);
+			setScheduleActive(false);
+			audioRef.current.src = '';
+			audioRef.current.pause();
+			audioRef.current.removeEventListener('play',handlePlaySchedule);
+		}
+		console.log('play');
+	}
+
+
+
+	async function connectedWithScheduleStream(){
+		const url = `${process.env.NEXT_PUBLIC_SOCKET_URL}/schedule/${streamId}`;
+		audioRef.current.src = url;
+
+		audioRef.current.addEventListener('play',handlePlaySchedule);
+	}
 
 	const userJoin = () => {
 		socketRef.current.emit('user-join',{roomId: streamId});
@@ -53,6 +88,8 @@ const useSocket = (streamId,audioRef) => {
 	        console.log(stream)
 	        console.log(peerRef.current.connected)
 	        audioRef.current.srcObject = stream;
+	        setRoomActive(true);
+			setIsLive(true);
 	        // audioElement.srcObject = stream;
 	        // audioElement.play()
 	    });
@@ -70,18 +107,41 @@ const useSocket = (streamId,audioRef) => {
 			console.log('owner',data?.user)
 			setOwner(data?.user);
 			ownerRef.current = data?.user;
-			setRoomActive(true);
 			createPeerConnection();
 		});
 
-		socketRef.current.on('room-unactive',() => {
-			console.log('room room-unactive')
-			setRoomActive(false);
+		socketRef.current.on('room-unactive',async (data) => {
+			if(data?.butScheduleActive){
+				console.log('schedule-active but');
+				await connectedWithScheduleStream();
+				setRoomActive(true);
+				setScheduleActive(true);
+			}else{
+				console.log('room room-unactive')
+				setRoomActive(false);
+				setIsLive(false);
+			}
 			// if(peerRef.current.destroy){
 			// 	peerRef.current?.destroy();
 			// }
 			// peerRef.current = {};
 			console.log('peerRef',peerRef.current);
+		});
+
+		socketRef.current.on('schedule-active',async (data) => {
+			console.log('schedule-active')
+			await connectedWithScheduleStream();
+			setRoomActive(true);
+			setScheduleActive(true);
+		});
+
+		socketRef.current.on('schedule-unactive',() => {
+			console.log('schedule-unactive')
+			setRoomActive(false);
+			setScheduleActive(false);
+			audioRef.current.src = '';
+			audioRef.current.pause();
+			audioRef.current.removeEventListener('play',handlePlaySchedule);
 		});
 
 		socketRef.current.on('room-active-now',() => {
@@ -96,7 +156,7 @@ const useSocket = (streamId,audioRef) => {
 
 	},[]);
 
-	return {socketRef,userJoin}
+	return {socketRef,userJoin,roomActive}
 }
 
 export default useSocket;

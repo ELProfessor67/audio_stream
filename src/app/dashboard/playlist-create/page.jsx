@@ -77,7 +77,7 @@ export default function Page(){
                     </div>
 
                     <div className='input-group flex flex-col gap-1 mb-6'>
-                        <label for="description" className='text-black text-lg'>Description</label>
+                        <label for="description" className='text-black text-lg'>Select Songs</label>
                         <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                             <MdPlaylistAdd size={20} className='text-gray-400'/>
                             <button type="button" className="w-full h-full text-gray-400 text-left bg-none border-none outline-none px-1" onClick={() => setOpen(true)}>

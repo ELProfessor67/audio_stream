@@ -10,7 +10,7 @@ import axios from 'axios';
 
 const page = () => {
     const [title,setTitle] = useState('');
-    const [description,setDescription] = useState('');
+    const [description,setDescription] = useState('hhh');
     const [audiofile,setAudio] = useState('');
     const [cover,setCover] = useState('');
     const [artist,setArtist] = useState('');
@@ -74,13 +74,13 @@ const page = () => {
                         </div>
                     </div>
 
-                    <div className='input-group flex flex-col gap-1 mb-6'>
+                    {/*<div className='input-group flex flex-col gap-1 mb-6'>
                         <label for="description" className='text-black text-lg'>Description</label>
                         <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                             <MdDescription size={20} className='text-gray-400'/>
                             <input type='text' value={description} onChange={(e) => setDescription(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your description' id='description' name='description' required/>
                         </div>   
-                    </div>
+                    </div>*/}
 
                     <div className='input-group flex flex-col gap-1 mb-6'>
                         <label for="artist" className='text-black text-lg'>Artist Name</label>

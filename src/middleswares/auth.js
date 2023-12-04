@@ -11,6 +11,9 @@ export const auth = (func) => async (req) => {
             throw new Error('user unauthorized');
         }
 
+        if(user.isDJ){
+            user._id = user.djOwner
+        }
         req.user = user;
         return func(req);
     } catch (error) {

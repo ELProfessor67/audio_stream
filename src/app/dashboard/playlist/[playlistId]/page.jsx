@@ -34,6 +34,18 @@ function page({params}){
     }
   },[playSong]);
 
+
+  const handleSave = async () => {
+    console.log(seletdSongs);
+    try{
+      const {data} = await axios.post(`/api/v1/playlist/${params.playlistId}`,{songs: seletdSongs});
+      console.log(data)
+      getPlayListSong();
+      }catch(err){
+        console.log(err.response.data.message);
+    }
+  }
+
   const handleCheckbox = (_id) => {
         setSelectedSongs(prev => {
             if(prev.includes(_id)){
@@ -44,9 +56,7 @@ function page({params}){
         })
     }
 
-  useEffect(() => {
-    (
-      async function(){
+  async function getPlayListSong(){
         try{
           const {data} = await axios.get(`/api/v1/playlist/${params.playlistId}`);
           console.log(data)
@@ -63,7 +73,9 @@ function page({params}){
           console.log(err.response.data.message);
         }
       }
-    )()
+
+  useEffect(() => {
+    getPlayListSong();
   },[]);
   return (
     <section className="w-full py-5 px-4 reletive">
@@ -83,7 +95,7 @@ function page({params}){
       </div>
       <audio ref={songRef} className="hidden"></audio>
 
-      <Dialog open={open} onClose={() => setOpen(false)} seletdSongs={seletdSongs}>
+      <Dialog open={open} onClose={() => setOpen(false)} seletdSongs={seletdSongs} save={handleSave}>
           {
             allSongs && allSongs.map((data) => (
               <div className="flex justify-between items-center my-6">

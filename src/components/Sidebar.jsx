@@ -8,15 +8,38 @@ import {BsMusicNoteList,BsMailbox, BsCloudUpload, BsCalendarDate} from 'react-ic
 import {PiUsersThreeDuotone} from 'react-icons/pi'
 import {CiStreamOn} from 'react-icons/ci'
 import {GiLoveSong} from 'react-icons/gi'
-import {MdPlaylistAdd} from 'react-icons/md'
+import {MdPlaylistAdd,MdOutlineLogout} from 'react-icons/md'
+import {LiaAdSolid} from 'react-icons/lia'
 import { usePathname } from 'next/navigation';
 import Link from 'next/link'
+import {logout} from '@/redux/action/user';
+import {useDispatch,useSelector} from 'react-redux';
+
+
+
+function checkInTimeRange(startTime,endTime){
+    const currentHour = new Date().getHours();
+    const currentMinute = new Date().getMinutes();
+
+    const rangeStartHour = +startTime.split(':')[0];
+    const rangeStartMinute = +startTime.split(':')[1];
+
+    const rangeEndHour = +endTime.split(':')[0];
+    const rangeEndMinute = +endTime.split(':')[1];
+
+    const timeInRange = (currentHour > rangeStartHour || (currentHour === rangeStartHour && currentMinute >= rangeStartMinute)) && (currentHour < rangeEndHour || (currentHour === rangeEndHour && currentMinute <= rangeEndMinute));
+
+    console.log('range',timeInRange)
+
+    return timeInRange;
+}
 
 
 const SidebarContext = createContext();
 
 export const SidebarBody = ({children}) => {
     const [expanded, setExpanded] = useState(true);
+    const {user} = useSelector(store => store.user);
   return (
     <aside className='h-screen'>
         <nav className='h-full flex flex-col bg-white border-r shadow-sm'>
@@ -43,8 +66,8 @@ export const SidebarBody = ({children}) => {
                 ${expanded ? "w-52 ml-3": "w-0"}
                 `}>
                     <div>
-                        <h4 className='font-semibold'>Zeeshan Raza</h4>
-                        <span className='text-xs text-gray-600'>jeeshanr599@gmail.com</span>
+                        <h4 className='font-semibold'>{user?.name}</h4>
+                        <span className='text-xs text-gray-600'>{user?.email}</span>
                     </div>
                     
                 </div>
@@ -58,10 +81,10 @@ export const SidebarBody = ({children}) => {
 }
 
 
-export function SidebarItem({icon,text,active,alert,link='/'}){
+export function SidebarItem({icon,text,active,alert,link='/',onClick}){
     const {expanded} = useContext(SidebarContext);
     return(<>
-        <li>
+        <li onClick={onClick}>
             <Link href={link} className={` 
                 relative flex items-center py-2 px-3 my-1
                 font-medium rounded-md cursor-pointer
@@ -97,28 +120,54 @@ export function SidebarItem({icon,text,active,alert,link='/'}){
 
 export default function Sidebar(){
     const pathname = usePathname();
+    const dispatch = useDispatch();
+    const {user} = useSelector(store => store.user);
+    const handleLogout = async () => {
+        dispatch(logout());
+    }
+
+    const isAllow = (permissionName) => {
+        if(user?.isDJ){
+            if(user?.djPermissions.includes(permissionName)){
+                if(permissionName === 'live'){
+                    const isTimeRange = checkInTimeRange(user?.djStartTime,user?.djEndTime);
+                    return isTimeRange;
+                }else{
+                    return true
+                }   
+            }else{
+               return false
+            }
+        }else{
+            return true
+        }
+    }
+
+
     const navigationsItems = [
         {
             icon: <RxDashboard size={30}/>,
             text: "Dashboard",
             alert: false,
             active: pathname == '/dashboard',
-            link: '/dashboard'
+            link: '/dashboard',
+            show: isAllow('dashboard')
         },
         {
             icon: <BsMusicNoteList size={30}/>,
             text: "My Playlists",
             alert: false,
             active: pathname == '/dashboard/playlist',
-            link: '/dashboard/playlist'
-    
+            link: '/dashboard/playlist',
+            show: true
         },
         {
             icon: <MdPlaylistAdd size={30}/>,
             text: "Create Playlists",
             alert: false,
             active: pathname == '/dashboard/playlist-create',
-            link: '/dashboard//playlist-create'
+            link: '/dashboard//playlist-create',
+            show: isAllow('playlists')
     
         },
         {
@@ -126,15 +175,16 @@ export default function Sidebar(){
             text: "My Songs",
             alert: false,
             active: pathname == '/dashboard/songs',
-            link: '/dashboard/songs'
-    
+            link: '/dashboard/songs',
+            show: true
         },
         {
             icon: <BsCloudUpload size={30}/>,
             text: "Uploads Song",
             alert: false,
             active: pathname == '/dashboard/songs/upload',
-            link: '/dashboard/songs/upload'
+            link: '/dashboard/songs/upload',
+            show: isAllow('songs')
     
         },
         {
@@ -142,22 +192,32 @@ export default function Sidebar(){
             text: "Schedules",
             alert: false,
             active: pathname == '/dashboard/shedules',
-            link: '/dashboard/shedules'
+            link: '/dashboard/shedules',
+            show: isAllow("schedules")
         },
         {
             icon: <PiUsersThreeDuotone size={30}/>,
             text: "My Team",
             alert: false,
             active: pathname == '/dashboard/team',
-            link: '/dashboard/team'
-    
+            link: '/dashboard/team',
+            show: isAllow('team')
+        },
+        {
+            icon: <LiaAdSolid size={30}/>,
+            text: "Ads",
+            alert: false,
+            active: pathname == '/dashboard/ads',
+            link: '/dashboard/ads',
+            show: isAllow('ads')
         },
         {
             icon: <BsMailbox size={30}/>,
             text: "Requests",
             alert: true,
             active: pathname == '/dashboard/requests',
-            link: '/dashboard/requests'
+            link: '/dashboard/requests',
+            show: isAllow("requests")
     
         },
         {
@@ -165,23 +225,26 @@ export default function Sidebar(){
             text: "Go Live",
             alert: false,
             active: pathname == '/dashboard/go-live',
-            link: '/dashboard/go-live'
-    
+            link: '/dashboard/go-live',
+            show: isAllow("live")
         },
         {
             icon: <FiSettings size={30}/>,
             text: "Settings",
             alert: false,
             active: pathname == '/dashboard/settings',
-            link: '/dashboard/settings'
-        },
+            link: '/dashboard/settings',
+            show: true
+        }
         
     ]
     return<>
     <SidebarBody>
         {
-            navigationsItems.map((data) => <SidebarItem {...data}/>)
+            navigationsItems.map((data) => data.show ? <SidebarItem {...data}/> :<></>)
         }
+
+        <SidebarItem icon={<MdOutlineLogout size={30}/>} text={'Logout'} alert={false} link={''} active={false} onClick={handleLogout}/>
     </SidebarBody>
     </>
 }

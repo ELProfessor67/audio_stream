@@ -21,7 +21,12 @@ const userSchema = new mongoose.Schema({
     },
     isSubscriber: {type: Boolean, default: false },
     resetPasswordToken: {type: String,default: undefined},
-    resetPasswordExpire: {type: Date,default: undefined}
+    resetPasswordExpire: {type: Date,default: undefined},
+    isDJ: {type: Boolean,default: false},
+    djOwner: {type: mongoose.Schema.Types.ObjectId,ref: 'user',default: undefined},
+    djPermissions: [{type: String,enum: ['songs','playlists','schedules','live','dashboard','requests','ads']}],
+    djStartTime: {type: String,default: undefined},
+    djEndTime: {type: String,default: undefined}
 },{timestamps: true});
 
 
@@ -51,6 +56,12 @@ userSchema.methods.getResetToken = function(){
 
     return resetToken;
 }
+
+
+// userSchema.methods.getUserTimeRange = async function(start,end){
+//     const teams = await mongoose.model('user',userSchema).find({isDJ: true,djOwner: this._id});
+
+// }
 
 mongoose.models = {};
 

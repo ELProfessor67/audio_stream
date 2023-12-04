@@ -13,3 +13,18 @@ export const GET = connectDB(auth(async function (req){
 
     return NextResponse.json({success: true,playlist});
 }));
+
+
+export const POST = connectDB(auth(async function (req){
+    try{
+        const {songs} = await req.json();
+        console.log(songs)
+        const playlistId = req.url.split('/')[6];
+        
+        await playlistModel.findByIdAndUpdate(playlistId,{songs});
+
+        return NextResponse.json({success: true,message: 'update successfully'});
+    }catch(err){
+        return NextResponse.json({success: false,message: err.message},{status: 501});
+    }
+}));

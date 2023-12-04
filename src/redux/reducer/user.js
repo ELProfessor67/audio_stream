@@ -9,6 +9,7 @@ const initailstate = {
 };
 
 export const userReducer = createReducer(initailstate,{
+    // load user 
     loadUserReq: (state) => {
         state.loading = true;
     },
@@ -21,6 +22,22 @@ export const userReducer = createReducer(initailstate,{
     loadUserFai: (state,action) => {
         state.loading = false;
         state.error = action.payload;
-        state.isAuth = true;
+        state.isAuth = false;
     },
+
+    // logout user 
+    logoutUserReq: (state) => {
+        state.loading = true;
+    },
+    logoutUserSuc: (state,action) => {
+        state.loading = false;
+        state.user = null;
+        state.isAuth = false;
+        state.message = action.payload.message
+    },
+    logoutUserFai: (state,action) => {
+        state.loading = false;
+        state.error = action.payload;
+    },
+
 });

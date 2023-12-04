@@ -26,7 +26,9 @@ export const POST = connectDB(auth(async function (req){
 
 export const GET = connectDB(auth(async function (req){
     const {_id} = req.user;
-    const songs = await songModel.find({owner: _id}).populate('owner');
+    let songs = await songModel.find({owner: _id}).populate('owner');
+    
+    songs = songs.filter(song => !song.isAds)
 
     return NextResponse.json({success: true,songs});
 }));

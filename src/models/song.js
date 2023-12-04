@@ -9,7 +9,8 @@ const songSchems = new mongoose.Schema({
     audio: {type: String,required: true},
     size: {type: Number,required: true},
     type: {type: String,required: true},
-    owner: {type: mongoose.Schema.Types.ObjectId,ref: userSchema}
+    owner: {type: mongoose.Schema.Types.ObjectId,ref: userSchema},
+    isAds: {type: Boolean,default: false}
 },{timestamps: true});
 
 

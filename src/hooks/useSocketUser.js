@@ -14,7 +14,7 @@ const socketInit = () => {
 	return io(process.env.NEXT_PUBLIC_SOCKET_URL, options);
 }
 
-const useSocket = (streamId,audioRef) => {
+const useSocket = (streamId,audioRef,name) => {
 	const socketRef = useRef();
 	const peerRef = useRef({});
 	const [owner,setOwner] = useState('');
@@ -156,7 +156,13 @@ const useSocket = (streamId,audioRef) => {
 
 	},[]);
 
-	return {socketRef,userJoin,roomActive}
+
+	const handleRequestSong = (data) => {
+		console.log('request',data);
+		socketRef.current.emit('send-request-song',{...data,roomId:streamId,name: name || 'unknown'});
+	}
+
+	return {socketRef,userJoin,roomActive,isLive,handleRequestSong}
 }
 
 export default useSocket;

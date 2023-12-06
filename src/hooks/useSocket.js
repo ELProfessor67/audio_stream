@@ -2,6 +2,7 @@ import {io} from 'socket.io-client';
 import {useRef,useEffect,useState} from 'react';
 import {useSelector} from 'react-redux';
 import Peer from 'simple-peer';
+import axios from 'axios';
 
 const socketInit = () => {
 	const options = {
@@ -64,6 +65,8 @@ const useSocket = (setSongPlaying) => {
 	const gainNodeRef = useRef();
 	const localTrackRef = useRef();
 	const [micOn, setMicOn] = useState(false);
+	const [requests,setRequests] = useState([]);
+	const [listners,setListners] = useState([]);
 
 
 	const handleOffer = (data) => {
@@ -164,14 +167,23 @@ const useSocket = (setSongPlaying) => {
 		}
 	}
 
-	// useEffect(() => {
-	// 	socketRef.current = socketInit();
-	// 	socketRef.current.on('offer',handleOffer);
+	useEffect(() => {
+		socketRef.current?.on('recieve-request-song',(data) => {
+			console.log('requests',data);
+			setRequests(prev => [...prev,data]);
+		});
 
-	// 	return () => {
-	// 		socketRef.current.off('offer',handleOffer);
-	// 	}
-	// },[]);
+		socketRef.current?.on('user-disconnet',({id}) => {
+			if(peersRef.current[id]){
+				delete peersRef.current[id];
+			}
+		})
+
+		return () => {
+			socketRef.current?.off('recieve-request-song');
+			socketRef.current?.off('user-disconnet');
+		}
+	},[socketRef.current]);
 
 	const handleShare = async () => {
 		const url = `${window.location.origin}/public/${user._id}`;
@@ -193,16 +205,24 @@ const useSocket = (setSongPlaying) => {
 		console.log('join')
 		socketRef.current.disconnect();
 		setMicOn(false);
+		const listeners = Object.keys(peersRef.current).length;
 		Object.keys(peersRef.current).forEach((peerId) => {
 			peersRef.current[peerId].destroy();
 			delete peersRef.current[peerId];
 		});
+
+		try{
+			const {data} = await axios.post('/api/v1/listeners',{listeners});
+			console.log(data);
+		}catch(err){
+			console.log(err.message);
+		}
 		
 	}
 
 
 
-	return {socketRef,ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare}
+	return {socketRef,ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef}
 }
 
 export default useSocket;

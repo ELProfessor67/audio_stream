@@ -17,6 +17,7 @@ const Timer = ({timerStart}) => {
 	const interValref = useRef();
 	const [second,setSecond] = useState(0);
 
+
 	const startTime = () => {
 		interValref.current = setInterval(() => {
 			setSecond(prev => prev+1);
@@ -64,8 +65,23 @@ export default function(){
 	const [start,setStart] = useState(false);
 	const [songPlaying,setSongPlaying] = useState(false);
 	const [timerStart, setTimerStart] = useState(false);
+	const [que,setQue] = useState([]);
+	const [listners,setListners] = useState('0');
 	
-	const {ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare} = useSocket(setSongPlaying);
+	const {ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef} = useSocket(setSongPlaying);
+
+
+	useEffect(() => {
+		if(peersRef.current){
+			if(Object.keys(peersRef.current).length < 1000){
+				setListners(Object.keys(peersRef.current).length);
+			}else{
+				setListners(`${Object.keys(peersRef.current).length/1000}k`)
+			}
+		}
+	},[peersRef.current])
+
+	console.log('requests list',requests)
 
 	// useEffect(() => {
 	// 	console.log('before play');
@@ -124,6 +140,7 @@ export default function(){
 		setOpen(false);
 		setSongPlaying(true);
 		playSong(data.audio,volume);
+		setQue(prev => [data,...prev]);
 	}
 
 	const handleSongPlay = () => {
@@ -169,6 +186,31 @@ export default function(){
 		        				<IoMdShare size={40}/>
 		        			</button>
 		        		</div>
+		        	</div>
+
+		        	<div  className="w-full shadow-md rounded-md mt-5 border border-gray-100 h-[60vh]">
+		        		<div className="w-full bg-indigo-600 px-2 py-4 flex justify-between items-center rounded-t-md">
+		        			<h3 className="text-xl text-white">History</h3>
+		        		</div>
+
+
+		        		<div className="p-2 overflow-y-auto h-[85%]">
+		        			{
+		        				que?.length != 0 && que.map((data) => (
+		        					<div className="w-full p-1 my-2 border-b border-gray-100">
+				        				<div className="flex justify-between items-center">
+							                <div className="flex items-center gap-4">
+							                    <Image src={data?.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded"/> 
+							                    <h2 className="text-black">{data?.title}</h2>           
+							                </div>
+
+							                <button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handleSelectedSong(data)}><FaPlay size={20}/></button>       
+							              </div>
+				        			</div>
+		        				))
+		        			}
+		        		</div>
+
 		        	</div>
 		        </div>
 
@@ -239,7 +281,40 @@ export default function(){
 		        		</div>
 		        	</div>
 		        </div>
+
+
+
+		        <div className="side-box w-[22rem] p-2 reletive flex flex-col">
+		        	<div className="w-full shadow-md border border-gray-100 h-[95vh] rounded-md">
+		        		<div className="w-full bg-indigo-600 px-2 py-4 flex justify-between items-center rounded-t-md">
+		        			<h3 className="text-xl text-white">Requests</h3>
+		        			<h3 className="text-white text-sm">{listners} Listening</h3>
+		        		</div>
+		        		<div className="p-2 overflow-y-auto h-[85%]">
+		        			{
+		        				requests?.length != 0 && requests.map((data) => (
+		        					<div className="w-full p-1 my-2 border-b border-gray-100">
+				        				<h4 className="text-sm text-gray-300">{data?.name} requested</h4>
+				        				<div className="flex justify-between items-center my-2">
+							                <div className="flex items-center gap-4">
+							                    <Image src={data?.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded"/> 
+							                    <h2 className="text-black">{data?.title}</h2>           
+							                </div>
+
+							                <button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handleSelectedSong(data)}><FaPlay size={20}/></button>       
+							              </div>
+				        			</div>
+		        				))
+		        			}
+		        			
+		        		</div>
+		        	</div>
+		        </div>
 		      </div>
+
+
+
+
 		      <Dialog open={open} onClose={() => setOpen(false)}>
 	          {
 	            selectPlayListSong && selectPlayListSong.map((data) => (

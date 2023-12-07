@@ -3,10 +3,13 @@ import {MdDelete,MdEdit} from 'react-icons/md'
 import axios from 'axios'
 import {useState,useEffect} from 'react'
 import Link from 'next/link'
+import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert';
+import {useDispatch} from 'react-redux';
 
 export default function page(){
 
 	const [schedules,setSchedules] = useState([]);
+	const dispatch = useDispatch();
 	console.log(schedules)
 
 	async function getSchedules(){
@@ -25,9 +28,12 @@ export default function page(){
 		try{
 			const {data} = await axios.delete(`/api/v1/schedule?id=${id}`);
 			console.log(data.message);
+			await dispatch(showMessage(data.message));
+      await dispatch(clearMessage());
 			getSchedules();
-		}catch(err){
-				console.log(err.message)
+		}catch(error){
+				await dispatch(showError(error.response.data.message));
+        await dispatch(clearError());
 		}
 	}
 

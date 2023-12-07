@@ -6,26 +6,38 @@ import {MdOutlineSubtitles,MdDescription,MdPlaylistAdd} from 'react-icons/md';
 import {FaUserAlt} from 'react-icons/fa';
 import axios from 'axios';
 import Dialog from '@/components/Dialog';
+import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert';
+import {useDispatch} from 'react-redux';
 
 export default function Page(){
 	const [title,setTitle] = useState('');
-    const [description,setDescription] = useState('');
+    const [description,setDescription] = useState('description');
     const [seletdSongs,setSelectedSongs] = useState([]);
     const [songs,setSongs] = useState([]);
     const [open, setOpen] = useState(false);
-    console.log(seletdSongs)
+    const [loading,setLoading] = useState(false);
+    const dispatch = useDispatch();
+    // console.log(seletdSongs)
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+        setLoading(true);
         try{
             if(!title || !description) return
             if(seletdSongs.length === 0) return window.alert('please select atleast one songs');
             const {data} = await axios.post('/api/v1/playlist',{title,description,songs: seletdSongs});
-            window.alert(data.message)
+            setTitle('');
+            setSelectedSongs([]);
+            await dispatch(showMessage(data.message));
+            await dispatch(clearMessage());
+
+            // window.alert(data.message)
         }catch(err){
+            await dispatch(showError(error.response.data.message));
+            await dispatch(clearError());
             console.log(err.message);
         }
+        setLoading(false);
 
     }
 
@@ -68,13 +80,13 @@ export default function Page(){
                         </div>
                     </div>
 
-                    <div className='input-group flex flex-col gap-1 mb-6'>
+                    {/*<div className='input-group flex flex-col gap-1 mb-6'>
                         <label for="description" className='text-black text-lg'>Description</label>
                         <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                             <MdDescription size={20} className='text-gray-400'/>
                             <input type='text' value={description} onChange={(e) => setDescription(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your description' id='description' name='description' required/>
                         </div>   
-                    </div>
+                    </div>*/}
 
                     <div className='input-group flex flex-col gap-1 mb-6'>
                         <label for="description" className='text-black text-lg'>Select Songs</label>
@@ -87,7 +99,7 @@ export default function Page(){
                     </div>                 
 
                     <div className='flex justify-center items-center'>
-                        <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>Create</button>
+                        <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>{!loading ? 'Create' : 'Loading...'}</button>
                     </div>
                 </form>
             </div>

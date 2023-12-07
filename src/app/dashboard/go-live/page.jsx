@@ -81,7 +81,7 @@ export default function(){
 		}
 	},[peersRef.current])
 
-	console.log('requests list',requests)
+	// console.log('requests list',requests)
 
 	// useEffect(() => {
 	// 	console.log('before play');
@@ -90,6 +90,32 @@ export default function(){
 	// 		playSong(selectedSong.audio);
 	// 	}
 	// },[selectedSong]);
+
+	function getHistory(){
+		let history = window.localStorage.getItem('history');
+		if(!history){
+			window.localStorage.setItem('history','[]');
+			history = window.localStorage.getItem('history');
+		}
+		console.info('history',history)
+		const parseQue = JSON.parse(history);
+		setQue(parseQue);
+	}
+
+	function setHistory(data){
+		const history = window.localStorage.getItem('history');
+		let parseQue = JSON.parse(history);
+		parseQue = [data,...parseQue];
+		let stringifyQue = JSON.stringify(parseQue);
+		window.localStorage.setItem('history',stringifyQue);
+		getHistory();
+	}
+
+	useEffect(() => {
+		getHistory();
+	},[])
+
+
 
 
 	const handleVolumeChange = (e) => {
@@ -140,7 +166,8 @@ export default function(){
 		setOpen(false);
 		setSongPlaying(true);
 		playSong(data.audio,volume);
-		setQue(prev => [data,...prev]);
+		// setQue(prev => [data,...prev]);
+		setHistory(data);
 	}
 
 	const handleSongPlay = () => {

@@ -6,6 +6,8 @@ import Link from 'next/link'
 import {MdOutlineSubtitles,MdDescription, MdPhoto} from 'react-icons/md';
 import {FaUserAlt} from 'react-icons/fa';
 import axios from 'axios';
+import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert';
+import {useDispatch} from 'react-redux';
 
 
 const page = () => {
@@ -17,12 +19,14 @@ const page = () => {
     const [size,setSize] = useState('');
     const [type,setType] = useState('');
     const [audioEx,setAudioEx] = useState('');
+    const [loading,setLoading] = useState(false);
+    const dispatch = useDispatch();
  
 
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('submit',{title,size,type,audiofile})
+        setLoading(true);
 
         try{
             const {data} = await axios.post('/api/v1/ads',{audioEx,title,size,type,audio: audiofile});
@@ -32,11 +36,13 @@ const page = () => {
             e.target.reset();
             setAudio('');
             
-            alert(data.message);
-            console.log(data)
-        }catch(err){
-            console.log(err.message);
+            await dispatch(showMessage(data.message));
+            await dispatch(clearMessage());
+        }catch(error){
+            await dispatch(showError(error.response.data.message));
+            await dispatch(clearError());
         }
+        setLoading(false);
 
     }
 
@@ -90,7 +96,7 @@ const page = () => {
                     
 
                     <div className='flex justify-center items-center'>
-                        <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>Upload</button>
+                        <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>{!loading ? 'Upload' : 'Loading...'}</button>
                     </div>
                 </form>
             </div>

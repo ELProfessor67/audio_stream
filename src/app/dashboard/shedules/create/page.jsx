@@ -9,7 +9,8 @@ import {FaUserAlt} from 'react-icons/fa';
 import axios from 'axios';
 import Dialog from '@/components/Dialog';
 import {FaArrowUpRightFromSquare} from 'react-icons/fa6';
-
+import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert';
+import {useDispatch} from 'react-redux';
 
 const page = () => {
     
@@ -21,6 +22,8 @@ const page = () => {
     const [selectedSong,setSelectedSong] = useState([]);
     const [songOpen,setSongOpen] = useState(false);
     const [ads,setAds] = useState(1);
+    const [loading,setLoading] = useState(false);
+    const dispatch = useDispatch();
 
 
     const handleCheckbox = (id) => {
@@ -41,6 +44,7 @@ const page = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
         try{
         	console.log(date,time,selectedSong,ads);
             if(selectedSong.length === 0){
@@ -51,10 +55,14 @@ const page = () => {
             setTime('');
             setAds(1);
             setSelectedSong([]);
-            console.log(data.message)
-        }catch(err){
-            console.log(err.message)
+            await dispatch(showMessage(data.message));
+            await dispatch(clearMessage());
+            // console.log(data.message)
+        }catch(error){
+            await dispatch(showError(error.response.data.message));
+            await dispatch(clearError());
         }
+        setLoading(false);
 
     }
 
@@ -122,7 +130,7 @@ const page = () => {
 
                     
                     <div className='flex justify-center items-center'>
-                        <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>Add</button>
+                        <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>{!loading ? "Add" : 'Loading...'}</button>
                     </div>
                 </form>
             </div>

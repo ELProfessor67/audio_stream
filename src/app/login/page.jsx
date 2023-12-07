@@ -1,27 +1,49 @@
 "use client";
-import React, { useState } from 'react'
+import React, { useState,useEffect } from 'react'
 import Image from 'next/image'
 import {MdAlternateEmail,MdKey} from 'react-icons/md'
 import Link from 'next/link'
 import axios from 'axios'
+import {useSelector,useDispatch} from 'react-redux';
+import {redirect} from 'next/navigation';
+import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert'
 
 const page = () => {
     const [email,setEmail] = useState('');
     const [password,setPassword] = useState('');
+    const [loading,setLoading] = useState(false);
+    const {isAuth,user} = useSelector(store => store.user);
+    const dispatch = useDispatch();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+        setLoading(true)
         try {
             const {data} = await axios.post('/api/v1/login',{email,password});
+            dispatch({type: 'loadUserSuc',payload: data});
+            await dispatch(showMessage(data.message));
+            await dispatch(clearMessage());
             console.log(data.message);
-            window.location.pathname = '/dashboard';
-            
         } catch (error) {
+            await dispatch(showError(error.response.data.message));
+            await dispatch(clearError());
             console.log(error.response.data.message)
         }
+        setLoading(false);
 
     }
+
+    useEffect(() => {
+        if(isAuth === true && user){
+            if(user?.isSubscriber){
+                redirect('/dashboard');
+            }else{
+                redirect('/subscribe');
+            }
+        }
+    },[isAuth,user])
+
+
   return (
     <section className='login-section h-screen'>
         <div className='container m-auto h-full flex justify-center items-center'>
@@ -52,7 +74,7 @@ const page = () => {
                     </div>
 
                     <div className='flex justify-center items-center'>
-                        <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>Login</button>
+                        <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>{!loading ? 'Login' : 'Loading...'}</button>
                     </div>
                 </form>
             </div>

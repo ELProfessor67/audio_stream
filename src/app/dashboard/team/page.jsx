@@ -3,11 +3,14 @@ import {MdDelete,MdEdit} from 'react-icons/md'
 import axios from 'axios'
 import {useState,useEffect} from 'react'
 import Link from 'next/link'
+import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert';
+import {useDispatch} from 'react-redux';
 
 export default function page(){
 
 	const [teams,setTeams] = useState([]);
-	console.log(teams)
+	// console.log(teams)
+	const dispatch = useDispatch();
 
 	async function getTeam(){
 			try{
@@ -25,9 +28,13 @@ export default function page(){
 		try{
 			const {data} = await axios.delete(`/api/v1/dj?id=${id}`);
 			console.log(data.message);
-			getTeam();
-		}catch(err){
-				console.log(err.message)
+			await dispatch(showMessage(data.message));
+      await dispatch(clearMessage());
+      getTeam();
+		}catch(error){
+				await dispatch(showError(error.response.data.message));
+        await dispatch(clearError());
+				console.log(error.message)
 		}
 	}
 

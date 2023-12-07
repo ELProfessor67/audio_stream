@@ -44,11 +44,11 @@ export const SidebarBody = ({children}) => {
     <aside className='h-screen'>
         <nav className='h-full flex flex-col bg-white border-r shadow-sm'>
             <div className='p-4 pb-2 flex justify-between items-center'>
-                <Image src={'/next.svg'} className={`
+                <Image src={'/images/logo.svg'} className={`
                     overflow-hidden transition-all
-                    ${expanded ? "w-32": "w-0"}
+                    ${expanded ? "block w-28": "w-0 hidden"}
                  `} width={100} height={100}/>
-                <button className='p-1.5 rounded-lg bg-green-50 hover:bg-green-100' onClick={() => setExpanded(!expanded)}>
+                <button className={`p-1.5 rounded-lg bg-green-50 hover:bg-green-100 ${expanded ? "ml-0": "ml-2"}`} onClick={() => setExpanded(!expanded)}>
                     {expanded ? <TbChevronLeftPipe size={30}/> : <TbChevronRightPipe size={30}/> }
                 </button>
             </div>

@@ -7,7 +7,8 @@ import {MdOutlineSubtitles,MdDescription, MdPhoto} from 'react-icons/md';
 import {FaUserAlt} from 'react-icons/fa';
 import axios from 'axios';
 import Dialog from '@/components/Dialog';
-
+import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert';
+import {useDispatch} from 'react-redux';
 
 const page = () => {
     const [name,setName] = useState('');
@@ -17,9 +18,10 @@ const page = () => {
     const [selectPermission,setSelectedPermission] = useState([]);
     const [starttime,setStarttime] = useState();
     const [endtime,setEndtime] = useState();
+    const [loading, setLoading] = useState(false);
 
     const permissions = ['songs','playlists','schedules','live','dashboard','requests','ads'];
-
+    const dispatch = useDispatch();
 
     const handleCheckbox = (permission) => {
      setSelectedPermission(prev => {
@@ -35,14 +37,25 @@ const page = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        alert('submit')
- 
+        
+        setLoading(true);
         try{
             const {data} = await axios.post('/api/v1/dj',{name,email,password,permissions: selectPermission,starttime,endtime});
+            setName('');
+            setEmail('');
+            setPassword('');
+            setSelectedPermission([]);
+            setStarttime('');
+            setEndtime('');
+            await dispatch(showMessage(data.message));
+            await dispatch(clearMessage());
+
             console.log(data)
-        }catch(err){
-            
+        }catch(error){
+            await dispatch(showError(error.response.data.message));
+            await dispatch(clearError());
         }
+        setLoading(false);
 
     }
 
@@ -116,7 +129,7 @@ const page = () => {
                     
 
                     <div className='flex justify-center items-center'>
-                        <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>Add</button>
+                        <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>{!loading ? 'Add' : 'Loading...'}</button>
                     </div>
                 </form>
             </div>

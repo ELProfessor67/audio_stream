@@ -11,6 +11,8 @@ import PlanCard from './PlanCard'
 import {getNames} from 'country-list';
 import timezones from 'timezones-list';
 import axios from 'axios'
+import {useDispatch} from 'react-redux';
+import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert'
 
 const Register = ({SelectedPlan,setCname}) => {
     const [plan,setPlan] = useState({});
@@ -21,6 +23,8 @@ const Register = ({SelectedPlan,setCname}) => {
     const [password,setPassword] = useState('');
     const [station_name,setStation_name] = useState('');
     const [website_url,setWebsite_url] = useState('');
+    const [loading,setLoading] = useState(false);
+    const dispatch = useDispatch();
 
     useEffect(() => {
        const selectPlanData =  plansData.find(({name}) => name === SelectedPlan);
@@ -45,13 +49,18 @@ const Register = ({SelectedPlan,setCname}) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
         try{
             const {data} = await axios.post('/api/v1/register',{name,email,password,country,station_name,website_url,timezone});
-            
+            await dispatch(showMessage(data.message));
+            await dispatch(clearMessage());
             if(data.success) setCname('checkout')
-        }catch(err){
-            console.log(err.message)
+        }catch(error){
+            await dispatch(showError(error.response.data.message));
+            await dispatch(clearError());
+            console.log(error.message)
         }
+        setLoading(true);
     }
   return (
     <section className='login-section min-h-screen section'>

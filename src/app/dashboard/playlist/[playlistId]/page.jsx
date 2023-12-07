@@ -7,6 +7,8 @@ import SongPlayer from '@/components/SongPlayer';
 import {MdPlaylistAdd} from 'react-icons/md';
 import Dialog from '@/components/Dialog';
 import Image from 'next/image';
+import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert';
+import {useDispatch} from 'react-redux';
 
 
 function page({params}){
@@ -18,8 +20,9 @@ function page({params}){
   const [open, setOpen] = useState(false);
 
   const songRef = useRef();
+  const dispatch = useDispatch();
 
-  console.log(params.playlistId)
+  // console.log(params.playlistId)
 
 
   useEffect(() => {
@@ -39,10 +42,14 @@ function page({params}){
     console.log(seletdSongs);
     try{
       const {data} = await axios.post(`/api/v1/playlist/${params.playlistId}`,{songs: seletdSongs});
+      await dispatch(showMessage(data.message));
+      await dispatch(clearMessage());
       console.log(data)
       getPlayListSong();
-      }catch(err){
-        console.log(err.response.data.message);
+      setOpen(false);
+      }catch(error){
+        await dispatch(showError(error.response.data.message));
+        await dispatch(clearError()); 
     }
   }
 

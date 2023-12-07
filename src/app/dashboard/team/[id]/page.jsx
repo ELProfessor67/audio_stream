@@ -7,6 +7,8 @@ import {MdOutlineSubtitles,MdDescription, MdPhoto} from 'react-icons/md';
 import {FaUserAlt} from 'react-icons/fa';
 import axios from 'axios';
 import Dialog from '@/components/Dialog';
+import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert';
+import {useDispatch} from 'react-redux';
 
 
 const page = ({params}) => {
@@ -16,9 +18,10 @@ const page = ({params}) => {
     const [selectPermission,setSelectedPermission] = useState([]);
     const [starttime,setStarttime] = useState();
     const [endtime,setEndtime] = useState();
+    const [loading, setLoading] = useState(false);
 
     const permissions = ['songs','playlists','schedules','live','dashboard','requests','ads'];
-
+    const dispatch = useDispatch();
 
     const handleCheckbox = (permission) => {
      setSelectedPermission(prev => {
@@ -34,14 +37,19 @@ const page = ({params}) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        alert('submit')
+        setLoading(true);
  
         try{
             const {data} = await axios.put(`/api/v1/dj/${params.id}`,{name,email,permissions: selectPermission,starttime,endtime});
+            await dispatch(showMessage(data.message));
+            await dispatch(clearMessage());
             console.log(data)
-        }catch(err){
-            console.log(err.response.data.message);
+        }catch(error){
+            await dispatch(showError(error.response.data.message));
+            await dispatch(clearError());
+            console.log(error.response.data.message);
         }
+        setLoading(false);
     }
 
     useEffect(() => {
@@ -121,7 +129,7 @@ const page = ({params}) => {
                     
 
                     <div className='flex justify-center items-center'>
-                        <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>Update</button>
+                        <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>{!loading ? 'Update' : 'Loading...'}</button>
                     </div>
                 </form>
             </div>

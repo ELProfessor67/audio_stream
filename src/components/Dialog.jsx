@@ -33,7 +33,7 @@ export default function Dialog({open,onClose,children,seletdSongs,save,selectAll
 					</button>
 				</div>
 
-				<div className="body py-4 flex-1 overflow-auto">
+				<div className="body py-4 flex-1 overflow-auto" style={{flex: 'none', height: '30rem',overflowY: 'auto'}}>
 					{children}
 				</div>
 			</div>

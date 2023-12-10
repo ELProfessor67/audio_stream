@@ -8,13 +8,13 @@ import {BsMusicNoteList,BsMailbox, BsCloudUpload, BsCalendarDate} from 'react-ic
 import {PiUsersThreeDuotone} from 'react-icons/pi'
 import {CiStreamOn} from 'react-icons/ci'
 import {GiLoveSong} from 'react-icons/gi'
-import {MdPlaylistAdd,MdOutlineLogout} from 'react-icons/md'
+import {MdPlaylistAdd,MdOutlineLogout,MdOutlineAdminPanelSettings} from 'react-icons/md'
 import {LiaAdSolid} from 'react-icons/lia'
 import { usePathname } from 'next/navigation';
 import Link from 'next/link'
 import {logout} from '@/redux/action/user';
 import {useDispatch,useSelector} from 'react-redux';
-
+import {toast} from 'react-toastify';
 
 
 function checkInTimeRange(startTime,endTime){
@@ -139,7 +139,11 @@ export default function Sidebar(){
                return false
             }
         }else{
-            return true
+            if(permissionName === 'playlists'){
+                return false
+            }else{
+                return true
+            } 
         }
     }
 
@@ -166,7 +170,16 @@ export default function Sidebar(){
             text: "Create Playlists",
             alert: false,
             active: pathname == '/dashboard/playlist-create',
-            link: '/dashboard//playlist-create',
+            link: '/dashboard/playlist-create',
+            show: true
+    
+        },
+        {
+            icon: <MdOutlineAdminPanelSettings size={30}/>,
+            text: "Admin Playlists",
+            alert: false,
+            active: pathname == '/dashboard/playlist-admin',
+            link: '/dashboard/playlist-admin',
             show: isAllow('playlists')
     
         },
@@ -241,10 +254,62 @@ export default function Sidebar(){
     return<>
     <SidebarBody>
         {
-            navigationsItems.map((data) => data.show ? <SidebarItem {...data}/> :<></>)
+            navigationsItems.map((data) => data.show ? <SidebarItem {...data}/> :<HideLink {...data}/>)
         }
 
         <SidebarItem icon={<MdOutlineLogout size={30}/>} text={'Logout'} alert={false} link={''} active={false} onClick={handleLogout}/>
     </SidebarBody>
     </>
+}
+
+
+
+function HideLink({show,text,active,alert,icon}){
+
+    const {expanded} = useContext(SidebarContext);
+    const {user} = useSelector(store => store.user);
+    function handleClick(){
+        toast.info(`You go live only ${user?.djStartTime} to ${user?.djEndTime}`);
+    }
+
+    return(
+        <>
+            {
+                text === "Go Live" &&
+                <li onClick={handleClick}>
+                    <a href={''} className={` 
+                        relative flex items-center py-2 px-3 my-1
+                        font-medium rounded-md cursor-pointer
+                        transition-colors
+                        text-gray-300 cursor-[not-allowed]
+                        ${
+                            active ?
+                            "bg-gradient-to-tr from-indigo-200 to-indigo-100 text-indigo-800"
+                            :"hover:bg-gray-50 text-gray-300"
+                        }
+                    `}>
+                        {icon}
+                        <span className={`overflow-hidden transition-all ${
+                            expanded ? "w-52 ml-3": "w-0"
+                        }`}>{text}</span>
+                        {
+                            alert && (
+                                <div className={`absolute right-2 w-2 h-2 rounded-full bg-indigo-400 ${
+                                    expanded ? "": "top-2"
+                                }`}/>
+                            )
+                        }
+
+                        {
+                            !expanded && <div className={`absolute left-full rounded-md px-2 py-1 ml-6 bg-indigo-100 text-indigo-800 text-sm invisible opacity-20 -translate-x-3 transition-all group-hover:visible group-hover:opacity-100`}>
+                                {text}
+                            </div>
+                        }
+                    </a>
+                </li>
+            }
+        </>
+    )
+
+   
 }

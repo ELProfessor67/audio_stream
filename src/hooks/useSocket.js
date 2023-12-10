@@ -15,6 +15,9 @@ const socketInit = () => {
 	return io(process.env.NEXT_PUBLIC_SOCKET_URL, options);
 }
 
+
+const sleep = ms => new Promise(r => window.setTimeout(r,ms))
+
 function getSongStream(songUrl,gainNodeRef,songSourceRef,volume) {
     return fetch(songUrl)
         .then(response => response.arrayBuffer())
@@ -61,7 +64,8 @@ const useSocket = (setSongPlaying) => {
 	const peersRef = useRef({});
 	const localStreamRef = useRef();
 	const songSourceRef = useRef();
-	const songStreamRef = useRef();
+	const constantref = useRef();
+	const songStreamRef = useRef(null);
 	const gainNodeRef = useRef();
 	const localTrackRef = useRef();
 	const [micOn, setMicOn] = useState(false);
@@ -116,6 +120,33 @@ const useSocket = (setSongPlaying) => {
 				peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'),songStreamRef.current,localStreamRef.current);
 			}
 		});
+
+		
+
+
+
+		
+		// const setStream = () => new Promise(async (resolve) => {
+		// 		Object.keys(peersRef.current).forEach(peerId => {
+					
+		// 			console.log('connected',peersRef.current[peerId].connected);
+		// 			if(peersRef.current[peerId]){
+		// 				if(songStreamRef.current){
+		// 					console.log('replace track')
+		// 					peersRef.current[peerId].replaceTrack(songStreamRef.current,songStream.getTracks()[0],localStreamRef.current);
+		// 				}else{
+		// 					console.log('add track')
+		// 					peersRef.current[peerId].addTrack(songStream.getTracks()[0],localStreamRef.current);
+		// 				}
+						
+		// 			}
+		// 		});
+
+		// 		resolve();
+		// 	});
+
+		// await setStream();
+		// songStreamRef.current = songStream.getTracks()[0];
 	}
 
 	const pauseSong = () => {
@@ -165,6 +196,14 @@ const useSocket = (setSongPlaying) => {
 				});
 			}
 		}
+
+		// if(micOn){
+		// 	localStreamRef.current.getTracks().forEach(track => track.enabled = false);
+		// 	setMicOn(false);
+		// }else{
+		// 	setMicOn(true);
+		// 	localStreamRef.current.getTracks().forEach(track => track.enabled = true);
+		// }
 	}
 
 	useEffect(() => {
@@ -174,6 +213,7 @@ const useSocket = (setSongPlaying) => {
 		});
 
 		socketRef.current?.on('user-disconnet',({id}) => {
+			console.log('disconnect',id)
 			if(peersRef.current[id]){
 				delete peersRef.current[id];
 			}
@@ -199,13 +239,44 @@ const useSocket = (setSongPlaying) => {
 		socketRef.current.emit('owner-join',{user});
 		localStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
 		setMicOn(true);
+
+		const stream = await getSongStream('/audio/welcome.mp3',constantref,constantref,1);
+		
+		
+		Object.keys(peersRef.current).forEach(peerId => {
+			console.log(peersRef.current[peerId].connected)
+			if(peersRef.current[peerId]){
+				peersRef.current[peerId].addTrack(stream.getTracks()[0],localStreamRef.current);
+			}
+		});
 	}
 
 	const ownerLeft = async () => {
-		console.log('join')
+		await new Promise(async (resolve) => {
+			const stream = await getSongStream('/audio/good bye.mp3',constantref,constantref,1);
+		
+			Object.keys(peersRef.current).forEach(peerId => {
+				console.log(peersRef.current[peerId].connected)
+				if(peersRef.current[peerId]){
+					peersRef.current[peerId].addTrack(stream.getTracks()[0],localStreamRef.current);
+				}
+			});
+
+			resolve();
+		})
+
+		await sleep(7000);
+		
+		console.log('left')
+
 		socketRef.current.disconnect();
 		setMicOn(false);
+		localStreamRef.current.getTracks().forEach(track => track.enabled = false);
+		
+
+
 		const listeners = Object.keys(peersRef.current).length;
+
 		Object.keys(peersRef.current).forEach((peerId) => {
 			peersRef.current[peerId].destroy();
 			delete peersRef.current[peerId];
@@ -219,7 +290,6 @@ const useSocket = (setSongPlaying) => {
 		}
 		
 	}
-
 
 
 	return {socketRef,ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef}

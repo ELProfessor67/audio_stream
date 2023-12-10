@@ -14,13 +14,14 @@ const page = () => {
     const [title,setTitle] = useState('');
     const [description,setDescription] = useState('hhh');
     const [audiofile,setAudio] = useState('');
-    const [cover,setCover] = useState('');
-    const [artist,setArtist] = useState('');
+    const [cover,setCover] = useState('/upload/cover/default.jpg');
+    const [artist,setArtist] = useState('unknown');
     const [size,setSize] = useState('');
     const [type,setType] = useState('');
     const [audioEx,setAudioEx] = useState('');
     const [coverEx,setCoverEx] = useState('');
     const [loading,setLoading] = useState(false);
+    const [duration,setDuration] = useState(0);
     const dispatch = useDispatch();
 
 
@@ -29,7 +30,7 @@ const page = () => {
         // console.log('submit',{title,description,artist,size,type,audiofile,cover})
         setLoading(true);
         try{
-            const {data} = await axios.post('/api/v1/song',{audioEx,coverEx,title,description,artist,size,type,cover,audio: audiofile});
+            const {data} = await axios.post('/api/v1/song',{audioEx,coverEx,title,description,artist,size,type,cover,audio: audiofile,duration});
             setTitle('');
             setDescription('');
             setArtist('');
@@ -60,6 +61,11 @@ const page = () => {
                 setState(base64String);
                 const extention = file.name.split('.').reverse()[0]
                 setEx(extention);
+                const audio = new Audio(base64String);
+                audio.addEventListener('loadedmetadata',function(){
+                    // console.log('duration',audio.duration);
+                    setDuration(audio.duration);
+                })
             }
         }
 
@@ -101,7 +107,7 @@ const page = () => {
                         <label for="cover" className='text-black text-lg'>Cover Photo</label>
                         <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                             <MdPhoto size={20} className='text-gray-400'/>
-                            <input type='file' onChange={(e) => fileToBase64(e,setCover,setCoverEx)}  className='w-[95%] outline-none ml-1'  id='cover' name='cover' accept="image/*" required/>
+                            <input type='file' onChange={(e) => fileToBase64(e,setCover,setCoverEx)}  className='w-[95%] outline-none ml-1'  id='cover' name='cover' accept="image/*"/>
                         </div>   
                     </div>
 

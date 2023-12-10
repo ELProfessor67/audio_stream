@@ -6,10 +6,13 @@ import {FaPlay,FaPause} from 'react-icons/fa';
 import {useState,useEffect,useRef} from 'react';
 import Image from 'next/image';
 import axios from 'axios';
-import {FaArrowUpRightFromSquare} from 'react-icons/fa6';
+import {FaArrowUpRightFromSquare,FaRegMessage} from 'react-icons/fa6';
 import Link from 'next/link';
 import Dialog from '@/components/Dialog';
 import {useSocket} from '@/hooks';
+import {MdModeEdit} from 'react-icons/md'
+import {useDispatch} from 'react-redux';
+import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert'
 
 
 const Timer = ({timerStart}) => {
@@ -66,7 +69,10 @@ export default function(){
 	const [songPlaying,setSongPlaying] = useState(false);
 	const [timerStart, setTimerStart] = useState(false);
 	const [que,setQue] = useState([]);
+	const [message,setMessage] = useState('');
+	const [medit,setMEdit] = useState(false);
 	const [listners,setListners] = useState('0');
+	const dispatch = useDispatch();
 	
 	const {ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef} = useSocket(setSongPlaying);
 
@@ -131,6 +137,10 @@ export default function(){
 	        try{
 	          const {data} = await axios.get('/api/v1/playlist');
 	          setPlaylists(data?.playlists);
+	          const {data:mdata} = await axios.get('/api/v1/announcement');
+	          if(mdata?.announcement){
+	          	setMessage(mdata?.announcement?.message);
+	          }
 	        }catch(err){
 	          console.log(err.response.data.message);
 	        }
@@ -181,11 +191,58 @@ export default function(){
 	}
 
 
+	const handleMessageSubmit = async (e) => {
+		e.preventDefault();
+		try {
+            const {data} = await axios.post('/api/v1/announcement',{message});
+            await dispatch(showMessage(data.message));
+            await dispatch(clearMessage());
+            setMEdit(false);
+            console.log(data.message);
+        } catch (error) {
+            await dispatch(showError(error.response.data.message));
+            await dispatch(clearError());
+            console.log(error.response.data.message)
+        }
+	}
 
+
+	const handleUpload = async (e) => {
+		const [file] = e.target.files;
+
+        const reader = new FileReader();
+
+        reader.onload = function(){
+            if(reader.readyState == 2){
+                const base64String = reader.result;
+                const extention = file.name.split('.').reverse()[0]
+                const title = file.name.split('.')[0];
+                
+                const audio = new Audio(base64String);
+                audio.addEventListener('loadedmetadata',async function(){
+                    // console.log('duration',audio.duration);
+                    try{
+                    	const {data} = await axios.post('/api/v1/song',{audioEx:extention,coverEx:'',title,description:'description',artist: 'unknown',size:file.size,type:file.type,cover:'/upload/cover/default.jpg',audio: base64String,duration:audio.duration});
+
+                    	handleSelectedSong(data.song);
+                    	console.log(data.song);
+                    }catch(err){
+                    	console.log(err)
+                    }
+                })
+            }
+        }
+
+        reader.readAsDataURL(file);
+	}
 
 	return(
 		<>
 			<section className="w-full py-5 px-4 reletive">
+				<div className="m-auto p-4 max-w-[50rem] flex items-center justify-center gap-3">
+					<h3 className="text-2xl text-gray-600">{message}</h3>
+					<button onClick={() => setMEdit(true)} className="bg-none outline-none border-none text-green-400 hover:text-green-500"><MdModeEdit size={20}/></button>
+				</div>
 		      <div className="w-full flex">
 		        <div className="side-box w-[22rem] p-2 reletive">
 		        	<div className="w-full">
@@ -228,7 +285,7 @@ export default function(){
 				        				<div className="flex justify-between items-center">
 							                <div className="flex items-center gap-4">
 							                    <Image src={data?.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded"/> 
-							                    <h2 className="text-black">{data?.title}</h2>           
+							                    <h2 className="text-black">{data?.title?.slice(0,40)}</h2>           
 							                </div>
 
 							                <button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handleSelectedSong(data)}><FaPlay size={20}/></button>       
@@ -269,7 +326,7 @@ export default function(){
 		        				<Image src={selectedSong?.cover} width={200} height={200} className="w-[5rem] h-[5rem] rounded-md"/>
 		        				
 		        				<div className="flex flex-col px-3 justify-center">
-		        					<h2 className="text-black text-xl font-semibold">{selectedSong?.title}</h2>
+		        					<h2 className="text-black text-xl font-semibold">{selectedSong?.title?.slice(0,40)}</h2>
 		        					<p className="para">~ {selectedSong?.artist}</p>
 		        				</div>
 		        				<div className="flex-1 flex justify-center items-center">
@@ -288,6 +345,11 @@ export default function(){
 		        	<div className="w-full mt-5">
 		        		<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
 		        			<h2 className="text-white text-xl text-center">Playlists</h2>
+		        			
+		        			
+		        			<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => document.getElementById('audio').click()}>Media</button>
+		        			
+		        			<input type="file" accept="audio/*" className="hidden" id="audio" onChange={handleUpload}/>
 		        		</div>
 		        		<div className="py-2 rounded-b-md shadow-md p-3 h-[21rem] overflow-x-auto">
 		        			{playlists.map(data => (
@@ -325,7 +387,7 @@ export default function(){
 				        				<div className="flex justify-between items-center my-2">
 							                <div className="flex items-center gap-4">
 							                    <Image src={data?.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded"/> 
-							                    <h2 className="text-black">{data?.title}</h2>           
+							                    <h2 className="text-black">{data?.title?.slice(0,40)}</h2>           
 							                </div>
 
 							                <button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handleSelectedSong(data)}><FaPlay size={20}/></button>       
@@ -348,13 +410,28 @@ export default function(){
 	              <div className="flex justify-between items-center my-6">
 	                <div className="flex items-center gap-4">
 	                    <Image src={data.cover} width={200} height={200} alt="cover" className="h-[6rem] w-28 object-conver rounded"/> 
-	                    <h2 className="text-xl text-black">{data?.title}</h2>           
+	                    <h2 className="text-xl text-black">{data?.title?.slice(0,40)}</h2>           
 	                </div>
 
 	                <button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handleSelectedSong(data)}><FaPlay size={20}/></button>       
 	              </div>
 	            ))
 	          }
+	        </Dialog>
+
+
+	        <Dialog open={medit} onClose={() => setMEdit(false)}>
+	        	<form onSubmit={handleMessageSubmit}>
+	        		 <div className='input-group flex flex-col gap-1 mb-6'>
+                        <div className='flex items-center relative  py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                            <FaRegMessage size={20} className='text-gray-400'/>
+                            <input type='text' value={message} onChange={(e) => setMessage(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your email' id='message' name='message' required/>
+                        </div>
+                        <div className='flex justify-center items-center'>
+                        <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>Update</button>
+                    </div>
+                    </div>
+	        	</form>
 	        </Dialog>
 	           
 		    </section>

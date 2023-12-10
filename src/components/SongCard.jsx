@@ -10,7 +10,7 @@ export default function SongCard({cover,audio,title,artist,setPlaySong,playSong,
 
 			<div className="details pt-3 flex justify-between items-center">
 			 <div>
-			 	<h2 className="sub-heading text-black">{title}</h2>
+			 	<h2 className="sub-heading text-black">{title?.slice(0,40)}</h2>
 			 	<p className="para"><span className="text-black">~ </span><span> {artist}</span></p>
 			 </div>
 

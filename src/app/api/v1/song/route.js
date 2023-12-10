@@ -7,21 +7,27 @@ import {writeFileSync} from 'fs';
 import path from 'path';
 
 export const POST = connectDB(auth(async function (req){
-    const {title,description,artist,size,type,audio,cover,audioEx,coverEx} = await req.json();
+    const {title,description,artist,size,type,audio,cover,audioEx,coverEx,duration} = await req.json();
 
     // upload file 
+    let coverFileName;
+    if(cover.includes('/upload/cover/default.jpg')){
+        coverFileName = 'default.jpg'
+    }else{
+        const filterCoverData = cover.substr(cover.indexOf(',')+1);
+        const bufferCover = new Buffer(filterCoverData,'base64');
+        coverFileName = `${title}-${Date.now()}.${coverEx}`;
+        writeFileSync(`./public/upload/cover/${coverFileName}`,bufferCover,'binary');
+    }
+
     const filterAudioData = audio.substr(audio.indexOf(',')+1);
-    const filterCoverData = cover.substr(cover.indexOf(',')+1);
     const bufferAudio = new Buffer(filterAudioData,'base64');
-    const bufferCover = new Buffer(filterCoverData,'base64');
     const audioFileName = `${title}-${Date.now()}.${audioEx}`;
-    const coverFileName = `${title}-${Date.now()}.${coverEx}`;
     writeFileSync(`./public/upload/songs/${audioFileName}`,bufferAudio,'binary');
-    writeFileSync(`./public/upload/cover/${coverFileName}`,bufferCover,'binary');
+    
+    const song = await songModel.create({title,description,artist,size,type,audio: `/upload/songs/${audioFileName}`,cover:`/upload/cover/${coverFileName}`,owner: req.user._id,duration});
 
-    const song = await songModel.create({title,description,artist,size,type,audio: `/upload/songs/${audioFileName}`,cover:`/upload/cover/${coverFileName}`,owner: req.user._id});
-
-    return NextResponse.json({success: true,message: 'songs upload successfully'});
+    return NextResponse.json({success: true,message: 'songs upload successfully',song});
 }));
 
 export const GET = connectDB(auth(async function (req){

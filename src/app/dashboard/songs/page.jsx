@@ -15,6 +15,9 @@ function page(){
     if(playSong){
       songRef.current.src = playSong;
       songRef.current.play();
+      songRef.current.addEventListener('loadedmetadata',function(){
+        console.log('duration',this.duration);           
+      })
 
       console.log('play',playSong,songRef)
     }else{

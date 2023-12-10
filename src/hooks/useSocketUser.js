@@ -3,6 +3,8 @@ import {useRef,useEffect,useState} from 'react';
 import {useSelector} from 'react-redux';
 import Peer from 'simple-peer';
 
+const sleep = ms => new Promise(r => window.setTimeout(r,ms))
+
 const socketInit = () => {
 	const options = {
 		'force new connection': true,
@@ -14,7 +16,7 @@ const socketInit = () => {
 	return io(process.env.NEXT_PUBLIC_SOCKET_URL, options);
 }
 
-const useSocket = (streamId,audioRef,name) => {
+const useSocket = (streamId,audioRef,name,isPlay,setIsPlay) => {
 	const socketRef = useRef();
 	const peerRef = useRef({});
 	const [owner,setOwner] = useState('');
@@ -22,6 +24,55 @@ const useSocket = (streamId,audioRef,name) => {
 	const [roomActive,setRoomActive] = useState(false);
 	const [scheduleActive,setScheduleActive] = useState(false);
 	const [isLive,setIsLive] = useState(false);
+	const cuurentTimeRef = useRef();
+	const playRef = useRef();
+
+	useEffect(() => {
+		playRef.current = isPlay;
+	},[isPlay]);
+
+	
+
+
+	function handleAutoDjPlay(){
+		let startTime = cuurentTimeRef.current;
+
+		if(startTime){
+			const ellipTime = ((new Date().getTime()) - startTime)/1000;
+			console.log(ellipTime)
+			audioRef.current.currentTime = ellipTime;
+		}
+	}
+
+	async function handleSongChange(data){
+		if(scheduleActive || isLive){
+			return
+		}
+
+		setRoomActive(true)
+
+		console.log('auto dj',data);
+
+		audioRef.current.src = data?.currentSong?.url;
+		
+		cuurentTimeRef.current = data?.currentSong?.currentTime;
+		
+		handleAutoDjPlay();
+		console.log('isPlay',playRef.current)
+		if(playRef.current){
+			console.log('pausing....')
+			await audioRef.current.pause();
+			await sleep(3000);
+			await audioRef.current.play();
+			console.log('playing....')
+		}
+
+		audioRef.current.removeEventListener('play',handleAutoDjPlay)
+		audioRef.current.addEventListener('play',handleAutoDjPlay)
+		
+	}
+
+
 
 
 
@@ -120,6 +171,7 @@ const useSocket = (streamId,audioRef,name) => {
 				console.log('room room-unactive')
 				setRoomActive(false);
 				setIsLive(false);
+				socketRef.current.emit('auto-dj',{roomId: streamId});
 			}
 			// if(peerRef.current.destroy){
 			// 	peerRef.current?.destroy();
@@ -133,6 +185,7 @@ const useSocket = (streamId,audioRef,name) => {
 			await connectedWithScheduleStream();
 			setRoomActive(true);
 			setScheduleActive(true);
+			audioRef.current.removeEventListener('play',handleAutoDjPlay);
 		});
 
 		socketRef.current.on('schedule-unactive',() => {
@@ -142,16 +195,21 @@ const useSocket = (streamId,audioRef,name) => {
 			audioRef.current.src = '';
 			audioRef.current.pause();
 			audioRef.current.removeEventListener('play',handlePlaySchedule);
+			socketRef.current.emit('auto-dj',{roomId: streamId});
 		});
 
 		socketRef.current.on('room-active-now',() => {
 			window.location.reload();
-		})
+		});
+
+
+		socketRef.current.on('song-change',handleSongChange)
 
 		return () => {
 			socketRef.current.off('room-active');
 			socketRef.current.off('room-unactive');
 			socketRef.current.off('room-active-now');
+			socketRef.current.off('song-change');
 		}
 
 	},[]);

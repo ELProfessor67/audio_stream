@@ -8,6 +8,7 @@ import Image from 'next/image';
 import {useState,useEffect} from 'react';
 import axios from 'axios';
 import Dialog from '@/components/Dialog';
+import {CiSquareQuestion} from 'react-icons/ci'
 
 
 export default function page({params}){
@@ -19,7 +20,8 @@ export default function page({params}){
 	// const [soundOff,setSoundOff] = useState(false);
 	const [volume,setVolume] = useState(1);
 	const audioRef = useRef();
-	const {roomActive,handleRequestSong,isLive} = useSocketUser(params.streamId,audioRef,name);
+	console.log('isPlay from components side',isPlay)
+	const {roomActive,handleRequestSong,isLive} = useSocketUser(params.streamId,audioRef,name,isPlay,setIsPlay);
 	const [more,setMore] = useState(false);
 	const [rOpen,setROPen] = useState(false);
 	console.log(roomActive)
@@ -67,7 +69,11 @@ export default function page({params}){
 			<div className="w-[35rem] p-4 shadow-md rounded-md border border-gray-100">
 				<div className="flex justify-between items-center relative">
 					<h2 className="text-2xl para">HGC LIVE RADIO</h2>
-					<button className="bg-none border-none outline-none cursor-pointer"><FiMoreVertical size={20} onMouseEnter={() => setMore(true)} onMouseLeave={() => setMore(false)}/></button>
+					<div className="flex items-center">
+						<button className="bg-none border-none outline-none text-black disabled:cursor-[not-allowed] cursor-pointer disabled:text-gray-200" disabled={!isLive} title="request for songs play" onClick={() => setROPen(true)}><CiSquareQuestion size={20}/></button>
+
+						<button className="bg-none border-none outline-none cursor-pointer"><FiMoreVertical size={20} onMouseEnter={() => setMore(true)} onMouseLeave={() => setMore(false)}/></button>
+					</div>
 
 					{
 						more && <div onMouseEnter={() => setMore(true)} onMouseLeave={() => setMore(false)} className="absolute top-5 border border-gray-100 right-[-15%] p-2 rounded-md shadow-md bg-white flex flex-col items-start gap-3">

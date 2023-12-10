@@ -15,7 +15,7 @@ const page = () => {
     const [email,setEmail] = useState('');
     const [password,setPassword] = useState('');
     const [open,setOpen] = useState(false);
-    const [selectPermission,setSelectedPermission] = useState([]);
+    const [selectPermission,setSelectedPermission] = useState(['live','dashboard']);
     const [starttime,setStarttime] = useState();
     const [endtime,setEndtime] = useState();
     const [loading, setLoading] = useState(false);

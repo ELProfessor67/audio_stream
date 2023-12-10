@@ -11,7 +11,8 @@ export const auth = (func) => async (req) => {
             throw new Error('user unauthorized');
         }
 
-        if(user.isDJ){
+        const url = req.url;
+        if(user.isDJ && !url.includes('/playlist')){
             user._id = user.djOwner
         }
         req.user = user;

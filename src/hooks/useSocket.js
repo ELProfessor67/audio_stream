@@ -240,32 +240,32 @@ const useSocket = (setSongPlaying) => {
 		localStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
 		setMicOn(true);
 
-		const stream = await getSongStream('/audio/welcome.mp3',constantref,constantref,1);
+		// const stream = await getSongStream('/audio/welcome.mp3',constantref,constantref,1);
 		
 		
-		Object.keys(peersRef.current).forEach(peerId => {
-			console.log(peersRef.current[peerId].connected)
-			if(peersRef.current[peerId]){
-				peersRef.current[peerId].addTrack(stream.getTracks()[0],localStreamRef.current);
-			}
-		});
+		// Object.keys(peersRef.current).forEach(peerId => {
+		// 	console.log(peersRef.current[peerId].connected)
+		// 	if(peersRef.current[peerId]){
+		// 		peersRef.current[peerId].addTrack(stream.getTracks()[0],localStreamRef.current);
+		// 	}
+		// });
 	}
 
 	const ownerLeft = async () => {
-		await new Promise(async (resolve) => {
-			const stream = await getSongStream('/audio/good bye.mp3',constantref,constantref,1);
+		// await new Promise(async (resolve) => {
+		// 	const stream = await getSongStream('/audio/good bye.mp3',constantref,constantref,1);
 		
-			Object.keys(peersRef.current).forEach(peerId => {
-				console.log(peersRef.current[peerId].connected)
-				if(peersRef.current[peerId]){
-					peersRef.current[peerId].addTrack(stream.getTracks()[0],localStreamRef.current);
-				}
-			});
+		// 	Object.keys(peersRef.current).forEach(peerId => {
+		// 		console.log(peersRef.current[peerId].connected)
+		// 		if(peersRef.current[peerId]){
+		// 			peersRef.current[peerId].addTrack(stream.getTracks()[0],localStreamRef.current);
+		// 		}
+		// 	});
 
-			resolve();
-		})
+		// 	resolve();
+		// })
 
-		await sleep(7000);
+		// await sleep(7000);
 		
 		console.log('left')
 

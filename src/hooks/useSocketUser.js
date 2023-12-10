@@ -159,6 +159,8 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay) => {
 			setOwner(data?.user);
 			ownerRef.current = data?.user;
 			createPeerConnection();
+			const song = new Audio('/audio/welcome.mp3');
+			song.play();
 		});
 
 		socketRef.current.on('room-unactive',async (data) => {
@@ -178,6 +180,11 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay) => {
 			// }
 			// peerRef.current = {};
 			console.log('peerRef',peerRef.current);
+		});
+
+		socketRef.current.on('owner-left',() => {
+			const song = new Audio('/audio/good bye.mp3');
+			song.play();
 		});
 
 		socketRef.current.on('schedule-active',async (data) => {

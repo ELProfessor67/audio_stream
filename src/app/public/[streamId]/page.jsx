@@ -70,7 +70,7 @@ export default function page({params}){
 				<div className="flex justify-between items-center relative">
 					<h2 className="text-2xl para">HGC LIVE RADIO</h2>
 					<div className="flex items-center">
-						<button className="bg-none border-none outline-none text-black disabled:cursor-[not-allowed] cursor-pointer disabled:text-gray-200" disabled={!isLive} title="request for songs play" onClick={() => setROPen(true)}><CiSquareQuestion size={20}/></button>
+						<button className="bg-indigo-500 border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200" disabled={!isLive} title="request for songs play" onClick={() => setROPen(true)}>request</button>
 
 						<button className="bg-none border-none outline-none cursor-pointer"><FiMoreVertical size={20} onMouseEnter={() => setMore(true)} onMouseLeave={() => setMore(false)}/></button>
 					</div>

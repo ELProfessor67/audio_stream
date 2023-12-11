@@ -71,6 +71,50 @@ const useSocket = (setSongPlaying) => {
 	const [micOn, setMicOn] = useState(false);
 	const [requests,setRequests] = useState([]);
 	const [listners,setListners] = useState([]);
+	const [newUser,setNewUser] = useState([])
+	const micOnRef = useRef(false);
+
+	useEffect(() =>{
+		micOnRef.current = micOn;
+	},[micOn])
+
+	async function handleNewUser(peerId){
+		setNewUser(prev => [...prev,peerId]);
+		await sleep(2000);
+		if(!micOnRef.current){
+			console.log('mic is off')
+			localStreamRef.current?.getTracks().forEach((track) => track.stop());
+        }
+
+        if(songStreamRef.current){
+        	console.log(peersRef.current[peerId])
+        	console.log('someting is here song stream')
+        	if(peersRef.current[peerId]){
+        		console.log('someting is here song stream')
+				peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'),songStreamRef.current,localStreamRef.current);
+			}
+        }
+
+        if(micOnRef.current){
+        	console.log('micOn')
+        	if(songStreamRef.current){
+				const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+				localTrackRef.current = audioStream.getTracks()[0];		
+				if(peersRef.current[peerId]){
+					peersRef.current[peerId].replaceTrack(songStreamRef.current,localTrackRef.current,localStreamRef.current);
+				}
+				
+			}else{
+				const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+				localTrackRef.current = audioStream.getTracks()[0];
+				
+				if(peersRef.current[peerId]){
+					peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'),localTrackRef.current,localStreamRef.current);
+				}
+				
+			}
+        }
+	}
 
 
 	const handleOffer = (data) => {
@@ -84,6 +128,11 @@ const useSocket = (setSongPlaying) => {
         });
 
         peersRef.current[data.senderId].on('connect', () => {
+        	console.log(data.senderId,songStreamRef.current,micOn);
+        	console.log('new user come',data.senderId);
+        	handleNewUser(data.senderId);
+        	
+        	
             console.log('Connection established');
         });
 
@@ -217,6 +266,7 @@ const useSocket = (setSongPlaying) => {
 			if(peersRef.current[id]){
 				delete peersRef.current[id];
 			}
+			setNewUser(prev => prev.filter(peerId => peerId != id));
 		})
 
 		return () => {
@@ -224,6 +274,23 @@ const useSocket = (setSongPlaying) => {
 			socketRef.current?.off('user-disconnet');
 		}
 	},[socketRef.current]);
+
+
+	useEffect(() => {
+		function confirmReload(event) {
+            var confirmationMessage = "Are you sure you want to stop streaming?";
+
+            // For modern browsers
+            event.returnValue = confirmationMessage;
+            return confirmationMessage;
+        }
+
+		window.addEventListener('beforeunload', confirmReload);
+
+		return () => {
+			window.removeEventListener('beforeunload', confirmReload);
+		}
+	},[])
 
 	const handleShare = async () => {
 		const url = `${window.location.origin}/public/${user._id}`;
@@ -292,7 +359,7 @@ const useSocket = (setSongPlaying) => {
 	}
 
 
-	return {socketRef,ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef}
+	return {socketRef,ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef:newUser}
 }
 
 export default useSocket;

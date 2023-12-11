@@ -78,14 +78,14 @@ export default function(){
 
 
 	useEffect(() => {
-		if(peersRef.current){
-			if(Object.keys(peersRef.current).length < 1000){
-				setListners(Object.keys(peersRef.current).length);
+		if(peersRef){
+			if(Object.keys(peersRef).length < 1000){
+				setListners(Object.keys(peersRef).length);
 			}else{
-				setListners(`${Object.keys(peersRef.current).length/1000}k`)
+				setListners(`${Object.keys(peersRef).length/1000}k`)
 			}
 		}
-	},[peersRef.current])
+	},[peersRef])
 
 	// console.log('requests list',requests)
 

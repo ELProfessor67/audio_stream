@@ -7,7 +7,7 @@ import { auth } from "@/middleswares/auth";
 
 export const GET = connectDB(auth(async function (req){
     const {djOwner} = req.user;
-    const playlists = await playlistModel.find({owner: djOwner}).populate('owner').populate('songs');
-
+    let playlists = await playlistModel.find({owner: djOwner}).populate('owner').populate('songs');
+    playlists = playlists.filter((ele) => !ele.isTemp);
     return NextResponse.json({success: true,playlists});
 }));

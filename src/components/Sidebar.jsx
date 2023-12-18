@@ -14,6 +14,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link'
 import {logout} from '@/redux/action/user';
 import {useDispatch,useSelector} from 'react-redux';
+import {GiMusicalScore} from 'react-icons/gi'
 import {toast} from 'react-toastify';
 
 
@@ -225,12 +226,20 @@ export default function Sidebar(){
             show: isAllow('ads')
         },
         {
+            icon: <GiMusicalScore size={30}/>,
+            text: "Filter",
+            alert: false,
+            active: pathname == '/dashboard/filter',
+            link: '/dashboard/filter',
+            show: true
+        },
+        {
             icon: <BsMailbox size={30}/>,
-            text: "Requests",
+            text: "Manage Live Playlist",
             alert: true,
-            active: pathname == '/dashboard/requests',
-            link: '/dashboard/requests',
-            show: isAllow("requests")
+            active: pathname == '/dashboard/manage-live',
+            link: '/dashboard/manage-live',
+            show: true
     
         },
         {

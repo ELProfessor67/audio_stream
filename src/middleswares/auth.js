@@ -12,7 +12,17 @@ export const auth = (func) => async (req) => {
         }
 
         const url = req.url;
-        if(user.isDJ && !url.includes('/playlist')){
+        const djList = ['/playlist','/filter','/temp-playlist']
+        let change = true;
+        djList.forEach((ele) => {
+            if(url.includes(ele)){
+                change = false;
+            }
+        })
+        // if(user.isDJ && !url.includes('/playlist')){
+        //     user._id = user.djOwner
+        // }
+        if(user.isDJ && change){
             user._id = user.djOwner
         }
         req.user = user;

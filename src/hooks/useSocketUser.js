@@ -182,9 +182,13 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay) => {
 			console.log('peerRef',peerRef.current);
 		});
 
-		socketRef.current.on('owner-left',() => {
+		socketRef.current.on('owner-left',async () => {
 			const song = new Audio('/audio/good bye.mp3');
 			song.play();
+
+			await sleep(7000)
+
+			window.location.reload();
 		});
 
 		socketRef.current.on('schedule-active',async (data) => {

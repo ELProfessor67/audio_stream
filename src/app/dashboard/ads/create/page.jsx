@@ -20,6 +20,7 @@ const page = () => {
     const [type,setType] = useState('');
     const [audioEx,setAudioEx] = useState('');
     const [loading,setLoading] = useState(false);
+    const [duration,setDuration] = useState(0);
     const dispatch = useDispatch();
  
 
@@ -29,7 +30,7 @@ const page = () => {
         setLoading(true);
 
         try{
-            const {data} = await axios.post('/api/v1/ads',{audioEx,title,size,type,audio: audiofile});
+            const {data} = await axios.post('/api/v1/ads',{audioEx,title,size,type,audio: audiofile,duration});
             setTitle('');
             
             
@@ -59,6 +60,11 @@ const page = () => {
                 setState(base64String);
                 const extention = file.name.split('.').reverse()[0]
                 setEx(extention);
+                const audio = new Audio(base64String);
+                audio.addEventListener('loadedmetadata',function(){
+                    // console.log('duration',audio.duration);
+                    setDuration(audio.duration);
+                })
             }
         }
 

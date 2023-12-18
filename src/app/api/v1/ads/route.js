@@ -8,7 +8,7 @@ import path from 'path';
 
 
 export const POST = connectDB(auth(async function (req){
-    const {title,audio,audioEx,size,type} = await req.json();
+    const {title,audio,audioEx,size,type,duration} = await req.json();
 
     // upload file 
     const filterAudioData = audio.substr(audio.indexOf(',')+1);
@@ -20,7 +20,7 @@ export const POST = connectDB(auth(async function (req){
     writeFileSync(`./public/upload/songs/${audioFileName}`,bufferAudio,'binary');
     // writeFileSync(`./public/upload/cover/${coverFileName}`,bufferCover,'binary');
 
-    const song = await songModel.create({title,description:'description',artist:'ads',size,type,audio: `/upload/songs/${audioFileName}`,cover:`/upload/cover/ads.jpeg`,owner: req.user._id,isAds: true});
+    const song = await songModel.create({title,description:'description',artist:'ads',size,type,audio: `/upload/songs/${audioFileName}`,cover:`/upload/cover/ads.jpeg`,owner: req.user._id,isAds: true,duration});
 
     const adsPlaylist = await playlistModel.findOne({title: 'Ads',owner: req.user._id});
     if(adsPlaylist){

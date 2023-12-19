@@ -8,6 +8,9 @@ const nextConfig = {
          eslint: {
         ignoreDuringBuilds: true,
        },
+       images: {
+        domains: ['localhost','localhost:4000']
+       }
 }
 
 module.exports = nextConfig

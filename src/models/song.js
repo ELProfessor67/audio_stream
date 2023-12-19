@@ -11,7 +11,8 @@ const songSchems = new mongoose.Schema({
     type: {type: String,required: true},
     owner: {type: mongoose.Schema.Types.ObjectId,ref: userSchema},
     isAds: {type: Boolean,default: false},
-    duration: {type: Number,default: undefined}
+    duration: {type: Number,default: undefined},
+    album: {type: String,default: undefined}
 },{timestamps: true});
 
 

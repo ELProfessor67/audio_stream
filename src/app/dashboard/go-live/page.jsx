@@ -16,6 +16,38 @@ import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert'
 import { FaForward,FaBackward } from "react-icons/fa";
 import {IoSearch} from 'react-icons/io5';
 
+function organizeHistoryByDate(history) {
+  const organizedHistory = {};
+
+  history.forEach((entry) => {
+    const createdAtDate = new Date(entry.createdAt).toISOString().split('T')[0];
+
+    if (isToday(createdAtDate)) {
+      organizedHistory.today = organizedHistory.today || [];
+      organizedHistory.today.push(entry);
+    } else if (isYesterday(createdAtDate)) {
+      organizedHistory.yesterday = organizedHistory.yesterday || [];
+      organizedHistory.yesterday.push(entry);
+    } else {
+      organizedHistory[createdAtDate] = organizedHistory[createdAtDate] || [];
+      organizedHistory[createdAtDate].push(entry);
+    }
+  });
+
+  return organizedHistory;
+}
+
+function isToday(dateString) {
+  const today = new Date().toISOString().split('T')[0];
+  return dateString === today;
+}
+
+function isYesterday(dateString) {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  return dateString === yesterday.toISOString().split('T')[0];
+}
+
 
 const Timer = ({timerStart}) => {
 	const [straimgTime, setStraimgTime] = useState('00:00:00');
@@ -70,7 +102,7 @@ export default function(){
 	const [start,setStart] = useState(false);
 	const [songPlaying,setSongPlaying] = useState(false);
 	const [timerStart, setTimerStart] = useState(false);
-	const [que,setQue] = useState([]);
+	const [que,setQue] = useState({});
 	const [message,setMessage] = useState('');
 	const [medit,setMEdit] = useState(false);
 	const [listners,setListners] = useState('0');
@@ -85,6 +117,10 @@ export default function(){
 	const [filterPlaying,setFilterPlaying] = useState(false);
 	const [filtervolume,setFilterVolume] = useState(0.2);
 	const [fileload,setFileLoad] = useState(0);
+	const [filterload,setFilterload] = useState(0);
+	const [filterSearch,setFilterSearch] = useState([]);
+	const [filterQuery,setFilterQuery] = useState('');
+	const [fsopen,fsetsopen] = useState(false);
 	// console.info(filtersongs);
 	// console.warn(allsongs);
 
@@ -109,8 +145,10 @@ export default function(){
 	useEffect(() => {
 		if(query){
 			setFiltersongs(prev => {
-				return allsongs.filter(song => song.title.includes(query));
+				return allsongs.filter(song => song.title.includes(query) || song.artist?.includes(query) || song.album?.includes(query));
 			});
+		}else{
+			setFiltersongs(allsongs);
 		}
 	},[query]);
 
@@ -130,9 +168,11 @@ export default function(){
 			window.localStorage.setItem('history','[]');
 			history = window.localStorage.getItem('history');
 		}
-		console.info('history',history)
+		// console.info('history',history)
 		const parseQue = JSON.parse(history);
-		setQue(parseQue);
+		setQue(organizeHistoryByDate(parseQue));
+		console.log('history by dates',Object.keys(organizeHistoryByDate(parseQue)))
+
 	}
 
 	function setHistory(data){
@@ -141,6 +181,7 @@ export default function(){
 		const min = date.getMinutes();
 		const sec = date.getSeconds();
 		data.time = `${hour}:${min}:${sec}`;
+		data.createdAt = new Date(Date.now())
 		const history = window.localStorage.getItem('history');
 		let parseQue = JSON.parse(history);
 		parseQue = [data,...parseQue];
@@ -182,6 +223,7 @@ export default function(){
 
 	          const {data:fdata} = await axios.get('/api/v1/filter');
 	          setEffectSong(fdata.filter);
+	          setFilterSearch(fdata.filter);
 
 	        }catch(err){
 	          console.log(err?.response?.data?.message);
@@ -268,14 +310,17 @@ export default function(){
                 audio.addEventListener('loadedmetadata',async function(){
                     // console.log('duration',audio.duration);
                     try{
-                    	const {data} = await axios.post('/api/v1/song',{audioEx:extention,coverEx:'',title,description:'description',artist: 'unknown',size:file.size,type:file.type,cover:'/upload/cover/default.jpg',audio: base64String,duration:audio.duration},{
+                    	const {data} = await axios.post('/api/v1/song',{audioEx:extention,coverEx:'',title,description:'description',artist: 'unknown',size:file.size,type:file.type,cover:'/upload/cover/default.jpg',audio: base64String,duration:audio.duration,isUploadfromlive:true,playlisttitle: playlists[0]?.title},{
                     		onUploadProgress: (ProgressEvent) => {
                     			const progress = Math.round((ProgressEvent.loaded * 100)/ProgressEvent.total);
                     			setFileLoad(progress);
                     		}
                     	});
                     	setFileLoad(0);
-
+                    	setPlaylists(prev => {
+                    		prev[0].songs.push(data?.song)
+                    		return prev
+                    	});
                     	handleSelectedSong(data.song);
                     	console.log(data.song);
                     }catch(err){
@@ -367,6 +412,51 @@ export default function(){
 		changeFilterValume(e.target.value);
 	}
 
+	const handleFilterUpload = (e) => {
+		const [file] = e.target.files;
+
+        const reader = new FileReader();
+
+        reader.onload = function(){
+            if(reader.readyState == 2){
+                const base64String = reader.result;
+                const extention = file.name.split('.').reverse()[0]
+                const title = file.name.split('.')[0];
+                
+                const audio = new Audio(base64String);
+                audio.addEventListener('loadedmetadata',async function(){
+                    // console.log('duration',audio.duration);
+                    try{
+                    	const {data} = await axios.post('/api/v1/filter',{audioEx:extention,title,size:file.size,type:file.type,audio: base64String,duration:audio.duration},{
+                    		onUploadProgress: (ProgressEvent) => {
+                    			const progress = Math.round((ProgressEvent.loaded * 100)/ProgressEvent.total);
+                    			setFilterload(progress);
+                    		}
+                    	});
+                    	setFilterload(0);
+                    	setEffectSong(prev => [...prev,data.filter])
+                    	handleSelectFilter(data.filter);
+                    	console.log(data.filter);
+                    }catch(err){
+                    	setFilterload(0)
+                    	console.log(err)
+                    }
+                })
+            }
+        }
+
+        reader.readAsDataURL(file);
+	} 
+
+
+	useEffect(() => {
+		if(filterQuery){
+			setFilterSearch(prev => effectsong.filter(f => f.title.includes(filterQuery)))
+		}else{
+			setFilterSearch(effectsong);
+		}
+	},[filterQuery])
+
 	return(
 		<>
 			<section className="w-full py-5 px-4 reletive">
@@ -415,27 +505,38 @@ export default function(){
 		        		</div>
 		        	</div>
 
-		        	<div  className="w-full shadow-md rounded-md mt-5 border border-gray-100 h-[40vh]">
+		        	<div  className="w-full shadow-md rounded-md mt-5 border border-gray-100 h-[40vh]" id="history">
 		        		<div className="w-full bg-indigo-600 px-2 py-4 flex justify-between items-center rounded-t-md">
 		        			<h3 className="text-xl text-white">History</h3>
+		        			<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => window.print()}>Print</button>
 		        		</div>
 
 
 		        		<div className="p-2 overflow-y-auto h-[70%]">
 		        			{
-		        				que?.length != 0 && que.map((data) => (
-		        					<div className="w-full p-1 my-2 border-b border-gray-100">
-				        				<div className="flex justify-between items-center">
-							                <div className="flex items-center gap-4">
-							                	<time className="text-black">{data?.time}</time>
-							                    {/*<Image src={data?.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded"/>*/}
-							                    <h2 className="text-black">{data?.title?.slice(0,20)}</h2>
-							                    <time className="text-black">{Math.floor(data?.duration/60)}:{Math.floor(data?.duration%60)}</time>
-							                </div>
+		        				Object.keys(que).length != 0 && Object.keys(que)?.map((date) => (
+		        					<>
+		        						{
+		        							que[date]?.length != 0 &&
+		        							<time className="text-gray-400 text-xl mb-3">{date}</time>
+		        						}
+		        						{
+		        							que[date]?.map((data) => (
+		        								<div className="w-full p-1 my-2 border-b border-gray-100">
+							        				<div className="flex justify-between items-center">
+										                <div className="flex items-center gap-4">
+										                	<time className="text-black">{data?.time}</time>
+										                    
+										                    <h2 className="text-black">{data?.title?.slice(0,20)}</h2>
+										                    <time className="text-black">{Math.floor(data?.duration/60)}:{Math.floor(data?.duration%60)}</time>
+										                </div>
 
-							                <button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => {handleSelectedSong(data); setDforward(false);setDbackward(false)}}><FaPlay size={20}/></button>       
-							              </div>
-				        			</div>
+										                <button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => {handleSelectedSong(data); setDforward(false);setDbackward(false)}}><FaPlay size={20}/></button>       
+										              </div>
+							        			</div>
+		        							))
+		        						}
+		        					</>
 		        				))
 		        			}
 		        		</div>
@@ -631,7 +732,14 @@ export default function(){
 
 		        	<div className="w-full mt-5">
 		        		<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
-		        			<h2 className="text-white text-xl text-center">Filters</h2>
+		        			{/*<h2 className="text-white text-xl text-center">fsetsopen</h2>*/}
+
+		        			<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => fsetsopen(true)}><IoSearch size={25}/><span className="ml-2 text-white text-xl">Search</span></button>
+
+
+		        			<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => document.getElementById('filter').click()}>{filterload == 0 ? 'Upload' : `${filterload}%`}</button>
+		        			
+		        			<input type="file" accept="audio/*" className="hidden" id="filter" onChange={handleFilterUpload}/>
 		        		</div>
 		        		<div className="py-2 rounded-b-md shadow-md p-3 h-[21rem] overflow-x-auto">
 		        			{effectsong?.map(data => (
@@ -726,6 +834,24 @@ export default function(){
 
 	                        <div className="mr-10">
 	                            <button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => {handleSelectedSong(data);setsopen(false);setDbackward(false);setDforward(false)}}><FaPlay size={20}/></button>
+	                        </div>
+	        			</div>
+	        		))
+	        	}
+			</Dialog>
+			
+
+			<Dialog open={fsopen} onClose={() => fsetsopen(false)} name={filterQuery} setName={setFilterQuery} search={true}>
+				{
+	        		filterSearch && filterSearch.map((data) => (
+	        			<div className="flex justify-between items-center my-6">
+	        				<div className="flex items-center gap-4">
+	                            <Image src={data.cover} width={200} height={200} alt="cover" className="h-[4rem] w-[4rem] object-conver rounded"/> 
+	                            <h2 className="text-xl text-black">{data?.title}</h2>           
+	                        </div>
+
+	                        <div className="mr-10">
+	                            <button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => {handleSelectFilter(data);fsetsopen(false)}}><FaPlay size={20}/></button>
 	                        </div>
 	        			</div>
 	        		))

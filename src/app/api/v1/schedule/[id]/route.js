@@ -22,6 +22,11 @@ export const GET = connectDB(auth(async function (req){
             }
         });
 
+        // copyShedule = JSON.parse(JSON.stringify(copyShedule));
+        // copyShedule.songs = copyShedule.songs.map((song) => {
+        //     return {...song,audio: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.audio}`,cover: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.cover}`}
+        // });
+
         return NextResponse.json({success: true,schedule:copyShedule});
     }catch(err){
         return NextResponse.json({success: false,message: err.message},{status: 501});

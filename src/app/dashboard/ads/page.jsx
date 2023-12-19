@@ -3,12 +3,15 @@ import Link from 'next/link'
 import React,{useState,useEffect,useRef} from 'react'
 import axios from 'axios';
 import SongCard from '@/components/SongCard';
+import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert';
+import {useDispatch} from 'react-redux';
 
 
 export default function page(){
 	const [songs,setSongs] = useState([]);
 	  const [playSong,setPlaySong] = useState('');
 	  const songRef = useRef();
+	  const dispatch = useDispatch();
 
 
 	  useEffect(() => {
@@ -38,6 +41,23 @@ export default function page(){
 	      }
 	    )()
   },[]);
+
+	  const deleteSong = async (id) => {
+	    try{
+	      const {data} = await axios.delete(`/api/v1/ads?id=${id}`);
+	      console.log(data.message);
+	      await dispatch(showMessage(data.message));
+	      await dispatch(clearMessage());
+
+	      const {data:sdata} = await axios.get('/api/v1/ads');
+	      setSongs(sdata?.songs);
+	      
+	    }catch(error){
+	        await dispatch(showError(error.response.data.message));
+	        await dispatch(clearError());
+	        console.log(error.message)
+	    }
+	  }
 	return(
 		<section className="w-full py-5 px-4 reletive">
 	      <div className="flex justify-center items-center">
@@ -51,7 +71,7 @@ export default function page(){
 	        {
 	          songs.map((data) => (
 	            <>
-	              <SongCard {...data} setPlaySong={setPlaySong} playSong={playSong}/>
+	              <SongCard {...data} setPlaySong={setPlaySong} playSong={playSong} deleteSong={deleteSong}/>
 	            </>
 	          ))
 	        }

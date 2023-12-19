@@ -21,6 +21,12 @@ export const GET = connectDB(auth(async function (req){
     if(temp.length != 0){
         playlists = temp;
     }
+    playlists = JSON.parse(JSON.stringify(playlists));
+    playlists.forEach((playlist,index) => {
+        playlists[index].songs = playlists[index].songs.map((song) => {
+            return {...song,audio: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.audio}`,cover: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.cover}`}
+        });
+    })
     return NextResponse.json({success: true,playlists});
 }));
 

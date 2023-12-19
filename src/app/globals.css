@@ -68,3 +68,16 @@
 {
   @apply text-gray-600;
 }
+
+/*@media print {
+  body * {
+    display: none;
+  }
+  #history,#history * {
+    display: block;
+  }
+
+  #history {
+    height: auto;
+  }
+}*/

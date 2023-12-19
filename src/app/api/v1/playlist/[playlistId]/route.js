@@ -9,8 +9,11 @@ export const GET = connectDB(auth(async function (req){
     const {_id} = req.user;
     const playlistId = req.url.split('/')[6];
     
-     const playlist = await playlistModel.findById(playlistId).populate('owner').populate('songs');
-
+     let playlist = await playlistModel.findById(playlistId).populate('owner').populate('songs');
+     playlist = JSON.parse(JSON.stringify(playlist));
+        playlist.songs = playlist.songs.map((song) => {
+            return {...song,audio: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.audio}`,cover: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.cover}`}
+        });
     return NextResponse.json({success: true,playlist});
 }));
 

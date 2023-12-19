@@ -23,6 +23,7 @@ const page = () => {
     const [loading,setLoading] = useState(false);
     const [duration,setDuration] = useState(0);
     const dispatch = useDispatch();
+    const [album,setAlbum] = useState('');
 
 
     const handleSubmit = async (e) => {
@@ -30,7 +31,7 @@ const page = () => {
         // console.log('submit',{title,description,artist,size,type,audiofile,cover})
         setLoading(true);
         try{
-            const {data} = await axios.post('/api/v1/song',{audioEx,coverEx,title,description,artist,size,type,cover,audio: audiofile,duration});
+            const {data} = await axios.post('/api/v1/song',{audioEx,coverEx,title,description,artist,size,type,cover,audio: audiofile,duration,album});
             setTitle('');
             setDescription('');
             setArtist('');
@@ -87,13 +88,13 @@ const page = () => {
                         </div>
                     </div>
 
-                    {/*<div className='input-group flex flex-col gap-1 mb-6'>
-                        <label for="description" className='text-black text-lg'>Description</label>
+                    <div className='input-group flex flex-col gap-1 mb-6'>
+                        <label for="album" className='text-black text-lg'>Album</label>
                         <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                             <MdDescription size={20} className='text-gray-400'/>
-                            <input type='text' value={description} onChange={(e) => setDescription(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your description' id='description' name='description' required/>
+                            <input type='text' value={album} onChange={(e) => setAlbum(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter album name' id='album' name='album' required/>
                         </div>   
-                    </div>*/}
+                    </div>
 
                     <div className='input-group flex flex-col gap-1 mb-6'>
                         <label for="artist" className='text-black text-lg'>Artist Name</label>

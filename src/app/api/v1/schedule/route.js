@@ -47,8 +47,16 @@ export const POST = connectDB(auth(async function (req){
 
 export const GET = connectDB(auth(async function (req){
     const {_id} = req.user;
-    const schedules = await scheduleModel.find({owner: _id}).populate('owner').populate('songs');
+    let schedules = await scheduleModel.find({owner: _id}).populate('owner').populate('songs');
 
+    schedules = JSON.parse(JSON.stringify(schedules));
+
+    schedules.forEach((playlist,index) => {
+        schedules[index].songs = schedules[index].songs.map((song) => {
+            return {...song,audio: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.audio}`,cover: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.cover}`}
+        });
+    })
+    
     return NextResponse.json({success: true,schedules});
 }));
 

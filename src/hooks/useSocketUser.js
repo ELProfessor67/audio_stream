@@ -26,10 +26,19 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay) => {
 	const [isLive,setIsLive] = useState(false);
 	const cuurentTimeRef = useRef();
 	const playRef = useRef();
+	const isLiveRef = useRef();
+	const scheduleActiveRef = useRef();
 
 	useEffect(() => {
 		playRef.current = isPlay;
 	},[isPlay]);
+
+	useEffect(() => {
+		isLiveRef.current = isLive;
+	},[isLive])
+	useEffect(() => {
+		scheduleActiveRef.current = scheduleActive;
+	},[scheduleActive])
 
 	
 
@@ -45,7 +54,7 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay) => {
 	}
 
 	async function handleSongChange(data){
-		if(scheduleActive || isLive){
+		if(scheduleActiveRef.current == true || isLiveRef.current == true){
 			return
 		}
 

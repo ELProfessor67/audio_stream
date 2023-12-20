@@ -21,7 +21,7 @@ const sleep = ms => new Promise(r => window.setTimeout(r,ms))
 
 
 
-const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,setSeletedSong,volume) => {
+const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,setSeletedSong,volume,micVolume) => {
 	const socketRef = useRef();
 	const {user} = useSelector(store => store.user);
 	const peersRef = useRef({});
@@ -42,6 +42,7 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	const [fremaining,setFRemaining] = useState(0);
 	const [fduration,setfduration] = useState(0);
 
+	const micGainNodeRef = useRef();
 	const micOnRef = useRef(false);
 	const songPlayRef = useRef(false);
 	const audioContextRef = useRef(false);
@@ -56,6 +57,8 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	const filterGainNodeRef = useRef();
 	const filtterAudioContextRef = useRef();
 	const filterchangeCurrentTimeRef = useRef();
+	const gainNodeStreamRef = useRef();
+	const filterGainStreamNodeRef = useRef();
 
 	useEffect(() => {
 		selectPlayListSongRef.current = selectPlayListSong;
@@ -82,11 +85,12 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 	            audioContext.decodeAudioData(arrayBuffer, buffer => {
 	            
-	              
 	            const gainNode = audioContext.createGain();
 	            gainNode.connect(audioContext.destination);
 	            gainNode.gain.value = volume;
+	            
 	            gainNodeRef.current = gainNode
+	            
 
 
 	            const createSource = () => {
@@ -152,8 +156,12 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 
 	            source.start();
 	            updateProgess();
+	            
+	            
 
 	            const songStream = audioContext.createMediaStreamDestination();
+	            
+
 	            source.connect(songStream);
 
 	            resolve({songStream: songStream.stream,changeCurrentTime});
@@ -212,9 +220,18 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 
         // if(songStreamRef.current){
         	const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+
+        	// const micGainNode = audioContext.createGain();
+			// micGainNode.connect(audioContext.destination);
+			// micGainNode.gain.value = 10;
+
 		    const mic = audioContext.createMediaStreamSource(localStreamRef.current);
 		    const dest = audioContext.createMediaStreamDestination();
 			mic.connect(dest);
+
+			// mic.connect(micGainNode);
+  			// micGainNode.connect(dest);
 
 		    if(songStreamRef.current){
 		    	const song = audioContext.createMediaStreamSource(songStreamRef.current);
@@ -306,9 +323,27 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 
 
 		try{
-			const {songStream,changeCurrentTime} = await getSongStream(url,gainNodeRef,songSourceRef,volume,audioContextRef,progress,progressCallback,setsduration);
+			let {songStream,changeCurrentTime} = await getSongStream(url,gainNodeRef,songSourceRef,volume,audioContextRef,progress,progressCallback,setsduration);
 			changeCurrentTimeRef.current = changeCurrentTime;
-			songStreamRef.current = songStream;
+
+
+			const gaudioContext = new (window.AudioContext || window.webkitAudioContext)();
+			const gsong = gaudioContext.createMediaStreamSource(songStream);
+			const gdest = gaudioContext.createMediaStreamDestination();
+	        const gsongGainNode = gaudioContext.createGain();
+			// micGainNode.connect(audioContext.destination);
+			
+			gsong.connect(gsongGainNode);
+	  		gsongGainNode.connect(gdest);
+	  		gsongGainNode.gain.value = volume;
+	  		gainNodeStreamRef.current = gsongGainNode;
+	  		
+
+
+
+			songStreamRef.current = gdest.stream;
+			songStream = gdest.stream;
+
 		    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 		    console.error('mic',typeof(localStreamRef.current),localStreamRef.current)
 		    const mic = audioContext.createMediaStreamSource(localStreamRef.current);
@@ -342,8 +377,10 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	}
 
 	const changeValume = (value) => {
-		if(gainNodeRef.current?.gain){
+		if(gainNodeRef.current?.gain && gainNodeStreamRef.current?.gain){
+			console.log('inside song volume')
 			gainNodeRef.current.gain.value = value;
+			gainNodeStreamRef.current.gain.value = value;
 		}
 	}
 
@@ -364,9 +401,31 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 		}
 
 		try{
-			const {songStream,changeCurrentTime} = await getSongStream(url,filterGainNodeRef,filterSourceRef,volume,filtterAudioContextRef,fprogress,filterprogressCallback,setfduration,true);
+			let {songStream,changeCurrentTime} = await getSongStream(url,filterGainNodeRef,filterSourceRef,volume,filtterAudioContextRef,fprogress,filterprogressCallback,setfduration,true);
 			filterchangeCurrentTimeRef.current = changeCurrentTime;
-			filterStreamRef.current = songStream;
+
+
+			const gaudioContext = new (window.AudioContext || window.webkitAudioContext)();
+			const gsong = gaudioContext.createMediaStreamSource(songStream);
+			const gdest = gaudioContext.createMediaStreamDestination();
+	        const gsongGainNode = gaudioContext.createGain();
+			// micGainNode.connect(audioContext.destination);
+			
+			gsong.connect(gsongGainNode);
+	  		gsongGainNode.connect(gdest);
+	  		gsongGainNode.gain.value = volume;
+	  		filterGainStreamNodeRef.current = gsongGainNode;
+	  		
+
+
+
+			filterStreamRef.current = gdest.stream;
+			songStream = gdest.stream;
+
+
+
+
+			// filterStreamRef.current = songStream;
 		    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 		    
 		    const mic = audioContext.createMediaStreamSource(localStreamRef.current);
@@ -397,11 +456,19 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	}
 
 	const changeFilterValume = (value) => {
-		if(filterGainNodeRef.current?.gain){
+		if(filterGainNodeRef.current?.gain && filterGainStreamNodeRef.current?.gain){
 			filterGainNodeRef.current.gain.value = value;
+			filterGainStreamNodeRef.current.gain.value = value;
 		}
 	}
 
+	const changeMicValume = (value) => {
+		console.log(value);
+		if(micGainNodeRef.current?.gain){
+			console.log('inside',value);
+			micGainNodeRef.current.gain.value = value;
+		}
+	}
 
 
 	const SwitchOn = async () => {
@@ -498,37 +565,24 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 		socketRef.current = socketInit();
 		socketRef.current.on('offer',handleOffer);
 		socketRef.current.emit('owner-join',{user});
-		localStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+		// localStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+		const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 		setMicOn(true);
 
-
+		const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+		const mic = audioContext.createMediaStreamSource(stream);
+		const dest = audioContext.createMediaStreamDestination();
+        const micGainNode = audioContext.createGain();
+		// micGainNode.connect(audioContext.destination);
 		
-		// const stream = await getSongStream('/audio/welcome.mp3',constantref,constantref,1);
-		
-		
-		// Object.keys(peersRef.current).forEach(peerId => {
-		// 	console.log(peersRef.current[peerId].connected)
-		// 	if(peersRef.current[peerId]){
-		// 		peersRef.current[peerId].addTrack(stream.getTracks()[0],localStreamRef.current);
-		// 	}
-		// });
+		mic.connect(micGainNode);
+  		micGainNode.connect(dest);
+  		micGainNode.gain.value = micVolume;
+  		micGainNodeRef.current = micGainNode;
+  		localStreamRef.current = dest.stream;
 	}
 
 	const ownerLeft = async () => {
-		// await new Promise(async (resolve) => {
-		// 	const stream = await getSongStream('/audio/good bye.mp3',constantref,constantref,1);
-		
-		// 	Object.keys(peersRef.current).forEach(peerId => {
-		// 		console.log(peersRef.current[peerId].connected)
-		// 		if(peersRef.current[peerId]){
-		// 			peersRef.current[peerId].addTrack(stream.getTracks()[0],localStreamRef.current);
-		// 		}
-		// 	});
-
-		// 	resolve();
-		// })
-
-		// await sleep(7000);
 		
 		console.log('left')
 
@@ -555,7 +609,7 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	}
 
 
-	return {socketRef,ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef:newUser,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration}
+	return {socketRef,ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef:newUser,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume}
 }
 
 export default useSocket;

@@ -9,7 +9,7 @@ const nextConfig = {
         ignoreDuringBuilds: true,
        },
        images: {
-        domains: ['localhost','localhost:4000']
+        domains: ['localhost','localhost:4000','budgetbuddy.store']
        }
 }
 

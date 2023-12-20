@@ -3,7 +3,7 @@ import userSchema from "./user";
 
 const songSchems = new mongoose.Schema({
     title: {type: String,required: true,trim: true},
-    description: {type: String,required: true,trim: true},
+    description: {type: String,required: false,trim: true,default: 'description'},
     artist: {type: String,required: true},
     cover: {type: String,required: true},
     audio: {type: String,required: true},

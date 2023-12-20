@@ -15,6 +15,7 @@ import {useDispatch} from 'react-redux';
 import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert'
 import { FaForward,FaBackward } from "react-icons/fa";
 import {IoSearch} from 'react-icons/io5';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 function organizeHistoryByDate(history) {
   const organizedHistory = {};
@@ -121,6 +122,7 @@ export default function(){
 	const [filterSearch,setFilterSearch] = useState([]);
 	const [filterQuery,setFilterQuery] = useState('');
 	const [fsopen,fsetsopen] = useState(false);
+	const [micVolume,setMicVolume] = useState(5);
 	// console.info(filtersongs);
 	// console.warn(allsongs);
 
@@ -128,7 +130,7 @@ export default function(){
 
 	const dispatch = useDispatch();
 	
-	const {ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration} = useSocket(setSongPlaying,songPlaying,selectPlayListSong,selectedSong,setSeletedSong,volume);
+	const {ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume} = useSocket(setSongPlaying,songPlaying,selectPlayListSong,selectedSong,setSeletedSong,volume,micVolume);
 
 
 	useEffect(() => {
@@ -457,6 +459,33 @@ export default function(){
 		}
 	},[filterQuery])
 
+
+
+
+
+	const handleDragEnd = (result) => {
+	  if (!result.destination) {
+	    return;
+	  }
+
+	  const reorderedSongs = Array.from(selectPlayListSong.songs);
+	  const [removed] = reorderedSongs.splice(result.source.index, 1);
+	  reorderedSongs.splice(result.destination.index, 0, removed);
+
+	  // Update the state with the new order of songs
+	  // You need to have a state variable and a function to update it
+	  // For example, if your state variable is `setSelectPlayListSong`
+	  setSelectPlayListSong({ ...selectPlayListSong, songs: reorderedSongs });
+	};
+
+
+	const handleMicVolumeChange = (e) => {
+		// console.log('handleMicVolumeChange',e.target.value)
+		setMicVolume(e.target.value);
+		changeMicValume(e.target.value);
+	}
+
+
 	return(
 		<>
 			<section className="w-full py-5 px-4 reletive">
@@ -480,28 +509,50 @@ export default function(){
 		        		</div>
 		        	</div>
 
-		        	<div className="w-full p-3 shadow-md rounded-md mt-5 border border-gray-100">
-		        		<div className="flex justify-center">
-		        			<div className="flex flex-col items-center gap-3">
-		        				
-			        			<button className="bg-none outline-none border-none text-black" onClick={SwitchOn}>
-			        				{micOn 
-			        				? <IoMdMic size={40}/>
-			        				: <IoMdMicOff size={40}/>
-			        				}
-			        			</button>
+		        	<div className="w-full shadow-md rounded-md mt-5 border border-gray-100">
 
-			        			<span className="text-black text-2xl">{micOn ? 'Mute' : "Unmute"}</span>
-		        			</div>
+		        		<div className="w-full reletive bg-indigo-600 p-2 rounded-t-md">
+		        				<input type="range" className="w-full cursor-pointer" min={0} max={9} value={micVolume} step="1" onChange={handleMicVolumeChange}/>
+
+		        				<div className="w-full flex items-center justify-between mt-1 px-1">
+		        					<span className="text-white">0</span>
+		        					<span className="text-white">1</span>
+		        					<span className="text-white">2</span>
+		        					<span className="text-white">3</span>
+		        					<span className="text-white">4</span>
+		        					<span className="text-white">5</span>
+		        					<span className="text-white">6</span>
+		        					<span className="text-white">7</span>
+		        					<span className="text-white">8</span>
+		        					<span className="text-white">9</span>
+		        					
+		        				</div>
 		        		</div>
 
-		        		<div className="flex justify-center mt-5">
-		        			<div className="flex flex-col items-center gap-3">
-			        			<button className="bg-none outline-none border-none text-black" onClick={handleShare}>
-			        				<IoMdShare size={40}/>
-			        			</button>
-			        			<span className="text-black text-2xl">Share Link</span>
-		        			</div>
+		        		<div className="p-3 pt-0">
+			        		<div className="flex justify-center mt-5">
+			        			<div className="flex flex-col items-center gap-3">
+			        				
+				        			<button className="bg-none outline-none border-none text-black" onClick={SwitchOn}>
+				        				{micOn 
+				        				? <IoMdMic size={40}/>
+				        				: <IoMdMicOff size={40}/>
+				        				}
+				        			</button>
+
+				        			<span className="text-black text-2xl">{micOn ? 'Mute' : "Unmute"}</span>
+			        			</div>
+			        		</div>
+
+			        		<div className="flex justify-center mt-5">
+			        			<div className="flex flex-col items-center gap-3">
+				        			<button className="bg-none outline-none border-none text-black" onClick={handleShare}>
+				        				<IoMdShare size={40}/>
+				        			</button>
+				        			<span className="text-black text-2xl">Share Link</span>
+			        			</div>
+			        		</div>
+
 		        		</div>
 		        	</div>
 
@@ -791,7 +842,7 @@ export default function(){
 
 
 
-		      <Dialog open={open} onClose={() => setOpen(false)}>
+		      {/*<Dialog open={open} onClose={() => setOpen(false)}>
 	          {
 	            selectPlayListSong?.songs && selectPlayListSong?.songs?.map((data) => (
 	              <div className="flex justify-between items-center my-6">
@@ -804,7 +855,40 @@ export default function(){
 	              </div>
 	            ))
 	          }
-	        </Dialog>
+	        </Dialog>*/}
+
+		    <Dialog open={open} onClose={() => setOpen(false)}>
+		        <DragDropContext onDragEnd={handleDragEnd}>
+				  <Droppable droppableId="playlist">
+				    {(provided) => (
+				      <div ref={provided.innerRef} {...provided.droppableProps}>
+				        {selectPlayListSong?.songs &&
+				          selectPlayListSong?.songs.map((data, index) => (
+				            <Draggable key={data.id} draggableId={data.id} index={index}>
+				              {(provided) => (
+				                <div
+				                  ref={provided.innerRef}
+				                  {...provided.draggableProps}
+				                  {...provided.dragHandleProps}
+				                  className="flex justify-between items-center my-6"
+				                >
+				                  	<div className="flex items-center gap-4">
+					                    <Image src={data.cover} width={200} height={200} alt="cover" className="h-[6rem] w-28 object-conver rounded"/> 
+					                    <h2 className="text-xl text-black">{data?.title?.slice(0,40)}</h2>           
+					                </div>
+
+					                <button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handleSelectedSong(data)}><FaPlay size={20}/></button> 
+				                </div>
+				              )}
+				            </Draggable>
+				          ))}
+				        {provided.placeholder}
+				      </div>
+				    )}
+				  </Droppable>
+				</DragDropContext>
+			</Dialog>
+
 
 
 	        <Dialog open={medit} onClose={() => setMEdit(false)}>

@@ -7,11 +7,12 @@ import {FaArrowUpRightFromSquare} from 'react-icons/fa6';
 import Link from 'next/link';
 import {MdDelete} from 'react-icons/md'
 import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 
 export default function Page(){
 	const [playlists,setPlaylists] = useState([]);
 	const dispatch = useDispatch();
+	const {user} = useSelector(store => store.user)
 	
 	useEffect(() => {
 	    (
@@ -44,7 +45,7 @@ export default function Page(){
 		<>
 			<section className="w-full py-5 px-4 reletive">
 		      <div className="flex justify-center items-center">
-		        <h1 className='main-heading my-10'>My Playlists</h1>
+		        <h1 className='main-heading my-10'>{user?.isDJ ?  'DJ Playlists' : 'Admin Playlists'}</h1>
 		      </div>
 		      <div className="max-w-[55rem] m-auto reletive">
 		      	{playlists.map(data => (
@@ -58,8 +59,11 @@ export default function Page(){
 	                        </div>
 
 	                        <div className="mr-10 flex items-center gap-4">
-	                        	<button onClick={() => deletePlaylist(data._id)} className="p-2 rounded-full text-red-400 hover:text-white hover:bg-red-400"><MdDelete size={20}/></button>
-	                            <Link href={`/dashboard/playlist/${data._id}`} className="text-gray-500"><FaArrowUpRightFromSquare size={20}/></Link>
+	                        	<button title="delete playlist" onClick={() => deletePlaylist(data._id)} className="p-2 rounded-full text-red-400 hover:text-white hover:bg-red-400"><MdDelete size={20}/></button>
+
+	                        	<button className="bg-none border-none outline-none" title="view playlist">
+	                            	<Link href={`/dashboard/playlist/${data._id}`} className="text-gray-500"><FaArrowUpRightFromSquare size={20}/></Link>
+	                            </button>
 	                       </div>
 	        		</div>
 		      	))}

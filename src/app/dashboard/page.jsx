@@ -6,6 +6,7 @@ import axios from 'axios';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend,CategoryScale,LinearScale,PointElement,LineElement } from "chart.js";
 import { Line } from 'react-chartjs-2';
 import {FaRegClock} from 'react-icons/fa6'
+import {useSelector} from 'react-redux';
 
 
 ChartJS.register(ArcElement, Tooltip, Legend,CategoryScale,LinearScale,PointElement,LineElement);
@@ -21,6 +22,7 @@ const page = () => {
   const [cSchedules,setCSchedules] = useState(0);
   const [time,setTime] = useState('today');
 
+  const {user} = useSelector(store => store.user);
 
   useEffect(() => {
     (async function(){
@@ -51,6 +53,10 @@ const page = () => {
 
   return (
     <section className="w-full py-5 px-4 reletive">
+      <div className="flex justify-center items-center">
+        <h1 className='main-heading my-10'>{user?.isDJ ? 'DJ Panel' : 'Admin Panel'}</h1>
+      </div>
+
       <div className="w-full flex flex-wrap justify-center">
         <DashboardCard count={songs} name="songs"/>
         <DashboardCard count={playlists} name="playlists"/>

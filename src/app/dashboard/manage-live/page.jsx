@@ -6,12 +6,13 @@ import Image from 'next/image';
 import {FaArrowUpRightFromSquare} from 'react-icons/fa6';
 import Link from 'next/link';
 import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert';
-import {useDispatch} from 'react-redux';
+import {useDispatch,useSelector} from 'react-redux';
 import {MdDelete} from 'react-icons/md'
 
 export default function Page(){
 	const [playlists,setPlaylists] = useState([]);
 	const dispatch = useDispatch();
+	const {user} = useSelector(store => store.user)
 	
 	useEffect(() => {
 	    (
@@ -47,7 +48,7 @@ export default function Page(){
 			<section className="w-full py-5 px-4 reletive">
 		      <div>
 		      	<div className="flex justify-center items-center">
-		        	<h1 className='main-heading my-10'>My Playlists</h1>
+		        	<h1 className='main-heading my-10'>{user?.isDJ ?  'DJ Playlists' : 'Admin Playlists'}</h1>
 		        </div>
 		        <div className="flex justify-end items-center mb-4">
 		      		<Link href="/dashboard/manage-live/create" className="py-2 px-4 rounded-md bg-indigo-500 text-white">Add More</Link>
@@ -65,8 +66,10 @@ export default function Page(){
 	                    </div>
 
 	                        <div className="mr-10 flex items-center gap-4">
-	                        	<button onClick={() => deletePlaylist(data._id)} className="p-2 rounded-full text-red-400 hover:text-white hover:bg-red-400"><MdDelete size={20}/></button>
-	                            <Link href={`/dashboard/manage-live/${data._id}`} className="text-gray-500"><FaArrowUpRightFromSquare size={20}/></Link>
+	                        	<button title="delete playlist" onClick={() => deletePlaylist(data._id)} className="p-2 rounded-full text-red-400 hover:text-white hover:bg-red-400"><MdDelete size={20}/></button>
+	                        	<button className="bg-none border-none outline-none" title="view playlist">
+	                            	<Link href={`/dashboard/manage-live/${data._id}`} className="text-gray-500"><FaArrowUpRightFromSquare size={20}/></Link>
+	                            </button>
 	                       </div>
 	        		</div>
 		      	))}

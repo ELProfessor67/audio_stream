@@ -21,7 +21,7 @@ export default function page({params}){
 	const [volume,setVolume] = useState(1);
 	const audioRef = useRef();
 	console.log('isPlay from components side',isPlay)
-	const {roomActive,handleRequestSong,isLive} = useSocketUser(params.streamId,audioRef,name,isPlay,setIsPlay);
+	const {roomActive,handleRequestSong,isLive, autodj} = useSocketUser(params.streamId,audioRef,name,isPlay,setIsPlay);
 	const [more,setMore] = useState(false);
 	const [rOpen,setROPen] = useState(false);
 	console.log(roomActive)
@@ -87,7 +87,7 @@ export default function page({params}){
 					<Image className="w-[8rem] h-[8rem] rounded-md" src="/upload/cover/ads.jpeg" width={200} height={200}/>
 					<div className="p-4 flex flex-col gap-2 h-full">
 						<div>
-							<span className="px-5 py-1 rounded-3xl bg-indigo-500 text-white">{roomActive ? 'LIVE' : 'OFFLINE'}</span>
+							<span className="px-5 py-1 rounded-3xl bg-indigo-500 text-white">{isLive ? 'LIVE' : 'AUTO'}</span>
 						</div>
 						<h3 className="text-xl para">Zeeshan Raza</h3>
 						<h4 className="text-sm opacity-40">You'Listen Zeeshan Raza Radio Channel</h4>

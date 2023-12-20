@@ -463,20 +463,20 @@ export default function(){
 
 
 
-	const handleDragEnd = (result) => {
-	  if (!result.destination) {
-	    return;
-	  }
+	// const handleDragEnd = (result) => {
+	//   if (!result.destination) {
+	//     return;
+	//   }
 
-	  const reorderedSongs = Array.from(selectPlayListSong.songs);
-	  const [removed] = reorderedSongs.splice(result.source.index, 1);
-	  reorderedSongs.splice(result.destination.index, 0, removed);
+	//   const reorderedSongs = Array.from(selectPlayListSong.songs);
+	//   const [removed] = reorderedSongs.splice(result.source.index, 1);
+	//   reorderedSongs.splice(result.destination.index, 0, removed);
 
-	  // Update the state with the new order of songs
-	  // You need to have a state variable and a function to update it
-	  // For example, if your state variable is `setSelectPlayListSong`
-	  setSelectPlayListSong({ ...selectPlayListSong, songs: reorderedSongs });
-	};
+	//   // Update the state with the new order of songs
+	//   // You need to have a state variable and a function to update it
+	//   // For example, if your state variable is `setSelectPlayListSong`
+	//   setSelectPlayListSong({ ...selectPlayListSong, songs: reorderedSongs });
+	// };
 
 
 	const handleMicVolumeChange = (e) => {
@@ -572,9 +572,10 @@ export default function(){
 		        							<time className="text-gray-400 text-xl mb-3">{date}</time>
 		        						}
 		        						{
-		        							que[date]?.map((data) => (
+		        							que[date]?.map((data,index) => (
 		        								<div className="w-full p-1 my-2 border-b border-gray-100">
 							        				<div className="flex justify-between items-center">
+							        					<span className="text-black text-lg ml-3">{index+1}</span>
 										                <div className="flex items-center gap-4">
 										                	<time className="text-black">{data?.time}</time>
 										                    
@@ -842,11 +843,12 @@ export default function(){
 
 
 
-		      {/*<Dialog open={open} onClose={() => setOpen(false)}>
+		      <Dialog open={open} onClose={() => setOpen(false)}>
 	          {
-	            selectPlayListSong?.songs && selectPlayListSong?.songs?.map((data) => (
+	            selectPlayListSong?.songs && selectPlayListSong?.songs?.map((data,index) => (
 	              <div className="flex justify-between items-center my-6">
 	                <div className="flex items-center gap-4">
+	                	<span className="text-black text-2xl">{index+1}</span>
 	                    <Image src={data.cover} width={200} height={200} alt="cover" className="h-[6rem] w-28 object-conver rounded"/> 
 	                    <h2 className="text-xl text-black">{data?.title?.slice(0,40)}</h2>           
 	                </div>
@@ -855,9 +857,9 @@ export default function(){
 	              </div>
 	            ))
 	          }
-	        </Dialog>*/}
+	        </Dialog>
 
-		    <Dialog open={open} onClose={() => setOpen(false)}>
+		    {/*<Dialog open={open} onClose={() => setOpen(false)}>
 		        <DragDropContext onDragEnd={handleDragEnd}>
 				  <Droppable droppableId="playlist">
 				    {(provided) => (
@@ -887,7 +889,7 @@ export default function(){
 				    )}
 				  </Droppable>
 				</DragDropContext>
-			</Dialog>
+			</Dialog>*/}
 
 
 

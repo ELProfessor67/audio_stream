@@ -24,6 +24,7 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay) => {
 	const [roomActive,setRoomActive] = useState(false);
 	const [scheduleActive,setScheduleActive] = useState(false);
 	const [isLive,setIsLive] = useState(false);
+	const [autodj,setAutoDj] = useState(false);
 	const cuurentTimeRef = useRef();
 	const playRef = useRef();
 	const isLiveRef = useRef();
@@ -58,7 +59,8 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay) => {
 			return
 		}
 
-		setRoomActive(true)
+		setRoomActive(true);
+		setAutoDj(true);
 
 		console.log('auto dj',data);
 
@@ -240,7 +242,7 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay) => {
 		socketRef.current.emit('send-request-song',{...data,roomId:streamId,name: name || 'unknown'});
 	}
 
-	return {socketRef,userJoin,roomActive,isLive,handleRequestSong}
+	return {socketRef,userJoin,roomActive,isLive,handleRequestSong, autodj}
 }
 
 export default useSocket;

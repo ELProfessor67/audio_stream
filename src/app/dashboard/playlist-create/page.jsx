@@ -1,5 +1,5 @@
 "use client";
-import React, { useState,useEffect } from 'react'
+import React, { useState,useEffect,useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import {MdOutlineSubtitles,MdDescription,MdPlaylistAdd} from 'react-icons/md';
@@ -20,7 +20,10 @@ export default function Page(){
     // console.log(seletdSongs)
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        if(e.preventDefault){
+            e.preventDefault();
+        }
+        setOpen(false);
         setLoading(true);
         try{
             if(!title || !description) return
@@ -64,6 +67,8 @@ export default function Page(){
 	      }
 	    )()
 	  },[]);
+
+    
 	return(
 		<>
 			<section className='w-full py-5 px-4'>
@@ -104,7 +109,7 @@ export default function Page(){
                 </form>
             </div>
         </div>
-        <Dialog open={open} onClose={() => setOpen(false)} seletdSongs={seletdSongs}>
+        <Dialog open={open} onClose={() => setOpen(false)} seletdSongs={seletdSongs} save={handleSubmit}>
         	{
         		songs && songs.map((data) => (
         			<div className="flex justify-between items-center my-6">

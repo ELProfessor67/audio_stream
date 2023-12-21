@@ -11,7 +11,7 @@ import Link from 'next/link';
 import Dialog from '@/components/Dialog';
 import {useSocket} from '@/hooks';
 import {MdModeEdit} from 'react-icons/md'
-import {useDispatch} from 'react-redux';
+import {useDispatch,useSelector} from 'react-redux';
 import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert'
 import { FaForward,FaBackward } from "react-icons/fa";
 import {IoSearch} from 'react-icons/io5';
@@ -130,13 +130,14 @@ export default function(){
 	const setTimeoutRef = useRef(null);
 	// console.info(filtersongs);
 	// console.warn(allsongs);
+	const {user} = useSelector(store => store.user);
 
 
 	// console.log(dbackward,dforward)
 
 	const dispatch = useDispatch();
 	
-	const {ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume, voiceComing} = useSocket(setSongPlaying,songPlaying,selectPlayListSong,selectedSong,setSeletedSong,volume,micVolume,filterPlaying);
+	const {ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume, voiceComing,filterStreamloading,songStreamloading} = useSocket(setSongPlaying,songPlaying,selectPlayListSong,selectedSong,setSeletedSong,volume,micVolume,filterPlaying);
 
 	// console.info('voiceAcitce',voiceAcitce);
 
@@ -550,10 +551,76 @@ export default function(){
 	return(
 		<>
 			<section className="w-full py-5 px-4 reletive">
-				<div className="m-auto p-4 max-w-[50rem] flex items-center justify-center gap-3">
-					<h3 className="text-2xl text-gray-600">{message}</h3>
+				<div className="m-auto p-4 max-w-[40rem] flex items-center justify-center gap-3 mb-5">
+					<div className="border-b-2 border-indigo-600">
+						<h3 className="text-3xl text-gray-600 scrolling-text-container"><marquee className="scrolling-text">{message}</marquee></h3>
+					</div>
 					<button onClick={() => setMEdit(true)} className="bg-none outline-none border-none text-green-400 hover:text-green-500"><MdModeEdit size={20}/></button>
 				</div>
+
+
+				<div className="w-full reletive px-2">
+				<div className="m-auto w-full grid grid-cols-3 gap-3 flex-wrap rounded-md bg-indigo-600">
+
+					<div className="w-full reletive bg-indigo-600 p-2 rounded-md">
+						<h2 className="text-white text-lg mb-1">Microphone Volume</h2>
+		        		<input type="range" className="w-full cursor-pointer" min={0} max={9} value={micVolume} step="1" onChange={handleMicVolumeChange}/>
+
+		        		<div className="w-full flex items-center justify-between mt-1 px-1">
+		        			<span className="text-white">0</span>
+		        			<span className="text-white">1</span>
+		        			<span className="text-white">2</span>
+		        			<span className="text-white">3</span>
+		        			<span className="text-white">4</span>
+		        			<span className="text-white">5</span>
+		        			<span className="text-white">6</span>
+		        			<span className="text-white">7</span>
+		        			<span className="text-white">8</span>
+		       				<span className="text-white">9</span> 					
+		        		</div>
+		        	</div>
+
+		        	<div className="w-full reletive p-2">
+		        		<h2 className="text-white text-lg mb-1">Deck A Volume</h2>
+		        		<input type="range" className="w-full cursor-pointer" min={0} max={1} value={volume} step="0.1" onChange={handleVolumeChange}/>
+
+		        		<div className="w-full flex items-center justify-between mt-1 px-1">
+		        			<span className="text-white">0</span>
+		        			<span className="text-white">1</span>
+		       				<span className="text-white">2</span>
+		      				<span className="text-white">3</span>
+		        			<span className="text-white">4</span>
+		       				<span className="text-white">5</span>
+		      				<span className="text-white">6</span>
+		        			<span className="text-white">7</span>
+		        			<span className="text-white">8</span>
+		        			<span className="text-white">9</span>
+		        					
+		        		</div>
+		        	</div>
+
+		        	<div className="w-full reletive p-2">
+		        		<h2 className="text-white text-lg mb-1">Deck B Volume</h2>
+		        		<input type="range" className="w-full cursor-pointer" min={0} max={1} value={filtervolume} step="0.1" onChange={handleFilterVolumeChange}/>
+
+		        		<div className="w-full flex items-center justify-between mt-1 px-1">
+		        			<span className="text-white">0</span>
+		        			<span className="text-white">1</span>
+		       				<span className="text-white">2</span>
+		      				<span className="text-white">3</span>
+		        			<span className="text-white">4</span>
+		        			<span className="text-white">5</span>
+		        			<span className="text-white">6</span>
+		        			<span className="text-white">7</span>
+		        			<span className="text-white">8</span>
+		        			<span className="text-white">9</span>
+		        					
+		        		</div>
+		        	</div>
+						
+				</div>
+				</div>
+
 		      <div className="w-full flex">
 		        <div className="side-box flex-1 p-2 reletive">
 		        	<div className="w-full">
@@ -572,7 +639,7 @@ export default function(){
 
 		        	<div className="w-full shadow-md rounded-md mt-5 border border-gray-100">
 
-		        		<div className="w-full reletive bg-indigo-600 p-2 rounded-t-md">
+		        		{/*<div className="w-full reletive bg-indigo-600 p-2 rounded-t-md">
 		        				<input type="range" className="w-full cursor-pointer" min={0} max={9} value={micVolume} step="1" onChange={handleMicVolumeChange}/>
 
 		        				<div className="w-full flex items-center justify-between mt-1 px-1">
@@ -588,7 +655,7 @@ export default function(){
 		        					<span className="text-white">9</span>
 		        					
 		        				</div>
-		        		</div>
+		        		</div>*/}
 
 		        		<div className="p-3 pt-0">
 			        		<div className="flex justify-center mt-5">
@@ -686,10 +753,10 @@ export default function(){
 
 		        <div className="side-box-right w-[30rem] p-2 reletive">
 		        	{ selectedSong?.title &&
-		        		<div className="w-full">
+		        		<div className="w-full mb-5">
 		        		<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
-		        			<h2 className="text-white text-xl text-center">Song Volume</h2>
-		        			<div className="w-[50%] reletive">
+		        			<h2 className="text-white text-xl text-center">Deck A</h2>
+		        			{/*<div className="w-[50%] reletive">
 		        				<input type="range" className="w-full cursor-pointer" min={0} max={1} value={volume} step="0.1" onChange={handleVolumeChange}/>
 
 		        				<div className="w-full flex items-center justify-between mt-1 px-1">
@@ -705,7 +772,7 @@ export default function(){
 		        					<span className="text-white">9</span>
 		        					
 		        				</div>
-		        			</div>
+		        			</div> */}
 		        		</div>
 		        		<div className="py-2 rounded-b-md shadow-md p-3">
 		        			<div className="flex">
@@ -722,7 +789,7 @@ export default function(){
 				        					    <FaBackward size={20}/>
 				        					</button>
 
-				        					<button className="bg-none outline-none border-none text-black cursor-pointer" onClick={handleSongPlay}>
+				        					<button disabled={songStreamloading} className="bg-none outline-none border-none text-black cursor-pointer" onClick={handleSongPlay}>
 				        					    {songPlaying ? <FaPause size={20}/> : <FaPlay size={20}/>}
 				        					</button>
 
@@ -748,11 +815,11 @@ export default function(){
 		        		
 		        	
 
-		        	<div className="w-full mt-5">
+		        	<div className="w-full">
 		        		<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
 		        			{/*<h2 className="text-white text-xl text-center">Playlists</h2>*/}
 
-		        			<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => setsopen(true)}><IoSearch size={25}/><span className="ml-2 text-white text-xl">Search</span></button>
+		        			<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => setsopen(true)}><IoSearch size={25}/><span className="ml-2 text-white text-xl">{user?.isDJ ? 'Search DJ Playlist' : 'Search Admin Playlist'}</span></button>
 		        			
 		        			
 		        			<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => document.getElementById('audio').click()}>{fileload == 0 ? 'Upload' : `${fileload}%`}</button>
@@ -782,10 +849,10 @@ export default function(){
 
 		        <div className="side-box-right w-[30rem] p-2 reletive">
 		        	{ selectedFilter?.title &&
-		        		<div className="w-full">
+		        		<div className="w-full mb-5">
 		        		<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
-		        			<h2 className="text-white text-xl text-center">Filter Volume</h2>
-		        			<div className="w-[50%] reletive">
+		        			<h2 className="text-white text-xl text-center">Deck B</h2>
+		        			{/*<div className="w-[50%] reletive">
 		        				<input type="range" className="w-full cursor-pointer" min={0} max={1} value={filtervolume} step="0.1" onChange={handleFilterVolumeChange}/>
 
 		        				<div className="w-full flex items-center justify-between mt-1 px-1">
@@ -801,7 +868,7 @@ export default function(){
 		        					<span className="text-white">9</span>
 		        					
 		        				</div>
-		        			</div>
+		        			</div> */}
 		        		</div>
 		        		<div className="py-2 rounded-b-md shadow-md p-3">
 		        			<div className="flex">
@@ -818,7 +885,7 @@ export default function(){
 				        					    <FaBackward size={20}/>
 				        					</button>
 
-				        					<button className="bg-none outline-none border-none text-black cursor-pointer" onClick={handleFilterSongPlay}>
+				        					<button disabled={filterStreamloading} className="bg-none outline-none border-none text-black cursor-pointer" onClick={handleFilterSongPlay}>
 				        					    {filterPlaying ? <FaPause size={20}/> : <FaPlay size={20}/>}
 				        					</button>
 
@@ -844,11 +911,11 @@ export default function(){
 		        		
 		        	
 
-		        	<div className="w-full mt-5">
+		        	<div className="w-full">
 		        		<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
 		        			{/*<h2 className="text-white text-xl text-center">fsetsopen</h2>*/}
 
-		        			<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => fsetsopen(true)}><IoSearch size={25}/><span className="ml-2 text-white text-xl">Search</span></button>
+		        			<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => fsetsopen(true)}><IoSearch size={25}/><span className="ml-2 text-white text-xl">{user?.isDJ ? 'Search DJ Filter' : 'Search Admin Filter'}</span></button>
 
 
 		        			<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => document.getElementById('filter').click()}>{filterload == 0 ? 'Upload' : `${filterload}%`}</button>
@@ -864,7 +931,7 @@ export default function(){
 			                        </div>
 
 			                        <div className="mr-10">
-			                            <button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handleSelectFilter(data)}><FaPlay size={20}/></button>
+			                            <button disabled={filterStreamloading} className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handleSelectFilter(data)}><FaPlay size={20}/></button>
 			                        </div>
 			        			</div>
 					      	))}
@@ -915,7 +982,7 @@ export default function(){
 	                    <h2 className="text-xl text-black">{data?.title?.slice(0,40)}</h2>           
 	                </div>
 
-	                <button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handleSelectedSong(data)}><FaPlay size={20}/></button>       
+	                <button disabled={songStreamloading} className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handleSelectedSong(data)}><FaPlay size={20}/></button>       
 	              </div>
 	            ))
 	          }

@@ -170,8 +170,8 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay) => {
 			setOwner(data?.user);
 			ownerRef.current = data?.user;
 			createPeerConnection();
-			const song = new Audio('/audio/welcome.mp3');
-			song.play();
+			// const song = new Audio('/audio/welcome.mp3');
+			// song.play();
 		});
 
 		socketRef.current.on('room-unactive',async (data) => {

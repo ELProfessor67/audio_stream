@@ -22,7 +22,7 @@ export default function page({params}){
 	const audioRef = useRef();
 	console.log('isPlay from components side',isPlay)
 	const {roomActive,handleRequestSong,isLive, autodj} = useSocketUser(params.streamId,audioRef,name,isPlay,setIsPlay);
-	const [more,setMore] = useState(false);
+	// const [more,setMore] = useState(false);
 	const [rOpen,setROPen] = useState(false);
 	console.log(roomActive)
 
@@ -70,24 +70,24 @@ export default function page({params}){
 				<div className="flex justify-between items-center relative">
 					<h2 className="text-2xl para">HGC LIVE RADIO</h2>
 					<div className="flex items-center">
-						<button className="bg-indigo-500 border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200" disabled={!isLive} title="request for songs play" onClick={() => setROPen(true)}>request</button>
+						<button className="bg-indigo-500 border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200" disabled={!isLive} title="request for songs play" onClick={() => setROPen(true)}>Request for song</button>
 
-						<button className="bg-none border-none outline-none cursor-pointer"><FiMoreVertical size={20} onMouseEnter={() => setMore(true)} onMouseLeave={() => setMore(false)}/></button>
+						{/*<button className="bg-none border-none outline-none cursor-pointer"><FiMoreVertical size={20} onMouseEnter={() => setMore(true)} onMouseLeave={() => setMore(false)}/></button>*/}
 					</div>
 
-					{
+					{/*{
 						more && <div onMouseEnter={() => setMore(true)} onMouseLeave={() => setMore(false)} className="absolute top-5 border border-gray-100 right-[-15%] p-2 rounded-md shadow-md bg-white flex flex-col items-start gap-3">
 							<button className="bg-none border-none outline-none text-black disabled:text-gray-200" disabled={!isLive} title="request for songs play" onClick={() => setROPen(true)}>Request</button>
 							<button className="bg-none border-none outline-none text-black" title="schedule event times">Schedules</button>
 							<button className="bg-none border-none outline-none text-black" title="now about our radio">About</button>
 						</div>
-					}
+					}*/}
 				</div>
 				<div className="flex items-start py-4 border-b border-gray-200">
 					<Image className="w-[8rem] h-[8rem] rounded-md" src="/upload/cover/ads.jpeg" width={200} height={200}/>
 					<div className="p-4 flex flex-col gap-2 h-full">
 						<div>
-							<span className="px-5 py-1 rounded-3xl bg-indigo-500 text-white">{isLive ? 'LIVE' : 'AUTO'}</span>
+							<span className="px-5 py-1 rounded-3xl bg-indigo-500 text-white">{isLive ? 'LIVE' : 'AUTO DJ'}</span>
 						</div>
 						<h3 className="text-xl para">Zeeshan Raza</h3>
 						<h4 className="text-sm opacity-40">You'Listen Zeeshan Raza Radio Channel</h4>

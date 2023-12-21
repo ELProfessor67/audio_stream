@@ -16,6 +16,7 @@ import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert'
 import { FaForward,FaBackward } from "react-icons/fa";
 import {IoSearch} from 'react-icons/io5';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import {BsSoundwave} from 'react-icons/bs';
 
 function organizeHistoryByDate(history) {
   const organizedHistory = {};
@@ -123,14 +124,38 @@ export default function(){
 	const [filterQuery,setFilterQuery] = useState('');
 	const [fsopen,fsetsopen] = useState(false);
 	const [micVolume,setMicVolume] = useState(5);
+	const [fdforward,setfDforward] = useState(false);
+	const [fdbackward,setfDbackward] = useState(false);
+	const [voiceAcitce,setVoiceActice] = useState(false);
+	const setTimeoutRef = useRef(null);
 	// console.info(filtersongs);
 	// console.warn(allsongs);
+
 
 	// console.log(dbackward,dforward)
 
 	const dispatch = useDispatch();
 	
-	const {ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume} = useSocket(setSongPlaying,songPlaying,selectPlayListSong,selectedSong,setSeletedSong,volume,micVolume);
+	const {ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume, voiceComing} = useSocket(setSongPlaying,songPlaying,selectPlayListSong,selectedSong,setSeletedSong,volume,micVolume,filterPlaying);
+
+	// console.info('voiceAcitce',voiceAcitce);
+
+	useEffect(() => {
+		function callback(status){
+			setTimeoutRef.current = setTimeout(() => {
+				setVoiceActice(voiceComing);
+				setTimeoutRef.current = null;
+			},150);
+		}
+
+		if(setTimeoutRef.current == null){
+			callback(voiceComing);
+		}
+
+		if(micOn == false){
+			setVoiceActice(false);
+		}
+	},[voiceComing]);
 
 
 	useEffect(() => {
@@ -486,6 +511,42 @@ export default function(){
 	}
 
 
+	useEffect(() => {
+		if(selectedFilter){
+			const sindex = effectsong.indexOf(selectedFilter);
+			if(sindex == 0){
+				setfDbackward(false);
+			}else{
+				setfDbackward(true);
+			}
+
+			if(sindex >= effectsong.length-1){
+				setfDforward(false);
+			}else{
+				setfDforward(true);
+			}
+		}else{
+			setfDforward(false);
+			setfDbackward(false);
+		}
+	},[selectedFilter])
+
+
+	const handlefilterForward = () => {
+		const sindex = effectsong.indexOf(selectedFilter);
+		if(effectsong.length-1 <= sindex) return
+		const effect = effectsong[sindex+1];
+		handleSelectFilter(effect)
+	}
+
+	const handlefilterBackword = () => {
+		const sindex = effectsong.indexOf(selectedFilter);
+		if(sindex == 0) return
+		const effect = effectsong[sindex-1];
+		handleSelectFilter(effect)
+	}
+
+
 	return(
 		<>
 			<section className="w-full py-5 px-4 reletive">
@@ -534,8 +595,9 @@ export default function(){
 			        			<div className="flex flex-col items-center gap-3">
 			        				
 				        			<button className="bg-none outline-none border-none text-black" onClick={SwitchOn}>
-				        				{micOn 
-				        				? <IoMdMic size={40}/>
+				        				{
+				        				micOn && voiceAcitce ? <BsSoundwave size={40}/> 
+				        				: micOn ? <IoMdMic size={40}/> 
 				        				: <IoMdMicOff size={40}/>
 				        				}
 				        			</button>
@@ -752,7 +814,7 @@ export default function(){
 				        					<p className="para">~ {selectedFilter?.artist}</p>
 				        				</div>
 				        				<div className="flex-1 gap-4 flex justify-center items-center">
-				        					<button className="bg-none outline-none border-none text-black cursor-pointer disabled:opacity-40" onClick={handleBackword} disabled={!dbackward}>
+				        					<button className="bg-none outline-none border-none text-black cursor-pointer disabled:opacity-40" onClick={handlefilterBackword} disabled={!fdbackward}>
 				        					    <FaBackward size={20}/>
 				        					</button>
 
@@ -760,7 +822,7 @@ export default function(){
 				        					    {filterPlaying ? <FaPause size={20}/> : <FaPlay size={20}/>}
 				        					</button>
 
-				        					<button className="bg-none outline-none border-none text-black cursor-pointer disabled:opacity-40" onClick={handleForward} disabled={!dforward}>
+				        					<button className="bg-none outline-none border-none text-black cursor-pointer disabled:opacity-40" onClick={handlefilterForward} disabled={!fdforward}>
 				        					    <FaForward size={20}/>
 				        					</button>
 				        				</div>

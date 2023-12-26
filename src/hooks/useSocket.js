@@ -15,7 +15,6 @@ const socketInit = () => {
 	return io(process.env.NEXT_PUBLIC_SOCKET_URL, options);
 }
 
-
 const sleep = ms => new Promise(r => window.setTimeout(r,ms))
 
 
@@ -85,7 +84,7 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 
 	useEffect(() => {
 		filterPlayingRef.current = filterPlaying;
-	},[filterPlaying])
+	},[filterPlaying]);
 
 
 	function getSongStream(songUrl,gainNodeRef,songSourceRef,volume,audioContextRef,progress,progressCallback,setduration,isFilter=false) {

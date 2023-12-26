@@ -11,6 +11,50 @@ import Dialog from '@/components/Dialog';
 import {CiSquareQuestion} from 'react-icons/ci'
 
 
+const Timer = ({timerStart}) => {
+	const [straimgTime, setStraimgTime] = useState('00:00:00');
+	const interValref = useRef();
+	const [second,setSecond] = useState(0);
+
+
+	const startTime = () => {
+		interValref.current = setInterval(() => {
+			setSecond(prev => prev+1);
+		},1000);
+
+	}
+
+	useEffect(() => {
+		let hour = Math.floor(second / 3600);
+		let min = Math.floor((second % 3600) / 60);
+		let sec = Math.floor((second % 3600) % 60);
+
+		// console.log(second)
+
+		if(hour < 10) hour = `0${hour}`;
+		if(min < 10) min = `0${min}`;
+		if(sec < 10) sec = `0${sec}`;
+
+		// console.log(`${hour}:${min}:${sec}`)
+		setStraimgTime(`${hour}:${min}:${sec}`);
+	},[second]);
+
+	const stopTime = () => {
+		clearInterval(interValref.current);
+	}
+
+	useEffect(() => {
+		console.log(timerStart);
+		if(timerStart){
+			startTime();
+		}else{
+			stopTime();
+		}
+	},[timerStart])
+	return <span>{straimgTime}</span>
+}
+
+
 export default function page({params}){
 	const [user, setUser] = useState(null);
 	const [schediles,setSchedules] = useState([]);
@@ -19,7 +63,12 @@ export default function page({params}){
 	const [name,setName] = useState('');
 	// const [soundOff,setSoundOff] = useState(false);
 	const [volume,setVolume] = useState(1);
+	const [record,setRecord] = useState(false);
 	const audioRef = useRef();
+	const mediaRecorder = useRef(null);
+    const recordedChunks = useRef([]);
+    const downloadLink = useRef();
+
 	console.log('isPlay from components side',isPlay)
 	const {roomActive,handleRequestSong,isLive, autodj} = useSocketUser(params.streamId,audioRef,name,isPlay,setIsPlay);
 	// const [more,setMore] = useState(false);
@@ -62,14 +111,59 @@ export default function page({params}){
 			}
 		})();
 	},[]);
+
+
+	function startRecording() {
+        const audioStream = audioRef.current.captureStream();
+        
+        // Create a MediaRecorder instance
+        mediaRecorder.current = new MediaRecorder(audioStream);
+
+        // Listen for data available event
+        mediaRecorder.current.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                recordedChunks.current.push(event.data);
+            }
+        };
+
+        // Listen for the recording stop event
+        mediaRecorder.current.onstop = () => {
+            const blob = new Blob(recordedChunks.current, { type: 'audio/wav' });
+            const url = URL.createObjectURL(blob);
+            downloadLink.current.href = url;
+            downloadLink.current.download = 'live_session.wav';
+            downloadLink.current.click();
+        };
+
+        // Start recording
+        mediaRecorder.current.start();
+    }
+
+    function stopRecording() {
+        // Stop recording
+        mediaRecorder.current.stop();
+    }
+
+	const handleRecord = () => {
+		if(record){
+			setRecord(false);
+			stopRecording();
+		}else{
+			setRecord(true);
+			startRecording();
+		}
+	}
 	
 
 	return(
 		<section className="flex justify-center items-center h-[100vh] w-full">
+			<a className="hidden" ref={downloadLink}></a>
 			<div className="w-[35rem] p-4 shadow-md rounded-md border border-gray-100">
 				<div className="flex justify-between items-center relative">
 					<h2 className="text-2xl para">HGC LIVE RADIO</h2>
 					<div className="flex items-center">
+						<button className="bg-indigo-500 border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200 mr-5" disabled={!isLive} title="record live" onClick={handleRecord}>{record ? <Timer timerStart={record}/> : 'Record'}</button>
+
 						<button className="bg-indigo-500 border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200" disabled={!isLive} title="request for songs play" onClick={() => setROPen(true)}>Request for song</button>
 
 						{/*<button className="bg-none border-none outline-none cursor-pointer"><FiMoreVertical size={20} onMouseEnter={() => setMore(true)} onMouseLeave={() => setMore(false)}/></button>*/}

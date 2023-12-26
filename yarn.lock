@@ -2787,7 +2787,15 @@ signal-exit@^3.0.0:
   resolved "https://registry.npmjs.org/signal-exit/-/signal-exit-3.0.7.tgz"
   integrity sha512-wnD2ZE+l+SPC/uoS0vXeE9L1+0wuaMqKlfz9AMUo38JsyLSBWSFcHR1Rri62LZc12vLr1gb3jl7iwQhgwpAbGQ==
 
-simple-peer@9.11.1:
+simple-peer-wrapper@^0.0.5:
+  version "0.0.5"
+  resolved "https://registry.yarnpkg.com/simple-peer-wrapper/-/simple-peer-wrapper-0.0.5.tgz#a923bf440afedb1556839539ca53c0b46a8f461c"
+  integrity sha512-9nVu8QajGjs4HflRUHvTc1oR/j03gYi+VrLwHsIFIZmdhtO52XWxpWk3qZumdO22fRFNpnYrAHciXV7P1qV8rA==
+  dependencies:
+    simple-peer "^9.11.1"
+    socket.io-client "^4.1.1"
+
+simple-peer@9.11.1, simple-peer@^9.11.1:
   version "9.11.1"
   resolved "https://registry.yarnpkg.com/simple-peer/-/simple-peer-9.11.1.tgz#9814d5723f821b778b7fb011bdefcbd1e788e6cc"
   integrity sha512-D1SaWpOW8afq1CZGWB8xTfrT3FekjQmPValrqncJMX7QFl8YwhrPTZvMCANLtgBwwdS+7zURyqxDDEmY558tTw==
@@ -2805,7 +2813,7 @@ slash@^3.0.0:
   resolved "https://registry.npmjs.org/slash/-/slash-3.0.0.tgz"
   integrity sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==
 
-socket.io-client@^4.7.2:
+socket.io-client@^4.1.1, socket.io-client@^4.7.2:
   version "4.7.2"
   resolved "https://registry.npmjs.org/socket.io-client/-/socket.io-client-4.7.2.tgz"
   integrity sha512-vtA0uD4ibrYD793SOIAwlo8cj6haOeMHrGvwPxJsxH7CeIksqJ+3Zc06RvWTIFgiSqx4A3sOnTXpfAEE2Zyz6w==

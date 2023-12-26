@@ -95,7 +95,7 @@ const Timer = ({timerStart}) => {
 }
 
 export default function(){
-	const [volume,setVolume] = useState(0.2);
+	const [volume,setVolume] = useState(0.1);
 	const [playlists,setPlaylists] = useState([]);
 	const [selectPlayListSong, setSelectPlayListSong] = useState([]);
 	const [open, setOpen] = useState(false);
@@ -117,13 +117,13 @@ export default function(){
 	const [effectsong,setEffectSong] = useState([]);
 	const [selectedFilter,setSelectedFilter] = useState({});
 	const [filterPlaying,setFilterPlaying] = useState(false);
-	const [filtervolume,setFilterVolume] = useState(0.2);
+	const [filtervolume,setFilterVolume] = useState(0.1);
 	const [fileload,setFileLoad] = useState(0);
 	const [filterload,setFilterload] = useState(0);
 	const [filterSearch,setFilterSearch] = useState([]);
 	const [filterQuery,setFilterQuery] = useState('');
 	const [fsopen,fsetsopen] = useState(false);
-	const [micVolume,setMicVolume] = useState(5);
+	const [micVolume,setMicVolume] = useState(0.5);
 	const [fdforward,setfDforward] = useState(false);
 	const [fdbackward,setfDbackward] = useState(false);
 	const [voiceAcitce,setVoiceActice] = useState(false);
@@ -564,7 +564,7 @@ export default function(){
 
 					<div className="w-full reletive bg-indigo-600 p-2 rounded-md">
 						<h2 className="text-white text-lg mb-1">Microphone Volume</h2>
-		        		<input type="range" className="w-full cursor-pointer" min={0} max={9} value={micVolume} step="1" onChange={handleMicVolumeChange}/>
+		        		<input type="range" className="w-full cursor-pointer" min={0} max={1} value={micVolume} step="0.1" onChange={handleMicVolumeChange}/>
 
 		        		<div className="w-full flex items-center justify-between mt-1 px-1">
 		        			<span className="text-white">0</span>
@@ -582,7 +582,7 @@ export default function(){
 
 		        	<div className="w-full reletive p-2">
 		        		<h2 className="text-white text-lg mb-1">Deck A Volume</h2>
-		        		<input type="range" className="w-full cursor-pointer" min={0} max={1} value={volume} step="0.1" onChange={handleVolumeChange}/>
+		        		<input type="range" className="w-full cursor-pointer" min={0} max={0.5} value={volume} step="0.05" onChange={handleVolumeChange}/>
 
 		        		<div className="w-full flex items-center justify-between mt-1 px-1">
 		        			<span className="text-white">0</span>
@@ -601,7 +601,7 @@ export default function(){
 
 		        	<div className="w-full reletive p-2">
 		        		<h2 className="text-white text-lg mb-1">Deck B Volume</h2>
-		        		<input type="range" className="w-full cursor-pointer" min={0} max={1} value={filtervolume} step="0.1" onChange={handleFilterVolumeChange}/>
+		        		<input type="range" className="w-full cursor-pointer" min={0} max={0.5} value={filtervolume} step="0.05" onChange={handleFilterVolumeChange}/>
 
 		        		<div className="w-full flex items-center justify-between mt-1 px-1">
 		        			<span className="text-white">0</span>

@@ -43,6 +43,7 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	const [songStreamloading,setSongStreamLoading] = useState(false);
 	const [filterStreamloading,setFilterStreamLoading] = useState(false);
 	const [voiceComing,setVoiceComing] = useState(false);
+	const recordMediaRef = useRef();
 	// console.log('voiceComing',voiceComing);
 
 	const micGainNodeRef = useRef();
@@ -65,10 +66,19 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	const filterPlayingRef = useRef();
 	const analyserRef = useRef();
 	const scriptProcessorRef = useRef();
+	const mediaRecorderRef = useRef();
+	const combinedStreamRef = useRef();
+	const [recordReady,setRecordingReady] = useState(false);
 
 	useEffect(() => {
 		selectPlayListSongRef.current = selectPlayListSong;
 	},[selectPlayListSong]);
+
+	useEffect(() => {
+		recordMediaRef.current = new MediaStream();
+		mediaRecorderRef.current = new MediaRecorder(recordMediaRef.current);
+		setRecordingReady(true);
+	},[])
 
 	useEffect(() => {
 		volumeRef.current = volume;
@@ -390,8 +400,16 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 				filter.connect(dest);
 			}
 			const combinedStream = dest.stream;
-			console.log('combinedStream track',combinedStream.getTracks()[0])
-			console.log('combinedStream tracks',combinedStream.getTracks())
+
+
+			// recording 
+			
+			recordMediaRef.current.removeTrack(combinedStreamRef.current)
+			combinedStreamRef.current = combinedStream.getTracks()[0];
+			recordMediaRef.current.addTrack(combinedStreamRef.current);
+
+		    // end 
+			
 		    Object.keys(peersRef.current).forEach((peerId) => {
 		        peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'),combinedStream.getTracks()[0],localStreamRef.current);
 		    });
@@ -480,6 +498,22 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 				song.connect(dest);
 			}
 			const combinedStream = dest.stream;
+
+
+
+
+			// recording 
+
+			recordMediaRef.current.removeTrack(combinedStreamRef.current)
+			combinedStreamRef.current = combinedStream.getTracks()[0];
+			recordMediaRef.current.addTrack(combinedStreamRef.current);
+
+		    // end
+
+
+
+
+
 		    Object.keys(peersRef.current).forEach((peerId) => {
 		        peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'),combinedStream.getTracks()[0],localStreamRef.current);
 		    });
@@ -643,6 +677,18 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
   		micGainNode.gain.value = micVolume;
   		micGainNodeRef.current = micGainNode;
   		localStreamRef.current = dest.stream;
+		
+
+
+  		// recording 
+  		combinedStreamRef.current = localStreamRef.current.getTracks().find((track) => track.kind === 'audio')
+		recordMediaRef.current.addTrack(combinedStreamRef.current);
+
+		// end
+		
+
+
+
 
   		//deteting the audio
   		const analyser = audioContext.createAnalyser();
@@ -685,7 +731,7 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	}
 
 
-	return {socketRef,ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef:newUser,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume,voiceComing,filterStreamloading,songStreamloading}
+	return {socketRef,ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef:newUser,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume,voiceComing,filterStreamloading,songStreamloading,recordMediaRef:mediaRecorderRef,recordReady}
 }
 
 export default useSocket;

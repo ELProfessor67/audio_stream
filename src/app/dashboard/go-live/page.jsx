@@ -50,6 +50,44 @@ function isYesterday(dateString) {
   return dateString === yesterday.toISOString().split('T')[0];
 }
 
+function mergeAudioObjectURLs(audioURLs) {
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  
+  // Fetch and decode each audio URL
+  const promises = audioURLs.map(url =>
+    fetch(url)
+      .then(response => response.arrayBuffer())
+      .then(data => audioContext.decodeAudioData(data))
+  );
+
+  return Promise.all(promises)
+    .then(buffers => {
+      // Calculate the total length of the merged audio
+      const totalLength = buffers.reduce((acc, buffer) => acc + buffer.length, 0);
+
+      // Create a new buffer with combined length
+      const combinedBuffer = audioContext.createBuffer(
+        buffers[0].numberOfChannels,
+        totalLength,
+        buffers[0].sampleRate
+      );
+
+      // Copy data into the new buffer
+      let offset = 0;
+      buffers.forEach(buffer => {
+        for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+          combinedBuffer.getChannelData(channel).set(buffer.getChannelData(channel), offset);
+        }
+        offset += buffer.length;
+      });
+
+      // Create Object URL from the merged buffer
+      const mergedObjectURL = URL.createObjectURL(new Blob([combinedBuffer], { type: 'audio/wav' }));
+      return mergedObjectURL;
+    });
+}
+
+
 
 const Timer = ({timerStart}) => {
 	const [straimgTime, setStraimgTime] = useState('00:00:00');
@@ -128,8 +166,10 @@ export default function(){
 	const [fdbackward,setfDbackward] = useState(false);
 	const [voiceAcitce,setVoiceActice] = useState(false);
 	const setTimeoutRef = useRef(null);
-	// console.info(filtersongs);
-	// console.warn(allsongs);
+	const [record,setRecord] = useState(false);
+  const recordedChunks = useRef([]);
+  const downloadLink = useRef()
+  const instanceRef = useRef();
 	const {user} = useSelector(store => store.user);
 
 
@@ -137,7 +177,7 @@ export default function(){
 
 	const dispatch = useDispatch();
 	
-	const {ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume, voiceComing,filterStreamloading,songStreamloading} = useSocket(setSongPlaying,songPlaying,selectPlayListSong,selectedSong,setSeletedSong,volume,micVolume,filterPlaying);
+	const {ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume, voiceComing,filterStreamloading,songStreamloading,recordMediaRef,recordReady} = useSocket(setSongPlaying,songPlaying,selectPlayListSong,selectedSong,setSeletedSong,volume,micVolume,filterPlaying);
 
 	// console.info('voiceAcitce',voiceAcitce);
 
@@ -545,12 +585,55 @@ export default function(){
 		if(sindex == 0) return
 		const effect = effectsong[sindex-1];
 		handleSelectFilter(effect)
+
 	}
 
+
+	function startRecording() {
+      recordMediaRef.current.start();
+	    recordMediaRef.current.ondataavailable = (e) => {
+			  recordedChunks.current.push(e.data);
+			};
+
+			recordMediaRef.current.onstop = (e) => {
+				if(instanceRef.current){
+		  		startRecording();
+		  		return
+				}
+				const blob = new Blob(recordedChunks.current, { type: "audio/ogg; codecs=opus" });
+		  	recordedChunks.current = [];
+		  	const url = URL.createObjectURL(blob);
+		  	downloadLink.current.href = url;
+		  	downloadLink.current.download = 'live_session.mp3';
+		  	downloadLink.current.click();
+				
+			}
+    }
+
+
+
+    async function stopRecording() {
+        recordMediaRef.current.stop();
+    }
+
+    useEffect(() => {
+    	instanceRef.current = record;
+    },[record])
+
+	const handleRecord = async () => {
+		if(record){
+			setRecord(false);
+			stopRecording();
+		}else{
+			await startRecording();
+			setRecord(true);
+		}
+	}
 
 	return(
 		<>
 			<section className="w-full py-5 px-4 reletive">
+				<a className="hidden" ref={downloadLink}></a>
 				<div className="m-auto p-4 max-w-[40rem] flex items-center justify-center gap-3 mb-5">
 					<div className="border-b-2 border-indigo-600">
 						<h3 className="text-3xl text-gray-600 scrolling-text-container"><marquee className="scrolling-text">{message}</marquee></h3>
@@ -679,6 +762,15 @@ export default function(){
 				        				<IoMdShare size={40}/>
 				        			</button>
 				        			<span className="text-black text-2xl">Share Link</span>
+			        			</div>
+			        		</div>
+
+							<div className="flex justify-center mt-5">
+							<div className="flex flex-col items-center gap-3">
+				        			<button disabled={!recordReady} onClick={handleRecord} className="bg-indigo-600 disabled:opacity-50 outline-none border-none text-2xl py-2 px-4 rounded-md text-white" title="record live stream">
+				        				{record ? <Timer timerStart={record}/>: 'Record'}
+				        			</button>
+				
 			        			</div>
 			        		</div>
 

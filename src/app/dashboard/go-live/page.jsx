@@ -15,8 +15,9 @@ import {useDispatch,useSelector} from 'react-redux';
 import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert'
 import { FaForward,FaBackward } from "react-icons/fa";
 import {IoSearch} from 'react-icons/io5';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import {BsSoundwave} from 'react-icons/bs';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import {MdDelete,MdAdd} from 'react-icons/md'
 
 function organizeHistoryByDate(history) {
   const organizedHistory = {};
@@ -213,7 +214,7 @@ export default function(){
 	useEffect(() => {
 		if(query){
 			setFiltersongs(prev => {
-				return allsongs.filter(song => song.title.includes(query) || song.artist?.includes(query) || song.album?.includes(query));
+				return allsongs.filter(song => song.title.toLowerCase().includes(query.toLowerCase()) || song.artist?.toLowerCase()?.includes(query.toLowerCase()) || song.album?.toLowerCase().includes(query.toLowerCase()));
 			});
 		}else{
 			setFiltersongs(allsongs);
@@ -519,30 +520,12 @@ export default function(){
 
 	useEffect(() => {
 		if(filterQuery){
-			setFilterSearch(prev => effectsong.filter(f => f.title.includes(filterQuery)))
+			setFilterSearch(prev => effectsong.filter(f => f.title.toLowerCase().includes(filterQuery.toLowerCase())))
 		}else{
 			setFilterSearch(effectsong);
 		}
 	},[filterQuery])
 
-
-
-
-
-	// const handleDragEnd = (result) => {
-	//   if (!result.destination) {
-	//     return;
-	//   }
-
-	//   const reorderedSongs = Array.from(selectPlayListSong.songs);
-	//   const [removed] = reorderedSongs.splice(result.source.index, 1);
-	//   reorderedSongs.splice(result.destination.index, 0, removed);
-
-	//   // Update the state with the new order of songs
-	//   // You need to have a state variable and a function to update it
-	//   // For example, if your state variable is `setSelectPlayListSong`
-	//   setSelectPlayListSong({ ...selectPlayListSong, songs: reorderedSongs });
-	// };
 
 
 	const handleMicVolumeChange = (e) => {
@@ -628,6 +611,76 @@ export default function(){
 			await startRecording();
 			setRecord(true);
 		}
+	}
+
+
+
+	const handleDeleteFromPlaylist = (data) => {
+		
+		let index = 0;
+		const song = selectPlayListSong.songs.find((s,i) => {
+			if(data._id.toString() === s._id.toString()){
+				index = i;
+			}
+			return data._id.toString() === s._id.toString();
+		})
+
+		let clone = JSON.parse(JSON.stringify(selectPlayListSong.songs));
+
+
+		
+		clone.splice(index,1);
+		setSelectPlayListSong({...selectPlayListSong,songs: clone})
+		
+		setPlaylists(prev => {
+			let index = 0;
+			prev.forEach((data,i) => {
+				if(data._id.toString() === selectPlayListSong._id.toString()){
+					index = i
+				}
+			})
+			prev[index].songs = clone;
+			return prev
+		})
+		
+	}
+
+
+	const handleAddPlaylist = (data) => {
+		let clone = JSON.parse(JSON.stringify(selectPlayListSong.songs));
+		clone.push(data);
+		setSelectPlayListSong({...selectPlayListSong,songs: clone})
+		
+		setPlaylists(prev => {
+			let index = 0;
+			prev.forEach((data,i) => {
+				if(data._id.toString() === selectPlayListSong._id.toString()){
+					index = i
+				}
+			})
+			prev[index].songs = clone;
+			return prev
+		})
+	}
+
+	function handleOnDragEnd(result) {
+		if (!result.destination) return;
+
+		const items = Array.from(selectPlayListSong.songs);
+		const [reorderedItem] = items.splice(result.source.index, 1);
+		items.splice(result.destination.index, 0, reorderedItem);
+
+		setSelectPlayListSong({...selectPlayListSong,songs: items});
+		setPlaylists(prev => {
+			let index = 0;
+			prev.forEach((data,i) => {
+				if(data._id.toString() === selectPlayListSong._id.toString()){
+					index = i
+				}
+			})
+			prev[index].songs = items;
+			return prev
+		})
 	}
 
 	return(
@@ -922,7 +975,7 @@ export default function(){
 		        			{playlists.map(data => (
 					      		<div className="flex justify-between items-center my-2 py-1 border-b border-gray-100">
 				        			<div className="flex items-center gap-4">
-				                            <Image src={data?.songs[0].cover} width={200} height={200} alt="cover" className="w-[5rem] h-[5rem] rounded-md"/> 
+				                            <Image src={data?.songs[0]?.cover} width={200} height={200} alt="cover" className="w-[5rem] h-[5rem] rounded-md"/> 
 				                            <div className="">
 				                            	<h2 className="text-black text-xl font-semibold">{data?.title}</h2>
 				                            	<p className="para">{data?.description}</p>
@@ -1064,7 +1117,7 @@ export default function(){
 
 
 
-		      <Dialog open={open} onClose={() => setOpen(false)}>
+		      {/*<Dialog open={open} onClose={() => setOpen(false)}>
 	          {
 	            selectPlayListSong?.songs && selectPlayListSong?.songs?.map((data,index) => (
 	              <div className="flex justify-between items-center my-6">
@@ -1078,39 +1131,37 @@ export default function(){
 	              </div>
 	            ))
 	          }
-	        </Dialog>
+	        </Dialog>*/}
 
-		    {/*<Dialog open={open} onClose={() => setOpen(false)}>
-		        <DragDropContext onDragEnd={handleDragEnd}>
-				  <Droppable droppableId="playlist">
-				    {(provided) => (
-				      <div ref={provided.innerRef} {...provided.droppableProps}>
-				        {selectPlayListSong?.songs &&
-				          selectPlayListSong?.songs.map((data, index) => (
-				            <Draggable key={data.id} draggableId={data.id} index={index}>
-				              {(provided) => (
-				                <div
-				                  ref={provided.innerRef}
-				                  {...provided.draggableProps}
-				                  {...provided.dragHandleProps}
-				                  className="flex justify-between items-center my-6"
-				                >
-				                  	<div className="flex items-center gap-4">
-					                    <Image src={data.cover} width={200} height={200} alt="cover" className="h-[6rem] w-28 object-conver rounded"/> 
-					                    <h2 className="text-xl text-black">{data?.title?.slice(0,40)}</h2>           
-					                </div>
-
-					                <button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handleSelectedSong(data)}><FaPlay size={20}/></button> 
-				                </div>
-				              )}
-				            </Draggable>
-				          ))}
-				        {provided.placeholder}
-				      </div>
-				    )}
-				  </Droppable>
-				</DragDropContext>
-			</Dialog>*/}
+		    <Dialog open={open} onClose={() => setOpen(false)}>
+					<DragDropContext onDragEnd={handleOnDragEnd}>
+						<Droppable droppableId="characters">
+							{(provided) => (
+								<div {...provided.droppableProps} ref={provided.innerRef}>
+									{
+										selectPlayListSong?.songs && selectPlayListSong?.songs?.map((data, index) => (
+											<Draggable key={data._id.toString()} draggableId={data._id.toString()} index={index}>
+								 				{(provided) => (
+													<div className="flex justify-between items-center my-6" ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
+														<div className="flex items-center gap-4">
+															<span className="text-black text-2xl">{index + 1}</span>
+															<Image src={data.cover} width={200} height={200} alt="cover" className="h-[6rem] w-28 object-conver rounded" />
+															<h2 className="text-xl text-black">{data?.title?.slice(0, 40)}</h2>
+														</div>
+														<div>
+															<button disabled={songStreamloading} title='delete song from playlist' className="p-2 rounded-full text-red-400 hover:text-white hover:bg-red-400 mr-4" onClick={() => handleDeleteFromPlaylist(data)}><MdDelete size={20} /></button>
+															<button disabled={songStreamloading} className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handleSelectedSong(data)}><FaPlay size={20} /></button>														
+														</div>
+													</div>
+												)}
+											</Draggable>
+										))
+									}
+								</div>
+							)} 
+						</Droppable>
+					</DragDropContext>
+				</Dialog>
 
 
 
@@ -1140,6 +1191,8 @@ export default function(){
 	                        </div>
 
 	                        <div className="mr-10">
+	                        		<button className="bg-none outline-none border-none text-black cursor-pointer mr-4" onClick={() => { handleAddPlaylist(data); setsopen(false); }}><MdAdd size={20} /></button>
+
 	                            <button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => {handleSelectedSong(data);setsopen(false);setDbackward(false);setDforward(false)}}><FaPlay size={20}/></button>
 	                        </div>
 	        			</div>

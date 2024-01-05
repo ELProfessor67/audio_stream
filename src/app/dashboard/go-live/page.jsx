@@ -178,7 +178,7 @@ export default function(){
 
 	const dispatch = useDispatch();
 	
-	const {ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume, voiceComing,filterStreamloading,songStreamloading,recordMediaRef,recordReady} = useSocket(setSongPlaying,songPlaying,selectPlayListSong,selectedSong,setSeletedSong,volume,micVolume,filterPlaying);
+	const {ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume, voiceComing,filterStreamloading,songStreamloading,recordMediaRef,recordReady,continuePlay, setContinuePlay, repeatPlaylist,setRepeatPlaylist} = useSocket(setSongPlaying,songPlaying,selectPlayListSong,selectedSong,setSeletedSong,volume,micVolume,filterPlaying);
 
 	// console.info('voiceAcitce',voiceAcitce);
 
@@ -689,7 +689,7 @@ export default function(){
 				<a className="hidden" ref={downloadLink}></a>
 				<div className="m-auto p-4 max-w-[40rem] flex items-center justify-center gap-3 mb-5">
 					<div className="border-b-2 border-indigo-600">
-						<h3 className="text-3xl text-gray-600 scrolling-text-container"><marquee className="scrolling-text">{message}</marquee></h3>
+						<h3 className="text-3xl text-gray-600 scrolling-text-container" style={{maxWidth: "50rem"}}><p className="scrolling-text">{message}</p></h3>
 					</div>
 					<button onClick={() => setMEdit(true)} className="bg-none outline-none border-none text-green-400 hover:text-green-500"><MdModeEdit size={20}/></button>
 				</div>
@@ -775,23 +775,7 @@ export default function(){
 
 		        	<div className="w-full shadow-md rounded-md mt-5 border border-gray-100">
 
-		        		{/*<div className="w-full reletive bg-indigo-600 p-2 rounded-t-md">
-		        				<input type="range" className="w-full cursor-pointer" min={0} max={9} value={micVolume} step="1" onChange={handleMicVolumeChange}/>
-
-		        				<div className="w-full flex items-center justify-between mt-1 px-1">
-		        					<span className="text-white">0</span>
-		        					<span className="text-white">1</span>
-		        					<span className="text-white">2</span>
-		        					<span className="text-white">3</span>
-		        					<span className="text-white">4</span>
-		        					<span className="text-white">5</span>
-		        					<span className="text-white">6</span>
-		        					<span className="text-white">7</span>
-		        					<span className="text-white">8</span>
-		        					<span className="text-white">9</span>
-		        					
-		        				</div>
-		        		</div>*/}
+		        		
 
 		        		<div className="p-3 pt-0">
 			        		<div className="flex justify-center mt-5">
@@ -901,23 +885,18 @@ export default function(){
 		        		<div className="w-full mb-5">
 		        		<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
 		        			<h2 className="text-white text-xl text-center">Deck A</h2>
-		        			{/*<div className="w-[50%] reletive">
-		        				<input type="range" className="w-full cursor-pointer" min={0} max={1} value={volume} step="0.1" onChange={handleVolumeChange}/>
 
-		        				<div className="w-full flex items-center justify-between mt-1 px-1">
-		        					<span className="text-white">0</span>
-		        					<span className="text-white">1</span>
-		        					<span className="text-white">2</span>
-		        					<span className="text-white">3</span>
-		        					<span className="text-white">4</span>
-		        					<span className="text-white">5</span>
-		        					<span className="text-white">6</span>
-		        					<span className="text-white">7</span>
-		        					<span className="text-white">8</span>
-		        					<span className="text-white">9</span>
-		        					
-		        				</div>
-		        			</div> */}
+		        			<div className='flex flex-col gap-3'>
+										<div className='flex items-center'>
+											<input type='checkbox'  onChange={(e) => setContinuePlay(prev => !prev)} checked={continuePlay}/>
+											<p className='text-white text-sm ml-2'>Continous Play</p>
+										</div>
+										<div className='flex items-center'>
+											<input type='checkbox' checked={repeatPlaylist} onChange={() => setRepeatPlaylist(prev => !prev)}/>
+											<p className='text-white text-sm ml-2'>Repeat Playlist</p>
+										</div>
+									</div>
+
 		        		</div>
 		        		<div className="py-2 rounded-b-md shadow-md p-3">
 		        			<div className="flex">
@@ -997,23 +976,7 @@ export default function(){
 		        		<div className="w-full mb-5">
 		        		<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
 		        			<h2 className="text-white text-xl text-center">Deck B</h2>
-		        			{/*<div className="w-[50%] reletive">
-		        				<input type="range" className="w-full cursor-pointer" min={0} max={1} value={filtervolume} step="0.1" onChange={handleFilterVolumeChange}/>
-
-		        				<div className="w-full flex items-center justify-between mt-1 px-1">
-		        					<span className="text-white">0</span>
-		        					<span className="text-white">1</span>
-		        					<span className="text-white">2</span>
-		        					<span className="text-white">3</span>
-		        					<span className="text-white">4</span>
-		        					<span className="text-white">5</span>
-		        					<span className="text-white">6</span>
-		        					<span className="text-white">7</span>
-		        					<span className="text-white">8</span>
-		        					<span className="text-white">9</span>
-		        					
-		        				</div>
-		        			</div> */}
+		        			
 		        		</div>
 		        		<div className="py-2 rounded-b-md shadow-md p-3">
 		        			<div className="flex">
@@ -1083,55 +1046,8 @@ export default function(){
 		        		</div>
 		        	</div>
 		        </div>
-
-
-
-		        {/*<div className="side-box w-[22rem] p-2 reletive flex flex-col">
-		        	<div className="w-full shadow-md border border-gray-100 h-[95vh] rounded-md">
-		        		<div className="w-full bg-indigo-600 px-2 py-4 flex justify-between items-center rounded-t-md">
-		        			<h3 className="text-xl text-white">Requests</h3>
-		        			<h3 className="text-white text-sm">{listners} Listening</h3>
-		        		</div>
-		        		<div className="p-2 overflow-y-auto h-[85%]">
-		        			{
-		        				requests?.length != 0 && requests.map((data) => (
-		        					<div className="w-full p-1 my-2 border-b border-gray-100">
-				        				<h4 className="text-sm text-gray-300">{data?.name} requested</h4>
-				        				<div className="flex justify-between items-center my-2">
-							                <div className="flex items-center gap-4">
-							                    <Image src={data?.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded"/> 
-							                    <h2 className="text-black">{data?.title?.slice(0,20)}</h2>           
-							                </div>
-
-							                <button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => {handleSelectedSong(data); setDforward(false);setDbackward(false)}}><FaPlay size={20}/></button>       
-							              </div>
-				        			</div>
-		        				))
-		        			}
-		        			
-		        		</div>
-		        	</div>
-		        </div>*/}
 		    </div>
 
-
-
-
-		      {/*<Dialog open={open} onClose={() => setOpen(false)}>
-	          {
-	            selectPlayListSong?.songs && selectPlayListSong?.songs?.map((data,index) => (
-	              <div className="flex justify-between items-center my-6">
-	                <div className="flex items-center gap-4">
-	                	<span className="text-black text-2xl">{index+1}</span>
-	                    <Image src={data.cover} width={200} height={200} alt="cover" className="h-[6rem] w-28 object-conver rounded"/> 
-	                    <h2 className="text-xl text-black">{data?.title?.slice(0,40)}</h2>           
-	                </div>
-
-	                <button disabled={songStreamloading} className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handleSelectedSong(data)}><FaPlay size={20}/></button>       
-	              </div>
-	            ))
-	          }
-	        </Dialog>*/}
 
 		    <Dialog open={open} onClose={() => setOpen(false)}>
 					<DragDropContext onDragEnd={handleOnDragEnd}>

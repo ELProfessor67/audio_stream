@@ -44,6 +44,8 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	const [filterStreamloading,setFilterStreamLoading] = useState(false);
 	const [voiceComing,setVoiceComing] = useState(false);
 	const recordMediaRef = useRef();
+	const [continuePlay,setContinuePlay] = useState(true);
+	const [repeatPlaylist,setRepeatPlaylist]	= useState(false);
 	// console.log('voiceComing',voiceComing);
 
 	const micGainNodeRef = useRef();
@@ -54,6 +56,8 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	const selectPlayListSongRef = useRef({});
 	const selectedSongRef = useRef({});
 	const volumeRef = useRef(0.3);
+	const continuePlayRef = useRef();
+	const repeatPlaylistRef = useRef();
 
 
 	const filterSourceRef = useRef();
@@ -73,6 +77,14 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	useEffect(() => {
 		selectPlayListSongRef.current = selectPlayListSong;
 	},[selectPlayListSong]);
+
+	useEffect(() => {
+		continuePlayRef.current = continuePlay;
+	},[continuePlay])
+
+	useEffect(() => {
+		repeatPlaylistRef.current = repeatPlaylist;
+	},[repeatPlaylist])
 
 	useEffect(() => {
 		recordMediaRef.current = new MediaStream();
@@ -156,11 +168,19 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 		            	if(currentTime < duration && songPlayRef.current){
 		            		requestAnimationFrame(updateProgess);
 		            	}else{
-		            		if(songPlayRef.current && !isFilter){
+		            		if(songPlayRef.current && !isFilter && continuePlayRef.current === true){
 		            			const sindex = selectPlayListSongRef.current?.songs?.indexOf(selectedSongRef.current);
 								if(sindex >= selectPlayListSongRef.current?.songs?.length-1){
-									setSongPlaying(false);
-									setProgress(0)
+									if(repeatPlaylistRef.current){
+										const song = selectPlayListSongRef.current?.songs[0];
+										setSeletedSong(song);
+										setSongPlaying(true);
+										setProgress(0);
+										playSong(song.audio,volumeRef.current);
+									}else{
+										setSongPlaying(false);
+										setProgress(0)
+									}
 
 								}else{
 									const song = selectPlayListSongRef.current?.songs[sindex+1];
@@ -731,7 +751,7 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	}
 
 
-	return {socketRef,ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef:newUser,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume,voiceComing,filterStreamloading,songStreamloading,recordMediaRef:mediaRecorderRef,recordReady}
+	return {socketRef,ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef:newUser,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume,voiceComing,filterStreamloading,songStreamloading,recordMediaRef:mediaRecorderRef,recordReady, continuePlay,setContinuePlay, repeatPlaylist,setRepeatPlaylist}
 }
 
 export default useSocket;

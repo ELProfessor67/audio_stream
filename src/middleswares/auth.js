@@ -12,7 +12,7 @@ export const auth = (func) => async (req) => {
         }
 
         const url = req.url;
-        const djList = ['/playlist','/filter','/temp-playlist']
+        const djList = ['/playlist','/filter','/temp-playlist','/welcome-tone','/ending-tone']
         let change = true;
         djList.forEach((ele) => {
             if(url.includes(ele)){

@@ -26,7 +26,9 @@ const userSchema = new mongoose.Schema({
     djOwner: {type: mongoose.Schema.Types.ObjectId,ref: 'user',default: undefined},
     djPermissions: [{type: String,enum: ['songs','playlists','schedules','live','dashboard','requests','ads']}],
     djStartTime: {type: String,default: undefined},
-    djEndTime: {type: String,default: undefined}
+    djEndTime: {type: String,default: undefined},
+    welcomeTone: {type: String,default: undefined},
+    endingTone: {type: String,default: undefined}
 },{timestamps: true});
 
 

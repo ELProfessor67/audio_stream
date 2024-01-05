@@ -16,7 +16,7 @@ const socketInit = () => {
 	return io(process.env.NEXT_PUBLIC_SOCKET_URL, options);
 }
 
-const useSocket = (streamId,audioRef,name,isPlay,setIsPlay) => {
+const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage) => {
 	const socketRef = useRef();
 	const peerRef = useRef({});
 	const [owner,setOwner] = useState('');
@@ -25,6 +25,7 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay) => {
 	const [scheduleActive,setScheduleActive] = useState(false);
 	const [isLive,setIsLive] = useState(false);
 	const [autodj,setAutoDj] = useState(false);
+	const [messageList,setMessageList] = useState([]);
 	const cuurentTimeRef = useRef();
 	const playRef = useRef();
 	const isLiveRef = useRef();
@@ -40,6 +41,12 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay) => {
 	useEffect(() => {
 		scheduleActiveRef.current = scheduleActive;
 	},[scheduleActive])
+
+
+
+	function handleReceiveMessage(data){
+		setMessageList(prev => [...prev,{...data}]);
+	}
 
 	
 
@@ -169,9 +176,13 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay) => {
 			console.log('owner',data?.user)
 			setOwner(data?.user);
 			ownerRef.current = data?.user;
+
 			createPeerConnection();
-			// const song = new Audio('/audio/welcome.mp3');
-			// song.play();
+
+			if(data?.user?.welcomeTone){
+				const song = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${data?.user?.welcomeTone}`);
+				song.play();
+			}
 		});
 
 		socketRef.current.on('room-unactive',async (data) => {
@@ -194,12 +205,23 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay) => {
 		});
 
 		socketRef.current.on('owner-left',async () => {
-			const song = new Audio('/audio/good bye.mp3');
-			song.play();
-
-			await sleep(7000)
-
-			window.location.reload();
+			
+			if(ownerRef.current.endingTone){
+				
+				const song = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${ownerRef.current?.endingTone}`);
+				song.play();
+				song.addEventListener('loadedmetadata',async function(){
+					
+					
+					await sleep(song.duration * 1000);
+					window.alert(2)
+					window.location.reload();
+				})
+			}else{
+				window.location.reload();
+			}
+			
+			
 		});
 
 		socketRef.current.on('schedule-active',async (data) => {
@@ -226,12 +248,14 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay) => {
 
 
 		socketRef.current.on('song-change',handleSongChange)
+		socketRef.current.on('receive-message',handleReceiveMessage);
 
 		return () => {
 			socketRef.current.off('room-active');
 			socketRef.current.off('room-unactive');
 			socketRef.current.off('room-active-now');
 			socketRef.current.off('song-change');
+			socketRef.current.off('receive-message');
 		}
 
 	},[]);
@@ -242,7 +266,16 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay) => {
 		socketRef.current.emit('send-request-song',{...data,roomId:streamId,name: name || 'unknown'});
 	}
 
-	return {socketRef,userJoin,roomActive,isLive,handleRequestSong, autodj}
+
+
+	function handleSendMessage (){
+		if(message){
+			socketRef.current.emit('send-message',{message,roomId:streamId,name: name || 'unknown',isOwner: false});
+			setMessage('');
+		}
+	}
+
+	return {socketRef,userJoin,roomActive,isLive,handleRequestSong, autodj, handleSendMessage, messageList}
 }
 
 export default useSocket;

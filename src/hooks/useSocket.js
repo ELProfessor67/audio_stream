@@ -20,7 +20,7 @@ const sleep = ms => new Promise(r => window.setTimeout(r,ms))
 
 
 
-const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,setSeletedSong,volume,micVolume,filterPlaying) => {
+const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,setSeletedSong,volume,micVolume,filterPlaying, chatMessage,setChatMessage, setUnread, chatOpen) => {
 	const socketRef = useRef();
 	const {user} = useSelector(store => store.user);
 	const peersRef = useRef({});
@@ -46,6 +46,7 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	const recordMediaRef = useRef();
 	const [continuePlay,setContinuePlay] = useState(true);
 	const [repeatPlaylist,setRepeatPlaylist]	= useState(false);
+	const [messageList,setMessageList] = useState([]);
 	// console.log('voiceComing',voiceComing);
 
 	const micGainNodeRef = useRef();
@@ -58,6 +59,7 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	const volumeRef = useRef(0.3);
 	const continuePlayRef = useRef();
 	const repeatPlaylistRef = useRef();
+	const chatOpenRef = useRef();
 
 
 	const filterSourceRef = useRef();
@@ -91,6 +93,10 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 		mediaRecorderRef.current = new MediaRecorder(recordMediaRef.current);
 		setRecordingReady(true);
 	},[])
+
+	useEffect(() => {
+		chatOpenRef.current = chatOpen;
+	},[chatOpen])
 
 	useEffect(() => {
 		volumeRef.current = volume;
@@ -233,57 +239,29 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 		micOnRef.current = micOn;
 	},[micOn])
 
+
+	function handleReceiveMessage(data){
+		setMessageList(prev => [...prev,{...data}]);
+		if(chatOpenRef.current === false){
+			setUnread(prev => prev+1);
+		}
+	}
+
 	async function handleNewUser(peerId){
 		setNewUser(prev => [...prev,peerId]);
 		await sleep(2000);
-		// if(!micOnRef.current){
-		// 	console.log('mic is off')
-		// 	localStreamRef.current?.getTracks().forEach((track) => track.stop());
-        // }
+		
 
-        // if(songStreamRef.current){
-        // 	console.log(peersRef.current[peerId])
-        // 	console.log('someting is here song stream')
-        // 	if(peersRef.current[peerId]){
-        // 		console.log('someting is here song stream')
-		// 		peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'),songStreamRef.current,localStreamRef.current);
-		// 	}
-        // }
-
-        // if(micOnRef.current){
-        // 	console.log('micOn')
-        // 	if(songStreamRef.current){
-		// 		const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-		// 		localTrackRef.current = audioStream.getTracks()[0];		
-		// 		if(peersRef.current[peerId]){
-		// 			peersRef.current[peerId].replaceTrack(songStreamRef.current,localTrackRef.current,localStreamRef.current);
-		// 		}
-				
-		// 	}else{
-		// 		const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-		// 		localTrackRef.current = audioStream.getTracks()[0];
-				
-		// 		if(peersRef.current[peerId]){
-		// 			peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'),localTrackRef.current,localStreamRef.current);
-		// 		}
-				
-		// 	}
-        // }
-
-        // if(songStreamRef.current){
+        
         	const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
 
-        	// const micGainNode = audioContext.createGain();
-			// micGainNode.connect(audioContext.destination);
-			// micGainNode.gain.value = 10;
 
 		    const mic = audioContext.createMediaStreamSource(localStreamRef.current);
 		    const dest = audioContext.createMediaStreamDestination();
 			mic.connect(dest);
 
-			// mic.connect(micGainNode);
-  			// micGainNode.connect(dest);
+			
 
 		    if(songStreamRef.current){
 		    	const song = audioContext.createMediaStreamSource(songStreamRef.current);
@@ -346,10 +324,7 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	function handleProgressChange(e){
 		console.log(e.target.value)
 		setProgress(e.target.value);
-		// changeCurrentTimeRef.current(e.target.value);
-		// songSourceRef.current.stop();
-		// songSourceRef.current.start(0,e.target.value);
-		// audioContextRef.current.resume();
+		
 	}
 
 	async function playSong(url,volume){
@@ -366,17 +341,7 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 
 		setSongStreamLoading(true);
 
-		// setMicOn(false);
-
-		// const songStream = await getSongStream(url,gainNodeRef,songSourceRef,volume);
-		// console.log(songStream);
-		// songStreamRef.current = songStream.getTracks()[0];
-		// Object.keys(peersRef.current).forEach(peerId => {
-		// 	console.log(peersRef.current[peerId].connected)
-		// 	if(peersRef.current[peerId]){
-		// 		peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'),songStreamRef.current,localStreamRef.current);
-		// 	}
-		// });
+		
 
 		
 
@@ -568,40 +533,7 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 
 
 	const SwitchOn = async () => {
-		// setSongPlaying(false);
-		// if(songSourceRef.current?.stop){
-		// 	songSourceRef.current.stop();
-		// }
-
-		// if(micOn){
-		// 	setMicOn(false);
-		// 	if(localTrackRef.current?.stop){
-		// 		localTrackRef.current.stop();	
-		// 	}else{
-		// 		localStreamRef.current?.getTracks().forEach((track) => track.stop());
-		// 	}
-		// }else{
-		// 	setMicOn(true);
-		// 	if(songStreamRef.current){
-		// 		const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-		// 		localTrackRef.current = audioStream.getTracks()[0];
-		// 		Object.keys(peersRef.current).forEach(peerId => {
-		// 			console.log(peersRef.current[peerId].connected)
-		// 			if(peersRef.current[peerId]){
-		// 				peersRef.current[peerId].replaceTrack(songStreamRef.current,localTrackRef.current,localStreamRef.current);
-		// 			}
-		// 		});
-		// 	}else{
-		// 		const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-		// 		localTrackRef.current = audioStream.getTracks()[0];
-		// 		Object.keys(peersRef.current).forEach(peerId => {
-		// 			console.log(peersRef.current[peerId].connected)
-		// 			if(peersRef.current[peerId]){
-		// 				peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'),localTrackRef.current,localStreamRef.current);
-		// 			}
-		// 		});
-		// 	}
-		// }
+		
 
 		if(micOn){
 			localStreamRef.current.getTracks().forEach(track => track.enabled = false);
@@ -626,9 +558,12 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 			setNewUser(prev => prev.filter(peerId => peerId != id));
 		})
 
+		socketRef.current?.on('receive-message',handleReceiveMessage);
+
 		return () => {
 			socketRef.current?.off('recieve-request-song');
 			socketRef.current?.off('user-disconnet');
+			socketRef.current?.off('receive-message');
 		}
 	},[socketRef.current]);
 
@@ -650,7 +585,7 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	},[])
 
 	const handleShare = async () => {
-		const url = `${window.location.origin}/public/${user._id}`;
+		const url = `${window.location.origin}/public/${user?._id}`;
 		await navigator.clipboard.writeText(url);
 	}
 
@@ -750,8 +685,15 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 		
 	}
 
+	function handleSendMessage (){
+		if(message){
+			socketRef.current?.emit('send-message',{message: chatMessage,roomId:user?._id.toString(),name: user?.name || 'owner',isOwner: true});
+			setChatMessage('');
+		}
+	}
 
-	return {socketRef,ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef:newUser,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume,voiceComing,filterStreamloading,songStreamloading,recordMediaRef:mediaRecorderRef,recordReady, continuePlay,setContinuePlay, repeatPlaylist,setRepeatPlaylist}
+
+	return {socketRef,ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef:newUser,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume,voiceComing,filterStreamloading,songStreamloading,recordMediaRef:mediaRecorderRef,recordReady, continuePlay,setContinuePlay, repeatPlaylist,setRepeatPlaylist,handleSendMessage,messageList}
 }
 
 export default useSocket;

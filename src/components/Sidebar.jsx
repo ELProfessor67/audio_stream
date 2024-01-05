@@ -159,11 +159,20 @@ export default function Sidebar(){
             show: isAllow('dashboard')
         },
         {
-            icon: <BsMusicNoteList size={30}/>,
-            text: "My Playlists",
+            icon: <BsCloudUpload size={30}/>,
+            text: "Uploads Song",
             alert: false,
-            active: pathname == '/dashboard/playlist',
-            link: '/dashboard/playlist',
+            active: pathname == '/dashboard/songs/upload',
+            link: '/dashboard/songs/upload',
+            show: isAllow('songs')
+    
+        },
+        {
+            icon: <GiLoveSong size={30}/>,
+            text: "My Songs",
+            alert: false,
+            active: pathname == '/dashboard/songs',
+            link: '/dashboard/songs',
             show: true
         },
         {
@@ -176,6 +185,14 @@ export default function Sidebar(){
     
         },
         {
+            icon: <BsMusicNoteList size={30}/>,
+            text: "My Playlists",
+            alert: false,
+            active: pathname == '/dashboard/playlist',
+            link: '/dashboard/playlist',
+            show: true
+        },
+        {
             icon: <MdOutlineAdminPanelSettings size={30}/>,
             text: "Admin Playlists",
             alert: false,
@@ -184,23 +201,8 @@ export default function Sidebar(){
             show: isAllow('playlists')
     
         },
-        {
-            icon: <GiLoveSong size={30}/>,
-            text: "My Songs",
-            alert: false,
-            active: pathname == '/dashboard/songs',
-            link: '/dashboard/songs',
-            show: true
-        },
-        {
-            icon: <BsCloudUpload size={30}/>,
-            text: "Uploads Song",
-            alert: false,
-            active: pathname == '/dashboard/songs/upload',
-            link: '/dashboard/songs/upload',
-            show: isAllow('songs')
-    
-        },
+       
+        
         {
             icon: <BsCalendarDate size={30}/>,
             text: "Schedules",
@@ -252,12 +254,20 @@ export default function Sidebar(){
         },
         {
             icon: <FiSettings size={30}/>,
-            text: "Settings",
+            text: "Welcome Tone",
             alert: false,
-            active: pathname == '/dashboard/settings',
-            link: '/dashboard/settings',
+            active: pathname == '/dashboard/welcome-tone',
+            link: '/dashboard/welcome-tone',
             show: true
-        }
+        },
+        {
+            icon: <FiSettings size={30}/>,
+            text: "Ending Tone",
+            alert: false,
+            active: pathname == '/dashboard/ending-tone',
+            link: '/dashboard/ending-tone',
+            show: true
+        },
         
     ]
     return<>

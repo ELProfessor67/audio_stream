@@ -47,6 +47,8 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	const [continuePlay,setContinuePlay] = useState(true);
 	const [repeatPlaylist,setRepeatPlaylist]	= useState(false);
 	const [messageList,setMessageList] = useState([]);
+	const [filterBase,setFilterBase] = useState(0);
+	const [songBase,setSongBase] = useState(0);
 	// console.log('voiceComing',voiceComing);
 
 	const micGainNodeRef = useRef();
@@ -75,6 +77,9 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	const mediaRecorderRef = useRef();
 	const combinedStreamRef = useRef();
 	const [recordReady,setRecordingReady] = useState(false);
+
+	const songAnalyserRef = useRef();
+	const filterAnalyserRef = useRef();
 
 	useEffect(() => {
 		selectPlayListSongRef.current = selectPlayListSong;
@@ -113,6 +118,42 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	useEffect(() => {
 		filterPlayingRef.current = filterPlaying;
 	},[filterPlaying]);
+
+
+
+
+	function AudioProcessSongFilter(isFilter){
+		let analyser;
+
+		if(isFilter){
+			analyser = filterAnalyserRef.current
+		}else{
+			analyser = songAnalyserRef.current
+		}
+
+		if(isFilter && !filterPlayingRef.current){
+			setFilterBase(0)
+			return
+		}
+
+		if(!isFilter && !songPlayRef.current){
+			setSongBase(0);
+			return
+		}
+
+	    const array = new Uint8Array(analyser.frequencyBinCount);
+	    analyser.getByteFrequencyData(array);
+	    const arraySum = array.reduce((a, value) => a + value, 0);
+	    const average = arraySum / array.length;
+	    // console.info('voulme',Math.round(average));
+	      // colorPids(average);
+	    const voiceVolume = Math.round(average);
+	    if(isFilter){
+	    	setFilterBase(voiceVolume);
+	    }else{
+	    	setSongBase(voiceVolume);
+		}
+	}
 
 
 	function getSongStream(songUrl,gainNodeRef,songSourceRef,volume,audioContextRef,progress,progressCallback,setduration,isFilter=false) {
@@ -221,6 +262,28 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	            
 
 	            source.connect(songStream);
+
+
+				const analyseraudioContext = new (window.AudioContext || window.webkitAudioContext)();
+				const audio = analyseraudioContext.createMediaStreamSource(songStream.stream);
+				//deteting the audio
+				const analyser = analyseraudioContext.createAnalyser();
+				const scriptProcessor = analyseraudioContext.createScriptProcessor(2048, 1, 1);
+				analyser.smoothingTimeConstant = 0.8;
+				analyser.fftSize = 1024;
+				if(isFilter){
+					filterAnalyserRef.current = analyser;
+				}else{
+					songAnalyserRef.current = analyser;
+				}
+				
+		
+				audio.connect(analyser);
+				analyser.connect(scriptProcessor);
+				scriptProcessor.connect(analyseraudioContext.destination);
+
+				scriptProcessor.addEventListener('audioprocess',() => AudioProcessSongFilter(isFilter));
+
 
 	            resolve({songStream: songStream.stream,changeCurrentTime});
 	            }, reject);
@@ -568,21 +631,21 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	},[socketRef.current]);
 
 
-	useEffect(() => {
-		function confirmReload(event) {
-            var confirmationMessage = "Are you sure you want to stop streaming?";
+	// useEffect(() => {
+	// 	function confirmReload(event) {
+    //         var confirmationMessage = "Are you sure you want to stop streaming?";
 
-            // For modern browsers
-            event.returnValue = confirmationMessage;
-            return confirmationMessage;
-        }
+    //         // For modern browsers
+    //         event.returnValue = confirmationMessage;
+    //         return confirmationMessage;
+    //     }
 
-		window.addEventListener('beforeunload', confirmReload);
+	// 	window.addEventListener('beforeunload', confirmReload);
 
-		return () => {
-			window.removeEventListener('beforeunload', confirmReload);
-		}
-	},[])
+	// 	return () => {
+	// 		window.removeEventListener('beforeunload', confirmReload);
+	// 	}
+	// },[])
 
 	const handleShare = async () => {
 		const url = `${window.location.origin}/public/${user?._id}`;
@@ -693,7 +756,7 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	}
 
 
-	return {socketRef,ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef:newUser,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume,voiceComing,filterStreamloading,songStreamloading,recordMediaRef:mediaRecorderRef,recordReady, continuePlay,setContinuePlay, repeatPlaylist,setRepeatPlaylist,handleSendMessage,messageList}
+	return {socketRef,ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef:newUser,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume,voiceComing,filterStreamloading,songStreamloading,recordMediaRef:mediaRecorderRef,recordReady, continuePlay,setContinuePlay, repeatPlaylist,setRepeatPlaylist,handleSendMessage,messageList,songBase,filterBase}
 }
 
 export default useSocket;

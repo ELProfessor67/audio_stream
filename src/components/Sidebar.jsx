@@ -169,7 +169,7 @@ export default function Sidebar(){
         },
         {
             icon: <GiLoveSong size={30}/>,
-            text: "My Songs",
+            text: "My Uploaded Songs",
             alert: false,
             active: pathname == '/dashboard/songs',
             link: '/dashboard/songs',
@@ -186,7 +186,7 @@ export default function Sidebar(){
         },
         {
             icon: <BsMusicNoteList size={30}/>,
-            text: "My Playlists",
+            text: "My Created Playlists",
             alert: false,
             active: pathname == '/dashboard/playlist',
             link: '/dashboard/playlist',
@@ -213,7 +213,7 @@ export default function Sidebar(){
         },
         {
             icon: <PiUsersThreeDuotone size={30}/>,
-            text: "My Team",
+            text: "My DJ Team",
             alert: false,
             active: pathname == '/dashboard/team',
             link: '/dashboard/team',
@@ -221,7 +221,7 @@ export default function Sidebar(){
         },
         {
             icon: <LiaAdSolid size={30}/>,
-            text: "Ads",
+            text: "Ads Jingles",
             alert: false,
             active: pathname == '/dashboard/ads',
             link: '/dashboard/ads',
@@ -229,7 +229,7 @@ export default function Sidebar(){
         },
         {
             icon: <GiMusicalScore size={30}/>,
-            text: "Filter",
+            text: "Manage Filter Effects",
             alert: false,
             active: pathname == '/dashboard/filter',
             link: '/dashboard/filter',
@@ -246,7 +246,7 @@ export default function Sidebar(){
         },
         {
             icon: <CiStreamOn size={30}/>,
-            text: "Go Live",
+            text: "Start Streaming",
             alert: false,
             active: pathname == '/dashboard/go-live',
             link: '/dashboard/go-live',

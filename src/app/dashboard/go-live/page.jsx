@@ -183,7 +183,7 @@ export default function () {
 
 	const dispatch = useDispatch();
 
-	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen);
+	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen);
 
 	// console.info('voiceAcitce',voiceAcitce);
 
@@ -944,6 +944,45 @@ export default function () {
 												</div>
 											</div>
 										</div>
+
+										<div className='flex gap-1 ml-3'>
+
+											<div className='w-1 h-full rounded-md bg-red-100 relative flex flex-col justify-end'>
+												{
+													songBase < 33.3
+														? (
+															<div className={`w-full transition-allbg-green-600 rounded-b-md`} style={{height: `${songBase}%`}}></div>
+														)
+														: songBase > 33.3 && songBase < 66.6 ?
+															(
+																<>
+																	<div className={`w-full transition-all bg-yellow-600`} style={{height: `${songBase-33.3}%`}}></div>
+																	<div className={`w-full transition-all bg-green-600 rounded-b-md`} style={{height: `33.3%`}}></div>
+																</>
+															)
+															: songBase > 66.6 ?
+																(
+																	<>
+																		<div className={`w-full transition-all bg-red-600 rounded-t-md`} style={{height: `${songBase - 66.6}%`}}></div>
+																		<div className={`w-full transition-all h-[${33.3}%] bg-yellow-600`} style={{height: `${33.3}%`}}></div>
+																		<div className={`w-full transition-all h-[33.3%] bg-green-600 rounded-b-md`}></div>
+																	</>
+																) :
+																<></>
+
+												}
+											</div>
+											<div className='w-2 h-full flex flex-col justify-between'>
+												<span className='text-xs'>-0</span>
+												<span className='text-xs'>-1</span>
+												<span className='text-xs'>-3</span>
+												<span className='text-xs'>-5</span>
+												<span className='text-xs'>-7</span>
+												<span className='text-xs'>-10</span>
+												<span className='text-xs'>-15</span>
+												<span className='text-xs'>-30</span>
+											</div>
+										</div>
 									</div>
 								</div>
 							</div>
@@ -963,9 +1002,9 @@ export default function () {
 
 								<input type="file" accept="audio/*" className="hidden" id="audio" onChange={handleUpload} />
 							</div>
-							<div className="py-2 rounded-b-md shadow-md p-3 h-[21rem] overflow-x-auto">
+							<div className="rounded-b-md shadow-md p-3 px-0 h-[21rem] overflow-x-auto">
 								{playlists.map(data => (
-									<div className="flex justify-between items-center my-2 py-1 border-b border-gray-100">
+									<div className={`${selectPlayListSong?._id?.toString() === data._id.toString() ? 'bg-gray-100': ''} px-3 flex justify-between items-center my-2 py-1 border-b border-gray-100`}>
 										<div className="flex items-center gap-4">
 											<Image src={data?.songs[0]?.cover} width={200} height={200} alt="cover" className="w-[5rem] h-[5rem] rounded-md" />
 											<div className="">
@@ -1022,6 +1061,45 @@ export default function () {
 													<time className="text-black text-xs">{Math.floor(fremaining / 60)}:{Math.floor(fremaining % 60)}</time>
 													<time className="text-black text-xs">{Math.floor(fduration / 60)}:{Math.floor(fduration % 60)}</time>
 												</div>
+											</div>
+										</div>
+
+										<div className='flex gap-1 ml-3'>
+
+											<div className='w-1 h-full rounded-md bg-red-100 relative flex flex-col justify-end'>
+												{
+													filterBase < 33.3
+														? (
+															<div className={`w-full transition-allbg-green-600 rounded-b-md`} style={{height: `${filterBase}%`}}></div>
+														)
+														: filterBase > 33.3 && filterBase < 66.6 ?
+															(
+																<>
+																	<div className={`w-full transition-all bg-yellow-600`} style={{height: `${filterBase-33.3}%`}}></div>
+																	<div className={`w-full transition-all bg-green-600 rounded-b-md`} style={{height: `33.3%`}}></div>
+																</>
+															)
+															: filterBase > 66.6 ?
+																(
+																	<>
+																		<div className={`w-full transition-all bg-red-600 rounded-t-md`} style={{height: `${filterBase - 66.6}%`}}></div>
+																		<div className={`w-full transition-all h-[${33.3}%] bg-yellow-600`} style={{height: `${33.3}%`}}></div>
+																		<div className={`w-full transition-all h-[33.3%] bg-green-600 rounded-b-md`}></div>
+																	</>
+																) :
+																<></>
+
+												}
+											</div>
+											<div className='w-2 h-full flex flex-col justify-between'>
+												<span className='text-xs'>-0</span>
+												<span className='text-xs'>-1</span>
+												<span className='text-xs'>-3</span>
+												<span className='text-xs'>-5</span>
+												<span className='text-xs'>-7</span>
+												<span className='text-xs'>-10</span>
+												<span className='text-xs'>-15</span>
+												<span className='text-xs'>-30</span>
 											</div>
 										</div>
 									</div>

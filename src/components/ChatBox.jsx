@@ -4,8 +4,8 @@ import ScrollToBottom from 'react-scroll-to-bottom';
 
 export default function ChatBox({ open, onClose, children, setName, name, message, setMessage, handleSendMessage }) {
     return (
-        <div className={`absolute top-0 left-0 right-0 bottom-0 bg-black/5 grid place-items-center ${open ? '' : 'hidden'}`}>
-            <div className="max-w-[40rem] w-[40rem] min-h-[35rem] bg-white shadow-md p-4 rounded-md flex flex-col">
+        <div className={`absolute top-0 left-0 right-0 bottom-0 bg-black/5 ${open ? '' : 'hidden'}`}>
+            <div className="max-w-[40rem] mx-auto mt-16 min-h-[35rem] bg-white shadow-md p-4 rounded-md flex flex-col">
                 <div className="top flex justify-between items-center">
                     {
                         setName &&

@@ -7,7 +7,7 @@ export default function SongCard({cover,audio,title,artist,setPlaySong,playSong,
 		<div className="w-[22rem] min-h-[25rem] shadow-md border border-gray-100 rounded mx-4 my-5 relative p-3">
 			{
 				deleteSong && <div className="absolute top-3 right-3">
-					<button onClick={() => deleteSong(_id)} className="p-2 rounded-full text-red-400 hover:text-white hover:bg-red-400"><MdDelete size={20}/></button>
+					<button onClick={() => deleteSong(_id)} className="p-2 rounded-full text-red-400 hover:text-white hover:bg-red-400 flex items-center" ><MdDelete size={20}/><span className='ml-1 text-gray-700'>delete</span></button>
 				</div>
 			}
 			<div className="w-full h-[18rem] reletive">

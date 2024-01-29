@@ -83,9 +83,9 @@ const TableRow = ({date,time,songsPerAds,_id,songs,deleteSchedule,status}) => (
 			    <button onClick={() => deleteSchedule(_id)} className="p-2 rounded-full text-red-400 hover:text-white hover:bg-red-400"><MdDelete size={20}/></button>
 			    <Link href={`/dashboard/shedules/${_id}`} className="p-2 rounded-full text-green-400 hover:text-white hover:bg-green-400"><MdEdit size={20}/></Link>
 			  </td>
-			: <td className="px-16 py-4 whitespace-nowarp flex gap-4 justify-center">
-			    <button className="p-2 rounded-full text-red-400 " style={{opacity: 0.7,cursor: 'not-allowed'}}><MdDelete size={20}/></button>
-			    <button className="p-2 rounded-full text-green-400 " style={{opacity: 0.7,cursor: 'not-allowed'}}><MdEdit size={20}/></button>
+			: <td className="px-16 py-4 whitespace-nowarp flex gap-7 justify-center">
+			    <button className="p-2 rounded-full flex items-center text-red-400 " style={{opacity: 0.7,cursor: 'not-allowed'}}><MdDelete size={20}/><span className='ml-3 text-gray-700'>delete</span></button>
+			    <button className="p-2 rounded-full flex items-center text-green-400 " style={{opacity: 0.7,cursor: 'not-allowed'}}><MdEdit size={20}/><span className='ml-3 text-gray-700'>edit</span></button>
 			  </td>
 	  }
 	  

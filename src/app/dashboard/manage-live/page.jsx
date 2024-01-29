@@ -65,10 +65,10 @@ export default function Page(){
 	                            </div>        
 	                    </div>
 
-	                        <div className="mr-10 flex items-center gap-4">
-	                        	<button title="delete playlist" onClick={() => deletePlaylist(data._id)} className="p-2 rounded-full text-red-400 hover:text-white hover:bg-red-400"><MdDelete size={20}/></button>
+	                        <div className="mr-10 flex items-center gap-7">
+	                        	<button title="delete playlist" onClick={() => deletePlaylist(data._id)} className="p-2 rounded-full text-red-400 hover:text-white hover:bg-red-400 flex items-center"><MdDelete size={20}/><span className='ml-3 text-gray-700'>delete</span></button>
 	                        	<button className="bg-none border-none outline-none" title="view playlist">
-	                            	<Link href={`/dashboard/manage-live/${data._id}`} className="text-gray-500"><FaArrowUpRightFromSquare size={20}/></Link>
+	                            	<Link href={`/dashboard/manage-live/${data._id}`} className="text-gray-500 flex items-center"><FaArrowUpRightFromSquare size={20}/><span className='ml-3 text-gray-700'>view</span></Link>
 	                            </button>
 	                       </div>
 	        		</div>

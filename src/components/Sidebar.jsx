@@ -288,13 +288,13 @@ function HideLink({show,text,active,alert,icon}){
     const {expanded} = useContext(SidebarContext);
     const {user} = useSelector(store => store.user);
     function handleClick(){
-        toast.info(`You go live only ${user?.djStartTime} to ${user?.djEndTime}`);
+        toast.info(`You can start streaming only ${user?.djStartTime} to ${user?.djEndTime}`);
     }
 
     return(
         <>
             {
-                text === "Go Live" &&
+                text === "Start Streaming" &&
                 <li onClick={handleClick}>
                     <a href={''} className={` 
                         relative flex items-center py-2 px-3 my-1

@@ -184,11 +184,14 @@ export default function page({ params }) {
 					</div>
 				</div>
 				<div className="w-full px-2 pt-1 mt-2 flex justify-between items-center">
-					<button className="bg-indigo-500 disabled:bg-indigo-300 p-2 rounded-full border-none outline-none text-white" disabled={!roomActive} onClick={handlePlay}>
-						{
-							isPlay ? <FaPause /> : <FaPlay />
-						}
-					</button>
+					<div className='flex items-center gap-3'>
+						<button className="bg-indigo-500 disabled:bg-indigo-300 p-2 rounded-full border-none outline-none text-white" disabled={!roomActive} onClick={handlePlay}>
+							{
+								isPlay ? <FaPause /> : <FaPlay />
+							}
+						</button>
+						<span className='text-lg text-gray-700'>Listen Now</span>
+					</div>
 
 					<div className="w-[50%] flex items-center">
 						<button className="text-gray-300 mr-3" onClick={() => volume === 0 ? setVolume(0.5) : setVolume(0)}>

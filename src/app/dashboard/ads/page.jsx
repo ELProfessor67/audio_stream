@@ -69,11 +69,14 @@ export default function page(){
 
 	      <div className="flex justify-start items-center flex-wrap">
 	        {
-	          songs.map((data) => (
+	          songs.length != 0 ?  songs.map((data) => (
 	            <>
 	              <SongCard {...data} setPlaySong={setPlaySong} playSong={playSong} deleteSong={deleteSong}/>
 	            </>
 	          ))
+			  : <h1 className='text-center text-xl text-gray-700 mt-10'>
+					No ads Here
+			  </h1>
 	        }
 	      </div>
 	      <audio ref={songRef} className="hidden"></audio>

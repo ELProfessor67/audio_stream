@@ -55,7 +55,7 @@ export default function Page(){
 		      	</div>
 		      </div>
 		      <div className="max-w-[55rem] m-auto reletive">
-		      	{playlists.map(data => (
+		      	{playlists.length != 0 ?  playlists.map(data => (
 		      		<div className="flex justify-between items-center my-2 py-1 border-b border-gray-100">
 	        			<div className="flex items-center gap-4">
 	                            <Image src={data?.songs[0]?.cover} width={200} height={200} alt="cover" className="h-[8rem] w-32 object-conver rounded"/> 
@@ -72,7 +72,9 @@ export default function Page(){
 	                            </button>
 	                       </div>
 	        		</div>
-		      	))}
+		      	)): <h1 className='text-center text-xl text-gray-700 mt-10'>
+				  No Playlists Here
+				</h1>}
 		      </div>
 		    </section>
 		</>

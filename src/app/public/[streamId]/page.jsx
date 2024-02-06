@@ -179,8 +179,8 @@ export default function page({ params }) {
 						<div>
 							<span className="px-5 py-1 rounded-3xl bg-indigo-500 text-white">{isLive ? 'LIVE' : 'AUTO DJ'}</span>
 						</div>
-						<h3 className="text-xl para">Zeeshan Raza</h3>
-						<h4 className="text-sm opacity-40">You'Listen Zeeshan Raza Radio Channel</h4>
+						<h3 className="text-xl para">{user?.name}</h3>
+						<h4 className="text-sm opacity-40">You'Listen {user?.name} Radio Channel</h4>
 					</div>
 				</div>
 				<div className="w-full px-2 pt-1 mt-2 flex justify-between items-center">

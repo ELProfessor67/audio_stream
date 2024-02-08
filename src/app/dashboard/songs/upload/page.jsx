@@ -24,6 +24,7 @@ const page = () => {
     const [duration,setDuration] = useState(0);
     const dispatch = useDispatch();
     const [album,setAlbum] = useState('');
+    const [loadPerc,setLoadPerc] = useState(0);
 
 
     const handleSubmit = async (e) => {
@@ -31,7 +32,12 @@ const page = () => {
         // console.log('submit',{title,description,artist,size,type,audiofile,cover})
         setLoading(true);
         try{
-            const {data} = await axios.post('/api/v1/song',{audioEx,coverEx,title,description,artist,size,type,cover,audio: audiofile,duration,album});
+            const {data} = await axios.post('/api/v1/song',{audioEx,coverEx,title,description,artist,size,type,cover,audio: audiofile,duration,album},{
+                onUploadProgress: (ProgressEvent) => {
+                    const progress = Math.round((ProgressEvent.loaded * 100) / ProgressEvent.total);
+                    setLoadPerc(progress);
+                }
+            });
             setTitle('');
             setDescription('');
             setArtist('');
@@ -45,6 +51,7 @@ const page = () => {
             await dispatch(showError(error.response.data.message));
             await dispatch(clearError());
         }
+        setLoadPerc(0);
         setLoading(false);
 
     }
@@ -134,7 +141,7 @@ const page = () => {
                     
 
                     <div className='flex justify-center items-center'>
-                        <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>{!loading ? 'Upload' : 'Loading...'}</button>
+                        <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>{!loading ? 'Upload' : `${loadPerc}%`}</button>
                     </div>
                 </form>
             </div>

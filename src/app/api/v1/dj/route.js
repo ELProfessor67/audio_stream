@@ -5,7 +5,7 @@ import { auth } from "@/middleswares/auth";
 
 
 export const POST = connectDB(auth(async function (req){
-        const {name,email,password,permissions,starttime,endtime} = await req.json();
+        const {name,email,password,permissions,starttime,endtime,djDate} = await req.json();
 
         // console.log(name,email,password,permissions)
 
@@ -31,6 +31,7 @@ export const POST = connectDB(auth(async function (req){
             isSubscriber: owner.isSubscriber,
             djStartTime: starttime,
             djEndTime: endtime,
+            djDate
         }
         const user = await userModel.create(userData);
 

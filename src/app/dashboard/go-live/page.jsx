@@ -237,10 +237,11 @@ export default function () {
 	// },[selectedSong]);
 
 	function getHistory() {
-		let history = window.localStorage.getItem('history');
+		const userhistoryname = `${user?.email}-history`;
+		let history = window.localStorage.getItem(userhistoryname);
 		if (!history) {
-			window.localStorage.setItem('history', '[]');
-			history = window.localStorage.getItem('history');
+			window.localStorage.setItem(userhistoryname, '[]');
+			history = window.localStorage.getItem(userhistoryname);
 		}
 		// console.info('history',history)
 		const parseQue = JSON.parse(history);
@@ -250,23 +251,26 @@ export default function () {
 	}
 
 	function setHistory(data) {
+		const userhistoryname = `${user?.email}-history`;
 		const date = new Date();
 		const hour = date.getHours();
 		const min = date.getMinutes();
 		const sec = date.getSeconds();
 		data.time = `${hour}:${min}:${sec}`;
 		data.createdAt = new Date(Date.now())
-		const history = window.localStorage.getItem('history');
+		const history = window.localStorage.getItem(userhistoryname);
 		let parseQue = JSON.parse(history);
 		parseQue = [data, ...parseQue];
 		let stringifyQue = JSON.stringify(parseQue);
-		window.localStorage.setItem('history', stringifyQue);
+		window.localStorage.setItem(userhistoryname, stringifyQue);
 		getHistory();
 	}
 
 	useEffect(() => {
-		getHistory();
-	}, [])
+		if(user){
+			getHistory();
+		}
+	}, [user])
 
 
 
@@ -688,6 +692,27 @@ export default function () {
 		})
 	}
 
+	const isAllow = (permissionName) => {
+        if(user?.isDJ){
+            if(user?.djPermissions.includes(permissionName)){
+                if(permissionName === 'live'){
+                    const isTimeRange = checkInTimeRange(user?.djStartTime,user?.djEndTime);
+                    return isTimeRange;
+                }else{
+                    return true
+                }   
+            }else{
+               return false
+            }
+        }else{
+            if(permissionName === 'playlists'){
+                return false
+            }else{
+                return true
+            } 
+        }
+    }
+
 	return (
 		<>
 			<section className="w-full py-5 px-4 reletive">
@@ -997,10 +1022,16 @@ export default function () {
 
 								<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => setsopen(true)}><IoSearch size={25} /><span className="ml-2 text-white text-xl">{user?.isDJ ? 'Search DJ Playlist' : 'Search Admin Playlist'}</span></button>
 
+								{
+									isAllow('songs') &&
+									<>
+										<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => document.getElementById('audio').click()}>{fileload == 0 ? 'Upload' : `${fileload}%`}</button>
 
-								<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => document.getElementById('audio').click()}>{fileload == 0 ? 'Upload' : `${fileload}%`}</button>
+										<input type="file" accept="audio/*" className="hidden" id="audio" onChange={handleUpload} />
+									</>
+								}
 
-								<input type="file" accept="audio/*" className="hidden" id="audio" onChange={handleUpload} />
+								
 							</div>
 							<div className="rounded-b-md shadow-md p-3 px-0 h-[21rem] overflow-x-auto">
 								{playlists.map(data => (
@@ -1116,10 +1147,15 @@ export default function () {
 
 								<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => fsetsopen(true)}><IoSearch size={25} /><span className="ml-2 text-white text-xl">{user?.isDJ ? 'Search DJ Filter' : 'Search Admin Filter'}</span></button>
 
+								{
+									isAllow('songs') &&
+									<>
+										<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => document.getElementById('filter').click()}>{filterload == 0 ? 'Upload' : `${filterload}%`}</button>
 
-								<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => document.getElementById('filter').click()}>{filterload == 0 ? 'Upload' : `${filterload}%`}</button>
-
-								<input type="file" accept="audio/*" className="hidden" id="filter" onChange={handleFilterUpload} />
+										<input type="file" accept="audio/*" className="hidden" id="filter" onChange={handleFilterUpload} />
+									</>
+								}
+								
 							</div>
 							<div className="py-2 rounded-b-md shadow-md p-3 h-[21rem] overflow-x-auto">
 								{effectsong?.map(data => (

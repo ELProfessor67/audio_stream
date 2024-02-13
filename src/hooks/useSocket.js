@@ -631,21 +631,21 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	},[socketRef.current]);
 
 
-	// useEffect(() => {
-	// 	function confirmReload(event) {
-    //         var confirmationMessage = "Are you sure you want to stop streaming?";
+	useEffect(() => {
+		function confirmReload(event) {
+            var confirmationMessage = "Are you sure you want to stop streaming?";
 
-    //         // For modern browsers
-    //         event.returnValue = confirmationMessage;
-    //         return confirmationMessage;
-    //     }
+            // For modern browsers
+            event.returnValue = confirmationMessage;
+            return confirmationMessage;
+        }
 
-	// 	window.addEventListener('beforeunload', confirmReload);
+		window.addEventListener('beforeunload', confirmReload);
 
-	// 	return () => {
-	// 		window.removeEventListener('beforeunload', confirmReload);
-	// 	}
-	// },[])
+		return () => {
+			window.removeEventListener('beforeunload', confirmReload);
+		}
+	},[])
 
 	const handleShare = async () => {
 		const url = `${window.location.origin}/public/${user?._id}`;

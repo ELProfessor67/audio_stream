@@ -16,11 +16,26 @@ import {logout} from '@/redux/action/user';
 import {useDispatch,useSelector} from 'react-redux';
 import {GiMusicalScore} from 'react-icons/gi'
 import {toast} from 'react-toastify';
+import { current } from '@reduxjs/toolkit'
 
 
-function checkInTimeRange(startTime,endTime){
+function isToday(year,month,date){
+    const Currntdate = new Date();
+    if(+year == Currntdate.getFullYear() && +month == Currntdate.getMonth()+1 && +date == Currntdate.getDate()){
+        return true;
+    }else{
+        return false;
+    }
+}
+
+
+function checkInTimeRange(startTime,endTime,date){
     const currentHour = new Date().getHours();
     const currentMinute = new Date().getMinutes();
+
+    // check date 
+    const [userYear,userMonth,userDate] = date.split('-');
+  
 
     const rangeStartHour = +startTime.split(':')[0];
     const rangeStartMinute = +startTime.split(':')[1];
@@ -32,7 +47,12 @@ function checkInTimeRange(startTime,endTime){
 
     console.log('range',timeInRange)
 
-    return timeInRange;
+    if(isToday(userYear,userMonth,userDate) && timeInRange){
+        return true;
+    }else{
+        return false;
+    }
+    // return timeInRange;
 }
 
 
@@ -82,7 +102,7 @@ export const SidebarBody = ({children}) => {
 }
 
 
-export function SidebarItem({icon,text,active,alert,link='/',onClick}){
+export function SidebarItem({icon,text,active,alert,link='/',onClick,desc}){
     const {expanded} = useContext(SidebarContext);
     return(<>
         <li onClick={onClick}>
@@ -97,9 +117,9 @@ export function SidebarItem({icon,text,active,alert,link='/',onClick}){
                 }
             `}>
                 {icon}
-                <span className={`overflow-hidden transition-all ${
+                <span className={`overflow-hidden transition-all flex justify-between items-center ${
                     expanded ? "w-52 ml-3": "w-0"
-                }`}>{text}</span>
+                }`}>{text} <button className='text-sm w-4 h-4 rounded-full bg-gray-300 text-gray-800' title={desc}>?</button></span>
                 {
                     alert && (
                         <div className={`absolute right-2 w-2 h-2 rounded-full bg-indigo-400 ${
@@ -131,7 +151,7 @@ export default function Sidebar(){
         if(user?.isDJ){
             if(user?.djPermissions.includes(permissionName)){
                 if(permissionName === 'live'){
-                    const isTimeRange = checkInTimeRange(user?.djStartTime,user?.djEndTime);
+                    const isTimeRange = checkInTimeRange(user?.djStartTime,user?.djEndTime,user?.djDate);
                     return isTimeRange;
                 }else{
                     return true
@@ -156,41 +176,46 @@ export default function Sidebar(){
             alert: false,
             active: pathname == '/dashboard',
             link: '/dashboard',
-            show: isAllow('dashboard')
+            show: isAllow('dashboard'),
+            desc: "overview of channel"
         },
         {
             icon: <BsCloudUpload size={30}/>,
-            text: "Uploads Song",
+            text:  `${user?.isDJ ? 'DJ' : 'Admin'} Uploads Song`,
             alert: false,
             active: pathname == '/dashboard/songs/upload',
             link: '/dashboard/songs/upload',
-            show: isAllow('songs')
+            show: isAllow('songs'),
+            desc: "You are able to upload your songs"
     
         },
         {
             icon: <GiLoveSong size={30}/>,
-            text: "My Uploaded Songs",
+            text: `${user?.isDJ ? 'DJ' : 'Admin'} Uploaded Songs`,
             alert: false,
             active: pathname == '/dashboard/songs',
             link: '/dashboard/songs',
-            show: true
+            show: true,
+            desc: "All your uploaded songs will display here"
         },
         {
             icon: <MdPlaylistAdd size={30}/>,
-            text: "Create Playlists",
+            text: `${user?.isDJ ? 'DJ' : 'Admin'} Create Playlist`,
             alert: false,
             active: pathname == '/dashboard/playlist-create',
             link: '/dashboard/playlist-create',
-            show: true
+            show: true,
+            desc: "You are able to add your songs in the form of playlist to arrange them well"
     
         },
         {
             icon: <BsMusicNoteList size={30}/>,
-            text: "My Created Playlists",
+            text: `${user?.isDJ ? 'DJ' : 'Admin'}  Created Playlists`,
             alert: false,
             active: pathname == '/dashboard/playlist',
             link: '/dashboard/playlist',
-            show: true
+            show: true,
+            desc: "All your created playlists will display here"
         },
         {
             icon: <MdOutlineAdminPanelSettings size={30}/>,
@@ -198,7 +223,8 @@ export default function Sidebar(){
             alert: false,
             active: pathname == '/dashboard/playlist-admin',
             link: '/dashboard/playlist-admin',
-            show: isAllow('playlists')
+            show: isAllow('playlists'),
+            desc: "You are able to copy admin playlists"
     
         },
        
@@ -209,7 +235,8 @@ export default function Sidebar(){
             alert: false,
             active: pathname == '/dashboard/shedules',
             link: '/dashboard/shedules',
-            show: isAllow("schedules")
+            show: isAllow("schedules"),
+            desc: "You are able to create schedules"
         },
         {
             icon: <PiUsersThreeDuotone size={30}/>,
@@ -217,7 +244,8 @@ export default function Sidebar(){
             alert: false,
             active: pathname == '/dashboard/team',
             link: '/dashboard/team',
-            show: isAllow('team')
+            show: isAllow('team'),
+            desc: "Admin is able to add djs from here and to assign time and date to djs"
         },
         {
             icon: <LiaAdSolid size={30}/>,
@@ -225,7 +253,8 @@ export default function Sidebar(){
             alert: false,
             active: pathname == '/dashboard/ads',
             link: '/dashboard/ads',
-            show: isAllow('ads')
+            show: isAllow('ads'),
+            desc: "You is able to add Ads Jingles"
         },
         {
             icon: <GiMusicalScore size={30}/>,
@@ -233,7 +262,8 @@ export default function Sidebar(){
             alert: false,
             active: pathname == '/dashboard/filter',
             link: '/dashboard/filter',
-            show: true
+            show: true,
+            desc: "Admin is able to add Filter effects"
         },
         {
             icon: <BsMailbox size={30}/>,
@@ -241,8 +271,8 @@ export default function Sidebar(){
             alert: true,
             active: pathname == '/dashboard/manage-live',
             link: '/dashboard/manage-live',
-            show: true
-    
+            show: true,
+            desc: "You can create a playlist before going to live which will be shown to during streaming"
         },
         {
             icon: <CiStreamOn size={30}/>,
@@ -250,7 +280,8 @@ export default function Sidebar(){
             alert: false,
             active: pathname == '/dashboard/go-live',
             link: '/dashboard/go-live',
-            show: isAllow("live")
+            show: isAllow("live"),
+            desc: "You are able to streaming"
         },
         {
             icon: <FiSettings size={30}/>,
@@ -258,7 +289,8 @@ export default function Sidebar(){
             alert: false,
             active: pathname == '/dashboard/welcome-tone',
             link: '/dashboard/welcome-tone',
-            show: true
+            show: true,
+            desc: "You can create own welcome tone"
         },
         {
             icon: <FiSettings size={30}/>,
@@ -266,7 +298,8 @@ export default function Sidebar(){
             alert: false,
             active: pathname == '/dashboard/ending-tone',
             link: '/dashboard/ending-tone',
-            show: true
+            show: true,
+            desc: "You can create own ending tone"
         },
         
     ]
@@ -288,7 +321,9 @@ function HideLink({show,text,active,alert,icon}){
     const {expanded} = useContext(SidebarContext);
     const {user} = useSelector(store => store.user);
     function handleClick(){
-        toast.info(`You can start streaming only ${user?.djStartTime} to ${user?.djEndTime}`);
+        toast.info(`You can start streaming only ${user?.djStartTime} to ${user?.djEndTime}`,{
+            position: "top-center"
+        });
     }
 
     return(
@@ -298,7 +333,7 @@ function HideLink({show,text,active,alert,icon}){
                 <li onClick={handleClick}>
                     <button className={` 
                         relative flex items-center py-2 px-3 my-1
-                        font-medium rounded-md cursor-pointer
+                        font-medium rounded-md
                         transition-colors
                         text-gray-300 cursor-[not-allowed]
                         ${
@@ -310,7 +345,7 @@ function HideLink({show,text,active,alert,icon}){
                         {icon}
                         <span className={`overflow-hidden transition-all ${
                             expanded ? "w-52 ml-3": "w-0"
-                        }`}>{text}</span>
+                        }`}>{user.djDate} / {user.djStartTime}-{user?.djEndTime}</span>
                         {
                             alert && (
                                 <div className={`absolute right-2 w-2 h-2 rounded-full bg-indigo-400 ${

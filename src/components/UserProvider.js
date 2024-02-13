@@ -5,9 +5,22 @@ import { useDispatch,useSelector } from 'react-redux'
 import { loadme } from '@/redux/action/user'
 import {toast} from 'react-toastify';
 
-function checkInTimeRange(startTime,endTime){
+function isToday(year,month,date){
+    const Currntdate = new Date();
+    if(+year == Currntdate.getFullYear() && +month == Currntdate.getMonth()+1 && +date == Currntdate.getDate()){
+        return true;
+    }else{
+        return false;
+    }
+}
+
+function checkInTimeRange(startTime,endTime,date){
     const currentHour = new Date().getHours();
     const currentMinute = new Date().getMinutes();
+
+    // check date 
+    const [userYear,userMonth,userDate] = date.split('-');
+  
 
     const rangeStartHour = +startTime.split(':')[0];
     const rangeStartMinute = +startTime.split(':')[1];
@@ -19,7 +32,12 @@ function checkInTimeRange(startTime,endTime){
 
     console.log('range',timeInRange)
 
-    return timeInRange;
+    if(isToday(userYear,userMonth,userDate) && timeInRange){
+        return true;
+    }else{
+        return false;
+    }
+    // return timeInRange;
 }
 
 const UserProvider = ({children}) => {
@@ -33,7 +51,7 @@ const UserProvider = ({children}) => {
 
     useEffect(() => {
         if(user?.isDJ){
-            const isRange = checkInTimeRange(user?.djStartTime,user?.djEndTime);
+            const isRange = checkInTimeRange(user?.djStartTime,user?.djEndTime,user?.djDate);
             if(isRange && !ref.current){
                 ref.current = setInterval(function(){
                     const currentHour = new Date().getHours();

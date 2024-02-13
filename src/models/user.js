@@ -27,6 +27,7 @@ const userSchema = new mongoose.Schema({
     djPermissions: [{type: String,enum: ['songs','playlists','schedules','live','dashboard','requests','ads']}],
     djStartTime: {type: String,default: undefined},
     djEndTime: {type: String,default: undefined},
+    djDate: {type: String,default: undefined},
     welcomeTone: {type: String,default: undefined},
     endingTone: {type: String,default: undefined}
 },{timestamps: true});

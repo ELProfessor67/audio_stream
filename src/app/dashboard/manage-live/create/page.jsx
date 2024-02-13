@@ -20,7 +20,7 @@ export default function Page(){
     // console.log(seletdSongs)
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        e?.preventDefault();
         setLoading(true);
         try{
             if(!title || !description) return
@@ -57,7 +57,8 @@ export default function Page(){
 	      async function(){
 	        try{
 	          const {data} = await axios.get('/api/v1/song');
-	          setSongs(data?.songs);
+              const {data:adata} = await axios.get('/api/v1/ads');
+	          setSongs([...data?.songs,...adata.songs]);
 	        }catch(err){
 	          console.log(err.response.data.message);
 	        }
@@ -104,7 +105,7 @@ export default function Page(){
                 </form>
             </div>
         </div>
-        <Dialog open={open} onClose={() => setOpen(false)} seletdSongs={seletdSongs}>
+        <Dialog open={open} onClose={() => setOpen(false)} seletdSongs={seletdSongs} save={() => {setOpen(false);handleSubmit();}}>
         	{
         		songs && songs.map((data) => (
         			<div className="flex justify-between items-center my-6">

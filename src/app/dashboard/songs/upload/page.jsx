@@ -60,6 +60,9 @@ const page = () => {
         const [file] = e.target.files;
 
         const reader = new FileReader();
+        if(!title){
+            setTitle(file.name.split('.')[0]);
+        }
 
         reader.onload = function(){
             if(reader.readyState == 2){

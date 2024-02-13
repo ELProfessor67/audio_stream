@@ -9,6 +9,8 @@ import axios from 'axios';
 import Dialog from '@/components/Dialog';
 import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert';
 import {useDispatch} from 'react-redux';
+import { BsCalendarDate, BsClock, BsMailbox } from 'react-icons/bs';
+import { FaAccessibleIcon, FaLock } from 'react-icons/fa6';
 
 const page = () => {
     const [name,setName] = useState('');
@@ -18,6 +20,7 @@ const page = () => {
     const [selectPermission,setSelectedPermission] = useState(['live','dashboard']);
     const [starttime,setStarttime] = useState();
     const [endtime,setEndtime] = useState();
+    const [djDate,setdjDate] = useState('');
     const [loading, setLoading] = useState(false);
 
     const permissions = ['songs','playlists','schedules','live','dashboard','requests','ads'];
@@ -40,7 +43,7 @@ const page = () => {
         
         setLoading(true);
         try{
-            const {data} = await axios.post('/api/v1/dj',{name,email,password,permissions: selectPermission,starttime,endtime});
+            const {data} = await axios.post('/api/v1/dj',{name,email,password,permissions: selectPermission,starttime,endtime,djDate});
             setName('');
             setEmail('');
             setPassword('');
@@ -77,7 +80,7 @@ const page = () => {
                     <div className='input-group flex flex-col gap-1 mb-6'>
                         <label for="email" className='text-black text-lg'>Email</label>
                         <div className='flex items-center relative  py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                            <MdOutlineSubtitles size={20} className='text-gray-400'/>
+                            <BsMailbox size={20} className='text-gray-400'/>
                             <input type='email' value={email} onChange={(e) => setEmail(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter dj email' id='email' name='email' required/>
                         </div>
                     </div>
@@ -85,7 +88,7 @@ const page = () => {
                     <div className='input-group flex flex-col gap-1 mb-6'>
                         <label for="password" className='text-black text-lg'>Password</label>
                         <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                            <FaUserAlt size={20} className='text-gray-400'/>
+                            <FaLock size={20} className='text-gray-400'/>
                             <input type='text' value={password} onChange={(e) => setPassword(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter dj password' id='password' name='password' required/>
                         </div>   
                     </div>
@@ -93,7 +96,7 @@ const page = () => {
                     <div className='input-group flex flex-col gap-1 mb-6'>
                         <label for="permissions" className='text-black text-lg'>Permissions</label>
                         <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                            <FaUserAlt size={20} className='text-gray-400'/>
+                            <FaAccessibleIcon size={20} className='text-gray-400'/>
                             <button type="button" className="w-full h-full text-gray-400 text-left bg-none border-none outline-none px-1" onClick={() => setOpen(true)}>
                             	 {
                             	 	selectPermission.length != 0
@@ -108,9 +111,17 @@ const page = () => {
                         selectPermission.includes('live') &&
                         <>
                             <div className='input-group flex flex-col gap-1 mb-6'>
+                                <label for="endtime" className='text-black text-lg'>Live Date</label>
+                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                    <BsCalendarDate size={20} className='text-gray-400'/>
+                                    <input type='date' value={djDate} onChange={(e) => setdjDate(e.target.value)} className='w-[95%] outline-none ml-1' id='endtime' name='endtime' required/>
+                                </div>   
+                            </div>
+
+                            <div className='input-group flex flex-col gap-1 mb-6'>
                                 <label for="starttime" className='text-black text-lg'>Live Start Time</label>
                                 <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                                    <FaUserAlt size={20} className='text-gray-400'/>
+                                    <BsClock size={20} className='text-gray-400'/>
                                     <input type='time' value={starttime} onChange={(e) => setStarttime(e.target.value)} className='w-[95%] outline-none ml-1' id='starttime' name='starttime' required/>
                                 </div>   
                             </div>
@@ -118,7 +129,7 @@ const page = () => {
                             <div className='input-group flex flex-col gap-1 mb-6'>
                                 <label for="endtime" className='text-black text-lg'>Live End Time</label>
                                 <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                                    <FaUserAlt size={20} className='text-gray-400'/>
+                                    <BsClock size={20} className='text-gray-400'/>
                                     <input type='time' value={endtime} onChange={(e) => setEndtime(e.target.value)} className='w-[95%] outline-none ml-1' id='endtime' name='endtime' required/>
                                 </div>   
                             </div>

@@ -67,15 +67,30 @@ export default function page(){
 	)
 }
 
+const daysObject = {
+    0: "Sunday",
+    1: "Monday",
+    2: "Tuesday",
+    3: "Wednesday",
+    4: "Thursday",
+    5: "Friday",
+    6: "Saturday"
+};
 
-const TableRow = ({name,email,djPermissions,_id,djStartTime,djEndTime,deleteTeam,djDate}) => (
+
+const TableRow = ({name,email,djPermissions,_id,djStartTime,djEndTime,deleteTeam,djDate,djTimeInDays,djDays}) => (
 	<tr className="bg-gray-50 font-midium border-b text-sm">
 	  <td className="px-6 py-4 whitespace-nowarp">{name}</td>
 	  <td className="px-6 py-4 whitespace-nowarp">{email}</td>
 	  <td className="px-6 py-4 whitespace-nowarp">
 	      {djPermissions?.map((p,i) => `${i != 0 ? ' ,' : ' '} ${p}`)}
 	  </td>
-	  <td className="px-6 py-4 whitespace-nowarp">{djDate} / {djStartTime} - {djEndTime}</td>
+	  {
+		djTimeInDays ?
+		<td className="px-6 py-4 whitespace-nowarp">{djDays?.map((p,i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]}`)}</td>
+		:<td className="px-6 py-4 whitespace-nowarp">{djDate} / {djStartTime} - {djEndTime}</td>
+	  }
+	  {/* <td className="px-6 py-4 whitespace-nowarp">{djDate} / {djStartTime} - {djEndTime}</td> */}
 	  <td className="px-16 py-4 whitespace-nowarp flex gap-7 justify-center">
 	    <button onClick={() => deleteTeam(_id)} className="p-2 rounded-full flex items-center text-red-400 hover:text-white hover:bg-red-400"><MdDelete size={20}/><span className='ml-3 text-gray-700'>delete</span></button>
 	    <Link href={`/dashboard/team/${_id}`} className="p-2 rounded-full flex items-center text-green-400 hover:text-white hover:bg-green-400"><MdEdit size={20}/><span className='ml-3 text-gray-700'>edit</span></Link>

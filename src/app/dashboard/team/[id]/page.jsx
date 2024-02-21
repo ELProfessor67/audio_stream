@@ -11,17 +11,29 @@ import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert';
 import {useDispatch} from 'react-redux';
 import { BsCalendarDate, BsClock, BsMailbox } from 'react-icons/bs';
 import { FaAccessibleIcon, FaLock } from 'react-icons/fa6';
+import { MultiSelect } from "react-multi-select-component";
 
+const options = [
+    { label: "Sunday", value: 0 },
+    { label: "Monday", value: 1 },
+    { label: "Tuesday", value: 2 },
+    { label: "Wednesday", value: 3 },
+    { label: "Thursday", value: 4 },
+    { label: "Friday", value: 5 },
+    { label: "Saturday", value: 6 }
+];
 
 const page = ({params}) => {
     const [name,setName] = useState('');
     const [email,setEmail] = useState('');
     const [open,setOpen] = useState(false);
-    const [selectPermission,setSelectedPermission] = useState([]);
+    const [selectPermission,setSelectedPermission] = useState(['live']);
     const [starttime,setStarttime] = useState();
     const [endtime,setEndtime] = useState();
     const [loading, setLoading] = useState(false);
     const [djDate,setdjDate] = useState('');
+    const [timeInDays, setTimeInDays] = useState(false);
+    const [selectedDays,setSelectedDays] = useState([]);
 
     const permissions = ['songs','playlists','schedules','live','dashboard','requests','ads'];
     const dispatch = useDispatch();
@@ -43,7 +55,9 @@ const page = ({params}) => {
         setLoading(true);
  
         try{
-            const {data} = await axios.put(`/api/v1/dj/${params.id}`,{name,email,permissions: selectPermission,starttime,endtime,djDate});
+            let djDays = [];
+            selectedDays.forEach((data) => djDays.push(data.value));
+            const {data} = await axios.put(`/api/v1/dj/${params.id}`,{name,email,permissions: selectPermission,starttime,endtime,djDate,djTimeInDays: timeInDays,djDays});
             await dispatch(showMessage(data.message));
             await dispatch(clearMessage());
             console.log(data)
@@ -65,6 +79,11 @@ const page = ({params}) => {
                 setStarttime(data?.team.djStartTime);
                 setEndtime(data?.team.djEndTime);
                 setdjDate(data?.team.djDate);
+                setTimeInDays(data?.team?.djTimeInDays);
+                setSelectedDays([]);
+                const days = data?.team?.djDays;
+                days?.forEach(ele => setSelectedDays(prev => [...prev,options[ele]]));
+                // setSelectedDays();
             }catch(err){
                 console.log(err.response.data.message);
             }
@@ -109,33 +128,86 @@ const page = ({params}) => {
                     </div>
 
                     {
-                        selectPermission.includes('live') &&
-                        <>
-                            <div className='input-group flex flex-col gap-1 mb-6'>
-                                <label for="endtime" className='text-black text-lg'>Live Date</label>
-                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                                    <BsCalendarDate size={20} className='text-gray-400'/>
-                                    <input type='date' value={djDate} onChange={(e) => setdjDate(e.target.value)} className='w-[95%] outline-none ml-1' id='endtime' name='endtime' required/>
-                                </div>   
-                            </div>
+                            selectPermission.includes('live') &&
+                            <>
+                                <div className='input-group items-center flex flex-row gap-1 mb-6'>
+                                    {/* <div class="checkbox-wrapper-61">
+                                        <input type="checkbox" class="check" id="check1-61" checked={timeInDays} onChange={() => setTimeInDays(prev => !prev)} />
+                                        <label for="check1-61" class="label">
+                                            <svg width="35" height="35" viewbox="0 0 95 95" >
+                                                <rect x="30" y="30" width="40" height="40" stroke="black" fill="none" />
+                                                <g transform="translate(0,-952.36222)">
+                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4 " stroke="black" stroke-width="3" fill="none" class="path1" />
+                                                </g>
+                                            </svg>
+                                        </label>
+                                    </div> */}
+                                    <div class="checkbox-wrapper-12">
+                                        <div class="cbx">
+                                            <input id="cbx-12" type="checkbox" checked={timeInDays} onChange={() => setTimeInDays(prev => !prev)}/>
+                                            <label for="cbx-12"></label>
+                                            <svg width="15" height="14" viewbox="0 0 15 14" fill="none">
+                                                <path d="M2 8.36364L6.23077 12L13 2"></path>
+                                            </svg>
+                                        </div>
+                                        
+                                        <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+                                            <defs>
+                                                <filter id="goo-12">
+                                                    <fegaussianblur in="SourceGraphic" stddeviation="4" result="blur"></fegaussianblur>
+                                                    <fecolormatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -7" result="goo-12"></fecolormatrix>
+                                                    <feblend in="SourceGraphic" in2="goo-12"></feblend>
+                                                </filter>
+                                            </defs>
+                                        </svg>
+                                    </div>
+                                    <p className='text-gray-700'>Given Time in Days ?</p>
+                                </div>
+                                {
+                                    timeInDays ?
+                                        (<>
+                                            <div className='input-group flex flex-col gap-1 mb-6'>
+                                                <label for="endtime" className='text-black text-lg'>Live Date</label>
+                                                
+                                                    <MultiSelect
+                                                        options={options}
+                                                        value={selectedDays}
+                                                        onChange={setSelectedDays}
+                                                        labelledBy="Select"
+                                                        className='w-[95%] outline-none ml-1'
+                                                    />
+                                               
+                                            </div>
+                                        </>)
+                                        : <>
+                                            <div className='input-group flex flex-col gap-1 mb-6'>
+                                                <label for="endtime" className='text-black text-lg'>Live Date</label>
+                                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                                    <BsCalendarDate size={20} className='text-gray-400' />
+                                                    <input type='date' value={djDate} onChange={(e) => setdjDate(e.target.value)} className='w-[95%] outline-none ml-1' id='endtime' name='endtime' required />
+                                                </div>
+                                            </div>
 
-                            <div className='input-group flex flex-col gap-1 mb-6'>
-                                <label for="starttime" className='text-black text-lg'>Live Start Time</label>
-                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                                    <BsClock size={20} className='text-gray-400'/>
-                                    <input type='time' value={starttime} onChange={(e) => setStarttime(e.target.value)} className='w-[95%] outline-none ml-1' id='starttime' name='starttime' required/>
-                                </div>   
-                            </div>
+                                            <div className='input-group flex flex-col gap-1 mb-6'>
+                                                <label for="starttime" className='text-black text-lg'>Live Start Time</label>
+                                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                                    <BsClock size={20} className='text-gray-400' />
+                                                    <input type='time' value={starttime} onChange={(e) => setStarttime(e.target.value)} className='w-[95%] outline-none ml-1' id='starttime' name='starttime' required />
+                                                </div>
+                                            </div>
 
-                            <div className='input-group flex flex-col gap-1 mb-6'>
-                                <label for="endtime" className='text-black text-lg'>Live End Time</label>
-                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                                    <BsClock size={20} className='text-gray-400'/>
-                                    <input type='time' value={endtime} onChange={(e) => setEndtime(e.target.value)} className='w-[95%] outline-none ml-1' id='endtime' name='endtime' required/>
-                                </div>   
-                            </div>
-                        </>
-                    }
+                                            <div className='input-group flex flex-col gap-1 mb-6'>
+                                                <label for="endtime" className='text-black text-lg'>Live End Time</label>
+                                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                                    <BsClock size={20} className='text-gray-400' />
+                                                    <input type='time' value={endtime} onChange={(e) => setEndtime(e.target.value)} className='w-[95%] outline-none ml-1' id='endtime' name='endtime' required />
+                                                </div>
+                                            </div>
+                                        </>
+                                }
+
+                            </>
+                        }
 
                     
                     

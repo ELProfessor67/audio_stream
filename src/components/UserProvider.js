@@ -19,14 +19,14 @@ function checkInTimeRange(startTime,endTime,date){
     const currentMinute = new Date().getMinutes();
 
     // check date 
-    const [userYear,userMonth,userDate] = date.split('-');
+    const [userYear,userMonth,userDate] = date?.split('-');
   
 
-    const rangeStartHour = +startTime.split(':')[0];
-    const rangeStartMinute = +startTime.split(':')[1];
+    const rangeStartHour = +startTime?.split(':')[0];
+    const rangeStartMinute = +startTime?.split(':')[1];
 
-    const rangeEndHour = +endTime.split(':')[0];
-    const rangeEndMinute = +endTime.split(':')[1];
+    const rangeEndHour = +endTime?.split(':')[0];
+    const rangeEndMinute = +endTime?.split(':')[1];
 
     const timeInRange = (currentHour > rangeStartHour || (currentHour === rangeStartHour && currentMinute >= rangeStartMinute)) && (currentHour < rangeEndHour || (currentHour === rangeEndHour && currentMinute <= rangeEndMinute));
 
@@ -50,7 +50,8 @@ const UserProvider = ({children}) => {
     },[]);
 
     useEffect(() => {
-        if(user?.isDJ){
+            if(user?.isDJ && !user?.djTimeInDays){
+
             const isRange = checkInTimeRange(user?.djStartTime,user?.djEndTime,user?.djDate);
             if(isRange && !ref.current){
                 ref.current = setInterval(function(){

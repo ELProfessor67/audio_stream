@@ -11,6 +11,17 @@ import Dialog from '@/components/Dialog';
 import { CiSquareQuestion } from 'react-icons/ci'
 import ChatBox from '@/components/ChatBox';
 import Message from '@/components/Message';
+import { MdCall } from "react-icons/md";
+import CallComponents from '@/components/CallComponents';
+
+function toTitleCase(str) {
+	return str.replace(
+		/\w\S*/g,
+		function (txt) {
+			return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+		}
+	);
+}
 
 
 const Timer = ({ timerStart }) => {
@@ -62,8 +73,12 @@ export default function page({ params }) {
 	const [schediles, setSchedules] = useState([]);
 	const [songs, setSongs] = useState([]);
 	const [isPlay, setIsPlay] = useState(false);
-	const [message,setMessage] = useState('');
+	const [message, setMessage] = useState('');
 	const [name, setName] = useState('');
+	const [callOpen, setCallOpen] = useState(false);
+	const [permissionReset,setPermissionReset] = useState(false);
+	// null,processing,accepted,rejected
+	const [callStatus, setCallStatus] = useState(null);
 	// const [soundOff,setSoundOff] = useState(false);
 	const [volume, setVolume] = useState(1);
 	const [record, setRecord] = useState(false);
@@ -73,8 +88,8 @@ export default function page({ params }) {
 	const recordedChunks = useRef([]);
 	const downloadLink = useRef();
 
-	console.log('isPlay from components side', isPlay)
-	const { roomActive, handleRequestSong, isLive, autodj, messageList,handleSendMessage } = useSocketUser(params.streamId, audioRef, name, isPlay, setIsPlay, message,setMessage);
+	// console.log('isPlay from components side', isPlay)
+	const { roomActive, handleRequestSong, isLive, autodj, messageList, handleSendMessage, callAdmin, cutCall } = useSocketUser(params.streamId, audioRef, name, isPlay, setIsPlay, message, setMessage, setCallStatus);
 	// const [more,setMore] = useState(false);
 	const [rOpen, setROPen] = useState(false);
 	console.log(roomActive)
@@ -158,19 +173,32 @@ export default function page({ params }) {
 		}
 	}
 
+	const handleCall = async () => {
+		const audioPermissionStatus = await navigator.permissions.query({ name: 'microphone' });
+		if (audioPermissionStatus.state === 'granted' || audioPermissionStatus.state === 'denied') {
+				setPermissionReset(true);
+				return
+		}
+		setCallOpen(true);
+		if (callStatus == 'processing' || callStatus == 'accepted') return
+		setCallStatus('processing');
+		callAdmin();
+		// handle calling
+	}
 
 	return (
 		<section className="flex justify-center items-center h-[100vh] w-full">
 			<a className="hidden" ref={downloadLink}></a>
 			<div className="w-[38rem] p-4 shadow-md rounded-md border border-gray-100">
 				<div className="flex justify-between items-center relative">
-					<h2 className="text-2xl para">HGC LIVE RADIO</h2>
+					<h2 className="text-2xl para whitespace-pre">HGC LIVE RADIO</h2>
 					<div className="flex items-center">
-						<button className="bg-indigo-500 border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200 mr-5" disabled={!isLive} title="live chat" onClick={() => setChatOpen(true)}>Chat</button>
+						<button className="bg-indigo-500 text-xs border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200 mr-2" disabled={!isLive} title="live chat" onClick={handleCall}>Call</button>
+						<button className="bg-indigo-500 text-xs border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200 mr-2" disabled={!isLive} title="live chat" onClick={() => setChatOpen(true)}>Chat</button>
 
-						<button className="bg-indigo-500 border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200 mr-5" disabled={!isLive} title="record live" onClick={handleRecord}>{record ? <Timer timerStart={record} /> : 'Record'}</button>
+						<button className="bg-indigo-500 text-xs border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200 mr-2" disabled={!isLive} title="record live" onClick={handleRecord}>{record ? <Timer timerStart={record} /> : 'Record'}</button>
 
-						<button className="bg-indigo-500 border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200" disabled={!isLive} title="request for songs play" onClick={() => setROPen(true)}>Request for song</button>
+						<button className="bg-indigo-500 text-xs border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200" disabled={!isLive} title="request for songs play" onClick={() => setROPen(true)}>Request for song</button>
 					</div>
 				</div>
 				<div className="flex items-start py-4 border-b border-gray-200">
@@ -223,11 +251,67 @@ export default function page({ params }) {
 			</Dialog>
 
 
+			{/* mannual  */}
+			<Dialog open={permissionReset} onClose={() => setPermissionReset(false)}>
+				<div className=''>
+					<h2 className='text-center mb-8 text-2xl text-gray-700'>Reset Permission</h2>
+					<ol className='text-lg flex text-gray-600 flex-col gap-3 list-decimal'>
+						<li>1. Click On i button</li>
+						<li><img src='/images/1.png' className='w-[20rem]'/></li>
+						<li>2. Click on the reset permission</li>
+						<li><img src='/images/2.png' className='w-[20rem]'/></li>
+
+						<li>3. click on reload button"</li>
+						<li><img src='/images/3.png' className='w-[20rem]'/></li>
+					</ol>
+				</div>
+			</Dialog>
+
+
 			<ChatBox open={chatOpen} onClose={() => setChatOpen(false)} name={name} setName={setName} message={message} setMessage={setMessage} handleSendMessage={handleSendMessage}>
 				{
-					messageList.map(data => <Message {...data}/>)
+					messageList.map(data => <Message {...data} />)
 				}
 			</ChatBox>
+
+			<CallComponents open={callOpen} onClose={() => setCallOpen(false)} name={name} setName={setName}>
+				<div className='w-full h-full flex flex-col gap-5 justify-center items-center'>
+					<h2 className='text-3xl text-gray-800'>{user?.name && toTitleCase(user?.name)}</h2>
+					{
+						callStatus == 'processing' &&
+						<div className='flex items-center'>
+							<h3 className='text-lg text-gray-500'>Calling</h3>
+							<div class="loading flex gap-1 items-center ml-1">
+								<div class="dot bg-gray-500 w-1 h-1 rounded-full"></div>
+								<div class="dot bg-gray-500 w-1 h-1 rounded-full"></div>
+								<div class="dot bg-gray-500 w-1 h-1 rounded-full"></div>
+							</div>
+						</div>
+					}
+
+					{
+						callStatus == 'accepted' &&
+						<h3 className='text-lg text-gray-500'><Timer timerStart={true} /></h3>
+
+					}
+					{
+						callStatus == 'rejected' &&
+						<h3 className='text-lg text-gray-500'>Call Rejected</h3>
+
+					}
+					{
+						callStatus == 'complete' &&
+						<h3 className='text-lg text-gray-500'>Call Complete</h3>
+
+					}
+					{
+						callStatus == 'rejected' || callStatus == 'complete' ?
+							<button className='p-2 text-green-600 rounded-full bg-gray-200' onClick={handleCall}><MdCall size={23} /></button>
+							:
+							<button className='p-2 text-red-600 rounded-full bg-gray-200' onClick={cutCall}><MdCall size={23} /></button>
+					}
+				</div>
+			</CallComponents>
 		</section>
 	);
 }

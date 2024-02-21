@@ -34,14 +34,14 @@ function checkInTimeRange(startTime,endTime,date){
     const currentMinute = new Date().getMinutes();
 
     // check date 
-    const [userYear,userMonth,userDate] = date.split('-');
+    const [userYear,userMonth,userDate] = date?.split('-');
   
 
-    const rangeStartHour = +startTime.split(':')[0];
-    const rangeStartMinute = +startTime.split(':')[1];
+    const rangeStartHour = +startTime?.split(':')[0];
+    const rangeStartMinute = +startTime?.split(':')[1];
 
-    const rangeEndHour = +endTime.split(':')[0];
-    const rangeEndMinute = +endTime.split(':')[1];
+    const rangeEndHour = +endTime?.split(':')[0];
+    const rangeEndMinute = +endTime?.split(':')[1];
 
     const timeInRange = (currentHour > rangeStartHour || (currentHour === rangeStartHour && currentMinute >= rangeStartMinute)) && (currentHour < rangeEndHour || (currentHour === rangeEndHour && currentMinute <= rangeEndMinute));
 
@@ -151,8 +151,13 @@ export default function Sidebar(){
         if(user?.isDJ){
             if(user?.djPermissions.includes(permissionName)){
                 if(permissionName === 'live'){
-                    const isTimeRange = checkInTimeRange(user?.djStartTime,user?.djEndTime,user?.djDate);
-                    return isTimeRange;
+                    if(user?.djTimeInDays){
+                        return user?.djDays?.includes((new Date().getDay()).toString());
+                    }else{
+                        const isTimeRange = checkInTimeRange(user?.djStartTime,user?.djEndTime,user?.djDate);
+                        return isTimeRange;
+                    }
+                    
                 }else{
                     return true
                 }   
@@ -313,6 +318,16 @@ export default function Sidebar(){
     </SidebarBody>
     </>
 }
+const daysObject = {
+    0: "Sunday",
+    1: "Monday",
+    2: "Tuesday",
+    3: "Wednesday",
+    4: "Thursday",
+    5: "Friday",
+    6: "Saturday"
+};
+
 
 
 
@@ -321,9 +336,16 @@ function HideLink({show,text,active,alert,icon}){
     const {expanded} = useContext(SidebarContext);
     const {user} = useSelector(store => store.user);
     function handleClick(){
-        toast.info(`You can start streaming only ${user?.djStartTime} to ${user?.djEndTime}`,{
-            position: "top-center"
-        });
+        if(user?.djTimeInDays){
+            toast.info(`You can start streaming only ${user?.djDays?.map((p,i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]}`)}`,{
+                position: "top-center"
+            });
+        }else{
+            toast.info(`You can start streaming only ${user?.djStartTime} to ${user?.djEndTime}`,{
+                position: "top-center"
+            });
+        }
+        
     }
 
     return(
@@ -345,7 +367,7 @@ function HideLink({show,text,active,alert,icon}){
                         {icon}
                         <span className={`overflow-hidden transition-all ${
                             expanded ? "w-52 ml-3": "w-0"
-                        }`}>{user.djDate} / {user.djStartTime}-{user?.djEndTime}</span>
+                        }`}>{user.djTimeInDays ? `${user?.djDays?.map((p,i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]}`)}`: `${user.djDate} / ${user.djStartTime}-${user?.djEndTime}`}</span>
                         {
                             alert && (
                                 <div className={`absolute right-2 w-2 h-2 rounded-full bg-indigo-400 ${

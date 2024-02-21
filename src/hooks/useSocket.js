@@ -3,6 +3,7 @@ import {useRef,useEffect,useState} from 'react';
 import {useSelector} from 'react-redux';
 import Peer from 'simple-peer';
 import axios from 'axios';
+import { data } from 'autoprefixer';
 
 const socketInit = () => {
 	const options = {
@@ -49,6 +50,11 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	const [messageList,setMessageList] = useState([]);
 	const [filterBase,setFilterBase] = useState(0);
 	const [songBase,setSongBase] = useState(0);
+	const [callerId,setCallerId] = useState('');
+	const [callComing,setcallComing] = useState(false);
+	const [callerName,setCallerName] = useState('');
+	const [callers,setCallers] = useState([]);
+	const [callDataChange,setCallDataChange] = useState(false);
 	// console.log('voiceComing',voiceComing);
 
 	const micGainNodeRef = useRef();
@@ -77,9 +83,13 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	const mediaRecorderRef = useRef();
 	const combinedStreamRef = useRef();
 	const [recordReady,setRecordingReady] = useState(false);
+	
 
 	const songAnalyserRef = useRef();
 	const filterAnalyserRef = useRef();
+	const callerStreamsRef = useRef({});
+	const callerDetailsRef = useRef({});
+	const callsElementRef = useRef(null);
 
 	useEffect(() => {
 		selectPlayListSongRef.current = selectPlayListSong;
@@ -335,11 +345,62 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 				const filter = audioContext.createMediaStreamSource(filterStreamRef.current);
 				filter.connect(dest);
 			}
+
+			for (let peerId in callerStreamsRef.current) {
+				const userStream = audioContext.createMediaStreamSource(callerStreamsRef.current[peerId]);
+				userStream.connect(dest);
+			}
 			
 			const combinedStream = dest.stream;
 
 		    peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'),combinedStream.getTracks()[0],localStreamRef.current);
         // }
+	}
+
+
+
+	async function addStreamInMain(id){
+		try {
+			const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+		    
+		    const mic = audioContext.createMediaStreamSource(localStreamRef.current);
+
+			
+			const dest = audioContext.createMediaStreamDestination();
+			mic.connect(dest);
+			
+			if(filterStreamRef.current){
+				const filter = audioContext.createMediaStreamSource(filterStreamRef.current);
+				filter.connect(dest);
+			}
+
+			if(songStreamRef.current){
+				const song = audioContext.createMediaStreamSource(songStreamRef.current);
+				song.connect(dest);
+			}
+
+			for (let peerId in callerStreamsRef.current) {
+				const userStream = audioContext.createMediaStreamSource(callerStreamsRef.current[peerId]);
+				userStream.connect(dest);
+			}
+
+			const combinedStream = dest.stream;
+			// peersRef.current[id].addStream(combinedStream);
+
+
+			// recording 
+			recordMediaRef.current.removeTrack(combinedStreamRef.current)
+			combinedStreamRef.current = combinedStream.getTracks()[0];
+			recordMediaRef.current.addTrack(combinedStreamRef.current);
+
+
+			Object.keys(peersRef.current).forEach((peerId) => {
+		        peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'),combinedStream.getTracks()[0],localStreamRef.current);
+		    });
+		} catch (error) {
+			
+		}
+
 	}
 
 
@@ -373,6 +434,17 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
         peersRef.current[data.senderId].on('error', err => {
             console.error('Peer error:', err);
         });
+
+
+		// test
+		peersRef.current[data.senderId].on('stream', (stream) => {
+	        console.log('stream coming');
+			console.log(stream);
+			console.log(peersRef.current[data.senderId].connected);
+			callerStreamsRef.current[data.senderId] = stream;
+			// callsElementRef.current.srcObject = stream;
+			addStreamInMain(data.senderId);
+	    });
 
         peersRef.current[data.senderId].signal(data?.offer);
 
@@ -447,6 +519,12 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 				const filter = audioContext.createMediaStreamSource(filterStreamRef.current);
 				filter.connect(dest);
 			}
+
+			for (let peerId in callerStreamsRef.current) {
+				const userStream = audioContext.createMediaStreamSource(callerStreamsRef.current[peerId]);
+				userStream.connect(dest);
+			}
+
 			const combinedStream = dest.stream;
 
 
@@ -545,6 +623,11 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 				const song = audioContext.createMediaStreamSource(songStreamRef.current);
 				song.connect(dest);
 			}
+
+			for (let peerId in callerStreamsRef.current) {
+				const userStream = audioContext.createMediaStreamSource(callerStreamsRef.current[peerId]);
+				userStream.connect(dest);
+			}
 			const combinedStream = dest.stream;
 
 
@@ -618,10 +701,35 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 			if(peersRef.current[id]){
 				delete peersRef.current[id];
 			}
+
+			if(callerDetailsRef.current[id]){
+				delete callerDetailsRef.current[id];
+				delete callerStreamsRef.current[id];
+				addStreamInMain(id);
+				setCallDataChange(prev => !prev);
+				setcallComing(false);
+			}
 			setNewUser(prev => prev.filter(peerId => peerId != id));
 		})
 
 		socketRef.current?.on('receive-message',handleReceiveMessage);
+
+		socketRef.current?.on('call-coming',(data) => {
+			setCallerId(data.callerID);
+			setcallComing(true);
+			setCallerName(data.name);
+			// peersRef.current[data.callerID].on('stream',(stream) => {
+			// 	window.alert(5);
+			// })
+		})
+
+		socketRef.current?.on('cut-admin',(data) => {
+			delete callerDetailsRef.current[data.callerID];
+			delete callerStreamsRef.current[data.callerID];
+			addStreamInMain(data.callerID);
+			setCallDataChange(prev => !prev);
+			setcallComing(false);
+		})
 
 		return () => {
 			socketRef.current?.off('recieve-request-song');
@@ -631,21 +739,21 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	},[socketRef.current]);
 
 
-	useEffect(() => {
-		function confirmReload(event) {
-            var confirmationMessage = "Are you sure you want to stop streaming?";
+	// useEffect(() => {
+	// 	function confirmReload(event) {
+    //         var confirmationMessage = "Are you sure you want to stop streaming?";
 
-            // For modern browsers
-            event.returnValue = confirmationMessage;
-            return confirmationMessage;
-        }
+    //         // For modern browsers
+    //         event.returnValue = confirmationMessage;
+    //         return confirmationMessage;
+    //     }
 
-		window.addEventListener('beforeunload', confirmReload);
+	// 	window.addEventListener('beforeunload', confirmReload);
 
-		return () => {
-			window.removeEventListener('beforeunload', confirmReload);
-		}
-	},[])
+	// 	return () => {
+	// 		window.removeEventListener('beforeunload', confirmReload);
+	// 	}
+	// },[])
 
 	const handleShare = async () => {
 		const url = `${window.location.origin}/public/${user?._id}`;
@@ -755,8 +863,32 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 		}
 	}
 
+	function handleCallComing(response){
+		socketRef.current?.emit('call-response',{response,callerId});
+		setcallComing(false);
+		if(response){
+			callerDetailsRef.current[callerId] = {
+				name: callerName,
+				callerId
+			}
+		}
+		setCallerId('');
+		setCallerName('');
+	}
 
-	return {socketRef,ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef:newUser,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume,voiceComing,filterStreamloading,songStreamloading,recordMediaRef:mediaRecorderRef,recordReady, continuePlay,setContinuePlay, repeatPlaylist,setRepeatPlaylist,handleSendMessage,messageList,songBase,filterBase}
+	async function handleCallCut(id){
+		socketRef.current?.emit('admin-call-cut',{callerId:id});
+		delete callerDetailsRef.current[id];
+		delete callerStreamsRef.current[id];
+		
+		addStreamInMain(id);
+		setCallDataChange(prev => !prev);
+	}
+
+
+
+
+	return {socketRef,ownerJoin,ownerLeft,micOn,playSong,pauseSong,changeValume,SwitchOn,handleShare,requests,peersRef:newUser,sduration,remaining,progress,handleProgressChange,setProgress,playFilter,pauseFilter,changeFilterValume,fprogress,fremaining,fduration,changeMicValume,voiceComing,filterStreamloading,songStreamloading,recordMediaRef:mediaRecorderRef,recordReady, continuePlay,setContinuePlay, repeatPlaylist,setRepeatPlaylist,handleSendMessage,messageList,songBase,filterBase,callComing,callerName,handleCallComing,callsElementRef,callerDetailsRef, handleCallCut,callDataChange}
 }
 
 export default useSocket;

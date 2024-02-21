@@ -16,7 +16,7 @@ const socketInit = () => {
 	return io(process.env.NEXT_PUBLIC_SOCKET_URL, options);
 }
 
-const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage) => {
+const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,setCallStatus) => {
 	const socketRef = useRef();
 	const peerRef = useRef({});
 	const [owner,setOwner] = useState('');
@@ -30,6 +30,8 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage)
 	const playRef = useRef();
 	const isLiveRef = useRef();
 	const scheduleActiveRef = useRef();
+	const myStreamRef = useRef();
+	
 
 	useEffect(() => {
 		playRef.current = isPlay;
@@ -250,6 +252,26 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage)
 		socketRef.current.on('song-change',handleSongChange)
 		socketRef.current.on('receive-message',handleReceiveMessage);
 
+
+		socketRef.current.on('call-response',(data) => {
+			if(data.response){
+				setCallStatus('accepted');
+				peerRef.current.addStream(myStreamRef.current);
+				
+				
+				console.log(peerRef.current.addStream);
+			}else{
+				setCallStatus('rejected');
+			}
+		});
+
+
+		socketRef.current.on('admin-call-cut',(data) => {
+			myStreamRef.current?.getTracks().forEach(track => track.stop());
+			// peerRef.current.removeStream(myStreamRef.current);
+			setCallStatus('complete');
+		});
+
 		return () => {
 			socketRef.current.off('room-active');
 			socketRef.current.off('room-unactive');
@@ -275,7 +297,25 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage)
 		}
 	}
 
-	return {socketRef,userJoin,roomActive,isLive,handleRequestSong, autodj, handleSendMessage, messageList}
+	
+
+	async function callAdmin (){
+		
+		myStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+		socketRef.current.emit('call-admin',{roomId:streamId,name: name || 'unknown'});
+	}
+
+	async function cutCall(){
+		myStreamRef.current?.getTracks().forEach(track => track.stop());
+		// peerRef.current.removeStream(myStreamRef.current);
+		socketRef.current.emit('cut-admin',{roomId:streamId});
+		setCallStatus('complete');
+	}
+
+
+	
+
+	return {socketRef,userJoin,roomActive,isLive,handleRequestSong, autodj, handleSendMessage, messageList,callAdmin,cutCall}
 }
 
 export default useSocket;

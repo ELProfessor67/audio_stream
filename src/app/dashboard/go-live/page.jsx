@@ -20,6 +20,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { MdDelete, MdAdd } from 'react-icons/md'
 import ChatBox from '@/components/ChatBox';
 import Message from '@/components/Message';
+import { MdCall } from "react-icons/md";
 
 function organizeHistoryByDate(history) {
 	const organizedHistory = {};
@@ -177,15 +178,22 @@ export default function () {
 	const [chatMessage, setChatMessage] = useState('');
 	const [chatOpen, setChatOpen] = useState(false);
 	const [unread, setUnread] = useState(0);
+	const [callers, setCallers] = useState({});
 
 	// console.log(dbackward,dforward)
 
 
 	const dispatch = useDispatch();
 
-	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen);
+	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen);
 
 	// console.info('voiceAcitce',voiceAcitce);
+
+
+	// callers
+	useEffect(() => {
+		setCallers(callerDetailsRef.current);
+	}, [callerDetailsRef.current, callDataChange])
 
 	useEffect(() => {
 		function callback(status) {
@@ -267,7 +275,7 @@ export default function () {
 	}
 
 	useEffect(() => {
-		if(user){
+		if (user) {
 			getHistory();
 		}
 	}, [user])
@@ -693,25 +701,25 @@ export default function () {
 	}
 
 	const isAllow = (permissionName) => {
-        if(user?.isDJ){
-            if(user?.djPermissions.includes(permissionName)){
-                if(permissionName === 'live'){
-                    const isTimeRange = checkInTimeRange(user?.djStartTime,user?.djEndTime);
-                    return isTimeRange;
-                }else{
-                    return true
-                }   
-            }else{
-               return false
-            }
-        }else{
-            if(permissionName === 'playlists'){
-                return false
-            }else{
-                return true
-            } 
-        }
-    }
+		if (user?.isDJ) {
+			if (user?.djPermissions.includes(permissionName)) {
+				if (permissionName === 'live') {
+					const isTimeRange = checkInTimeRange(user?.djStartTime, user?.djEndTime);
+					return isTimeRange;
+				} else {
+					return true
+				}
+			} else {
+				return false
+			}
+		} else {
+			if (permissionName === 'playlists') {
+				return false
+			} else {
+				return true
+			}
+		}
+	}
 
 	return (
 		<>
@@ -976,20 +984,20 @@ export default function () {
 												{
 													songBase < 33.3
 														? (
-															<div className={`w-full transition-allbg-green-600 rounded-b-md`} style={{height: `${songBase}%`}}></div>
+															<div className={`w-full transition-allbg-green-600 rounded-b-md`} style={{ height: `${songBase}%` }}></div>
 														)
 														: songBase > 33.3 && songBase < 66.6 ?
 															(
 																<>
-																	<div className={`w-full transition-all bg-yellow-600`} style={{height: `${songBase-33.3}%`}}></div>
-																	<div className={`w-full transition-all bg-green-600 rounded-b-md`} style={{height: `33.3%`}}></div>
+																	<div className={`w-full transition-all bg-yellow-600`} style={{ height: `${songBase - 33.3}%` }}></div>
+																	<div className={`w-full transition-all bg-green-600 rounded-b-md`} style={{ height: `33.3%` }}></div>
 																</>
 															)
 															: songBase > 66.6 ?
 																(
 																	<>
-																		<div className={`w-full transition-all bg-red-600 rounded-t-md`} style={{height: `${songBase - 66.6}%`}}></div>
-																		<div className={`w-full transition-all h-[${33.3}%] bg-yellow-600`} style={{height: `${33.3}%`}}></div>
+																		<div className={`w-full transition-all bg-red-600 rounded-t-md`} style={{ height: `${songBase - 66.6}%` }}></div>
+																		<div className={`w-full transition-all h-[${33.3}%] bg-yellow-600`} style={{ height: `${33.3}%` }}></div>
 																		<div className={`w-full transition-all h-[33.3%] bg-green-600 rounded-b-md`}></div>
 																	</>
 																) :
@@ -1031,11 +1039,11 @@ export default function () {
 									</>
 								}
 
-								
+
 							</div>
 							<div className="rounded-b-md shadow-md p-3 px-0 h-[21rem] overflow-x-auto">
 								{playlists.map(data => (
-									<div className={`${selectPlayListSong?._id?.toString() === data._id.toString() ? 'bg-gray-100': ''} px-3 flex justify-between items-center my-2 py-1 border-b border-gray-100`}>
+									<div className={`${selectPlayListSong?._id?.toString() === data._id.toString() ? 'bg-gray-100' : ''} px-3 flex justify-between items-center my-2 py-1 border-b border-gray-100`}>
 										<div className="flex items-center gap-4">
 											<Image src={data?.songs[0]?.cover} width={200} height={200} alt="cover" className="w-[5rem] h-[5rem] rounded-md" />
 											<div className="">
@@ -1049,6 +1057,30 @@ export default function () {
 										</div>
 									</div>
 								))}
+							</div>
+						</div>
+
+
+
+						{/* calls  */}
+						<div className="w-full mt-2">
+							<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
+								<h2 className="text-white text-xl text-center">Listeners Calls</h2>
+
+							</div>
+							<div className="rounded-b-md shadow-md p-3 h-[21rem] overflow-x-auto">
+								{/* <audio ref={callsElementRef} controls autoPlay>
+
+								</audio> */}
+								{
+									Object.keys(callers)?.map((key) => (
+										<div className='flex items-center rounded-md py-2 my-4 shadow-sm justify-between'>
+											<h1 className='text-xl to-gray-700'>{callers[key]?.name}</h1>
+											<button className='p-2 text-red-600 rounded-full bg-gray-200' onClick={() => handleCallCut(key)}><MdCall size={23} /></button>
+										</div>
+
+									))
+								}
 							</div>
 						</div>
 					</div>
@@ -1101,20 +1133,20 @@ export default function () {
 												{
 													filterBase < 33.3
 														? (
-															<div className={`w-full transition-allbg-green-600 rounded-b-md`} style={{height: `${filterBase}%`}}></div>
+															<div className={`w-full transition-allbg-green-600 rounded-b-md`} style={{ height: `${filterBase}%` }}></div>
 														)
 														: filterBase > 33.3 && filterBase < 66.6 ?
 															(
 																<>
-																	<div className={`w-full transition-all bg-yellow-600`} style={{height: `${filterBase-33.3}%`}}></div>
-																	<div className={`w-full transition-all bg-green-600 rounded-b-md`} style={{height: `33.3%`}}></div>
+																	<div className={`w-full transition-all bg-yellow-600`} style={{ height: `${filterBase - 33.3}%` }}></div>
+																	<div className={`w-full transition-all bg-green-600 rounded-b-md`} style={{ height: `33.3%` }}></div>
 																</>
 															)
 															: filterBase > 66.6 ?
 																(
 																	<>
-																		<div className={`w-full transition-all bg-red-600 rounded-t-md`} style={{height: `${filterBase - 66.6}%`}}></div>
-																		<div className={`w-full transition-all h-[${33.3}%] bg-yellow-600`} style={{height: `${33.3}%`}}></div>
+																		<div className={`w-full transition-all bg-red-600 rounded-t-md`} style={{ height: `${filterBase - 66.6}%` }}></div>
+																		<div className={`w-full transition-all h-[${33.3}%] bg-yellow-600`} style={{ height: `${33.3}%` }}></div>
 																		<div className={`w-full transition-all h-[33.3%] bg-green-600 rounded-b-md`}></div>
 																	</>
 																) :
@@ -1155,7 +1187,7 @@ export default function () {
 										<input type="file" accept="audio/*" className="hidden" id="filter" onChange={handleFilterUpload} />
 									</>
 								}
-								
+
 							</div>
 							<div className="py-2 rounded-b-md shadow-md p-3 h-[21rem] overflow-x-auto">
 								{effectsong?.map(data => (
@@ -1275,6 +1307,16 @@ export default function () {
 
 
 			</section>
+			{
+				callComing &&
+				<div className='w-[10rem] h-[10rem] absolute left-[calc(50%-5rem)] top-14 bg-white shadow-md rounded-md flex flex-col items-center justify-center gap-6'>
+					<h2 className='text-2xl text-gray-800'>{callerName}</h2>
+					<div className='flex items-center gap-10'>
+						<button className='p-2 text-green-600 rounded-full bg-gray-200' onClick={() => handleCallComing(true)}><MdCall size={23} /></button>
+						<button className='p-2 text-red-600 rounded-full bg-gray-200' onClick={() => handleCallComing(false)}><MdCall size={23} /></button>
+					</div>
+				</div>
+			}
 		</>
 	);
 }

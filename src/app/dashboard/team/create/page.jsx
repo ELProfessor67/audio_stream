@@ -1,49 +1,66 @@
 "use client";
 import React, { useState } from 'react'
 import Image from 'next/image'
-import {MdAlternateEmail,MdAudiotrack,MdKey} from 'react-icons/md'
+import { MdAlternateEmail, MdAudiotrack, MdKey } from 'react-icons/md'
 import Link from 'next/link'
-import {MdOutlineSubtitles,MdDescription, MdPhoto} from 'react-icons/md';
-import {FaUserAlt} from 'react-icons/fa';
+import { MdOutlineSubtitles, MdDescription, MdPhoto } from 'react-icons/md';
+import { FaUserAlt } from 'react-icons/fa';
 import axios from 'axios';
 import Dialog from '@/components/Dialog';
-import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert';
-import {useDispatch} from 'react-redux';
+import { showMessage, showError, clearMessage, clearError } from '@/utils/showAlert';
+import { useDispatch } from 'react-redux';
 import { BsCalendarDate, BsClock, BsMailbox } from 'react-icons/bs';
 import { FaAccessibleIcon, FaLock } from 'react-icons/fa6';
 
-const page = () => {
-    const [name,setName] = useState('');
-    const [email,setEmail] = useState('');
-    const [password,setPassword] = useState('');
-    const [open,setOpen] = useState(false);
-    const [selectPermission,setSelectedPermission] = useState(['live','dashboard']);
-    const [starttime,setStarttime] = useState();
-    const [endtime,setEndtime] = useState();
-    const [djDate,setdjDate] = useState('');
-    const [loading, setLoading] = useState(false);
+import { MultiSelect } from "react-multi-select-component";
 
-    const permissions = ['songs','playlists','schedules','live','dashboard','requests','ads'];
+const options = [
+    { label: "Sunday", value: 0 },
+    { label: "Monday", value: 1 },
+    { label: "Tuesday", value: 2 },
+    { label: "Wednesday", value: 3 },
+    { label: "Thursday", value: 4 },
+    { label: "Friday", value: 5 },
+    { label: "Saturday", value: 6 }
+];
+
+
+const page = () => {
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [open, setOpen] = useState(false);
+    const [selectPermission, setSelectedPermission] = useState(['live', 'dashboard']);
+    const [starttime, setStarttime] = useState();
+    const [endtime, setEndtime] = useState();
+    const [djDate, setdjDate] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [timeInDays, setTimeInDays] = useState(false);
+    const [selectedDays, setSelectedDays] = useState([]);
+
+    const permissions = ['songs', 'playlists', 'schedules', 'live', 'dashboard', 'requests', 'ads'];
     const dispatch = useDispatch();
 
     const handleCheckbox = (permission) => {
-     setSelectedPermission(prev => {
-     	if(prev.includes(permission)){
-     		return prev.filter(ele => ele != permission);
-     	}else{
-     		return [...prev,permission]
-     	}
-     })
+        setSelectedPermission(prev => {
+            if (prev.includes(permission)) {
+                return prev.filter(ele => ele != permission);
+            } else {
+                return [...prev, permission]
+            }
+        })
     }
 
 
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         setLoading(true);
-        try{
-            const {data} = await axios.post('/api/v1/dj',{name,email,password,permissions: selectPermission,starttime,endtime,djDate});
+        try {
+            let djDays = [];
+            selectedDays.forEach((data) => djDays.push(data.value));
+            const { data } = await axios.post('/api/v1/dj', { name, email, password, permissions: selectPermission, starttime, endtime, djDate, djTimeInDays: timeInDays, djDays });
             setName('');
             setEmail('');
             setPassword('');
@@ -54,7 +71,8 @@ const page = () => {
             await dispatch(clearMessage());
 
             console.log(data)
-        }catch(error){
+        } catch (error) {
+            console.log(error.message)
             await dispatch(showError(error.response.data.message));
             await dispatch(clearError());
         }
@@ -62,108 +80,161 @@ const page = () => {
 
     }
 
-  return (
-    <section className='w-full py-5 px-4'>
-        <div className='flex justify-start items-center h-full flex-col'>
-            <h1 className='main-heading mb-10'>Create Team</h1>
-            <div className='w-[40rem] max-w-[40rem] border border-x-gray-100 shadow-md p-3 rounded-md mb-6'>
-                <form className='p-3 px-6' onSubmit={handleSubmit}>
+    return (
+        <section className='w-full py-5 px-4'>
+            <div className='flex justify-start items-center h-full flex-col'>
+                <h1 className='main-heading mb-10'>Create Team</h1>
+                <div className='w-[40rem] max-w-[40rem] border border-x-gray-100 shadow-md p-3 rounded-md mb-6'>
+                    <form className='p-3 px-6' onSubmit={handleSubmit}>
 
-                	<div className='input-group flex flex-col gap-1 mb-6'>
-                        <label for="name" className='text-black text-lg'>Name</label>
-                        <div className='flex items-center relative  py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                            <MdOutlineSubtitles size={20} className='text-gray-400'/>
-                            <input type='text' value={name} onChange={(e) => setName(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter dj name' id='name' name='name' required/>
+                        <div className='input-group flex flex-col gap-1 mb-6'>
+                            <label for="name" className='text-black text-lg'>Name</label>
+                            <div className='flex items-center relative  py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                <MdOutlineSubtitles size={20} className='text-gray-400' />
+                                <input type='text' value={name} onChange={(e) => setName(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter dj name' id='name' name='name' required />
+                            </div>
                         </div>
-                    </div>
 
-                    <div className='input-group flex flex-col gap-1 mb-6'>
-                        <label for="email" className='text-black text-lg'>Email</label>
-                        <div className='flex items-center relative  py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                            <BsMailbox size={20} className='text-gray-400'/>
-                            <input type='email' value={email} onChange={(e) => setEmail(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter dj email' id='email' name='email' required/>
+                        <div className='input-group flex flex-col gap-1 mb-6'>
+                            <label for="email" className='text-black text-lg'>Email</label>
+                            <div className='flex items-center relative  py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                <BsMailbox size={20} className='text-gray-400' />
+                                <input type='email' value={email} onChange={(e) => setEmail(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter dj email' id='email' name='email' required />
+                            </div>
                         </div>
-                    </div>
 
-                    <div className='input-group flex flex-col gap-1 mb-6'>
-                        <label for="password" className='text-black text-lg'>Password</label>
-                        <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                            <FaLock size={20} className='text-gray-400'/>
-                            <input type='text' value={password} onChange={(e) => setPassword(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter dj password' id='password' name='password' required/>
-                        </div>   
-                    </div>
-
-                    <div className='input-group flex flex-col gap-1 mb-6'>
-                        <label for="permissions" className='text-black text-lg'>Permissions</label>
-                        <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                            <FaAccessibleIcon size={20} className='text-gray-400'/>
-                            <button type="button" className="w-full h-full text-gray-400 text-left bg-none border-none outline-none px-1" onClick={() => setOpen(true)}>
-                            	 {
-                            	 	selectPermission.length != 0
-                            	 	? selectPermission.map((p,i) => `${i == 0 ? '' : ', '} ${p}`)
-                            	 	: 'select permission'
-                            	 }
-                            </button>
-                        </div>   
-                    </div>
-
-                    {
-                        selectPermission.includes('live') &&
-                        <>
-                            <div className='input-group flex flex-col gap-1 mb-6'>
-                                <label for="endtime" className='text-black text-lg'>Live Date</label>
-                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                                    <BsCalendarDate size={20} className='text-gray-400'/>
-                                    <input type='date' value={djDate} onChange={(e) => setdjDate(e.target.value)} className='w-[95%] outline-none ml-1' id='endtime' name='endtime' required/>
-                                </div>   
+                        <div className='input-group flex flex-col gap-1 mb-6'>
+                            <label for="password" className='text-black text-lg'>Password</label>
+                            <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                <FaLock size={20} className='text-gray-400' />
+                                <input type='text' value={password} onChange={(e) => setPassword(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter dj password' id='password' name='password' required />
                             </div>
+                        </div>
 
-                            <div className='input-group flex flex-col gap-1 mb-6'>
-                                <label for="starttime" className='text-black text-lg'>Live Start Time</label>
-                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                                    <BsClock size={20} className='text-gray-400'/>
-                                    <input type='time' value={starttime} onChange={(e) => setStarttime(e.target.value)} className='w-[95%] outline-none ml-1' id='starttime' name='starttime' required/>
-                                </div>   
+                        <div className='input-group flex flex-col gap-1 mb-6'>
+                            <label for="permissions" className='text-black text-lg'>Permissions</label>
+                            <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                <FaAccessibleIcon size={20} className='text-gray-400' />
+                                <button type="button" className="w-full h-full text-gray-400 text-left bg-none border-none outline-none px-1" onClick={() => setOpen(true)}>
+                                    {
+                                        selectPermission.length != 0
+                                            ? selectPermission.map((p, i) => `${i == 0 ? '' : ', '} ${p}`)
+                                            : 'select permission'
+                                    }
+                                </button>
                             </div>
+                        </div>
 
-                            <div className='input-group flex flex-col gap-1 mb-6'>
-                                <label for="endtime" className='text-black text-lg'>Live End Time</label>
-                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                                    <BsClock size={20} className='text-gray-400'/>
-                                    <input type='time' value={endtime} onChange={(e) => setEndtime(e.target.value)} className='w-[95%] outline-none ml-1' id='endtime' name='endtime' required/>
-                                </div>   
-                            </div>
-                        </>
-                    }
+                        {
+                            selectPermission.includes('live') &&
+                            <>
+                                <div className='input-group items-center flex flex-row gap-1 mb-6'>
+                                    {/* <div class="checkbox-wrapper-61">
+                                        <input type="checkbox" class="check" id="check1-61" checked={timeInDays} onChange={() => setTimeInDays(prev => !prev)} />
+                                        <label for="check1-61" class="label">
+                                            <svg width="35" height="35" viewbox="0 0 95 95" >
+                                                <rect x="30" y="30" width="40" height="40" stroke="black" fill="none" />
+                                                <g transform="translate(0,-952.36222)">
+                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4 " stroke="black" stroke-width="3" fill="none" class="path1" />
+                                                </g>
+                                            </svg>
+                                        </label>
+                                    </div> */}
+                                    <div class="checkbox-wrapper-12">
+                                        <div class="cbx">
+                                            <input id="cbx-12" type="checkbox" checked={timeInDays} onChange={() => setTimeInDays(prev => !prev)}/>
+                                            <label for="cbx-12"></label>
+                                            <svg width="15" height="14" viewbox="0 0 15 14" fill="none">
+                                                <path d="M2 8.36364L6.23077 12L13 2"></path>
+                                            </svg>
+                                        </div>
+                                        
+                                        <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+                                            <defs>
+                                                <filter id="goo-12">
+                                                    <fegaussianblur in="SourceGraphic" stddeviation="4" result="blur"></fegaussianblur>
+                                                    <fecolormatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -7" result="goo-12"></fecolormatrix>
+                                                    <feblend in="SourceGraphic" in2="goo-12"></feblend>
+                                                </filter>
+                                            </defs>
+                                        </svg>
+                                    </div>
+                                    <p className='text-gray-700 ml-2'>Given Time in Days ?</p>
+                                </div>
+                                {
+                                    timeInDays ?
+                                        (<>
+                                            <div className='input-group flex flex-col gap-1 mb-6'>
+                                                <label for="endtime" className='text-black text-lg'>Live Date</label>
 
-                    
-                    
+                                                <MultiSelect
+                                                    options={options}
+                                                    value={selectedDays}
+                                                    onChange={setSelectedDays}
+                                                    labelledBy="Select"
+                                                    className='w-[95%] outline-none ml-1'
+                                                />
 
-                    <div className='flex justify-center items-center'>
-                        <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>{!loading ? 'Add' : 'Loading...'}</button>
-                    </div>
-                </form>
+                                            </div>
+                                        </>)
+                                        : <>
+                                            <div className='input-group flex flex-col gap-1 mb-6'>
+                                                <label for="endtime" className='text-black text-lg'>Live Date</label>
+                                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                                    <BsCalendarDate size={20} className='text-gray-400' />
+                                                    <input type='date' value={djDate} onChange={(e) => setdjDate(e.target.value)} className='w-[95%] outline-none ml-1' id='endtime' name='endtime' required />
+                                                </div>
+                                            </div>
+
+                                            <div className='input-group flex flex-col gap-1 mb-6'>
+                                                <label for="starttime" className='text-black text-lg'>Live Start Time</label>
+                                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                                    <BsClock size={20} className='text-gray-400' />
+                                                    <input type='time' value={starttime} onChange={(e) => setStarttime(e.target.value)} className='w-[95%] outline-none ml-1' id='starttime' name='starttime' required />
+                                                </div>
+                                            </div>
+
+                                            <div className='input-group flex flex-col gap-1 mb-6'>
+                                                <label for="endtime" className='text-black text-lg'>Live End Time</label>
+                                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                                    <BsClock size={20} className='text-gray-400' />
+                                                    <input type='time' value={endtime} onChange={(e) => setEndtime(e.target.value)} className='w-[95%] outline-none ml-1' id='endtime' name='endtime' required />
+                                                </div>
+                                            </div>
+                                        </>
+                                }
+
+                            </>
+                        }
+
+
+
+
+                        <div className='flex justify-center items-center'>
+                            <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>{!loading ? 'Add' : 'Loading...'}</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </div>
 
-        <Dialog open={open} onClose={() => setOpen(false)}>
-        	{
-        		permissions && permissions.map((permission) => (
-        			<div className="flex justify-between items-center my-6">
-        				<div className="flex items-center gap-4">
-                        
-                            <h2 className="text-xl text-black">{permission}</h2>           
-                        </div>
+            <Dialog open={open} onClose={() => setOpen(false)}>
+                {
+                    permissions && permissions.map((permission) => (
+                        <div className="flex justify-between items-center my-6">
+                            <div className="flex items-center gap-4">
 
-                        <div className="mr-10">
-                            <input type="checkbox" className="p-4" checked={selectPermission.includes(permission)} onChange={() => handleCheckbox(permission)}/>
+                                <h2 className="text-xl text-black">{permission}</h2>
+                            </div>
+
+                            <div className="mr-10">
+                                <input type="checkbox" className="p-4" checked={selectPermission.includes(permission)} onChange={() => handleCheckbox(permission)} />
+                            </div>
                         </div>
-        			</div>
-        		))
-        	}
-        </Dialog>
-    </section>
-  )
+                    ))
+                }
+            </Dialog>
+        </section>
+    )
 }
 
 export default page

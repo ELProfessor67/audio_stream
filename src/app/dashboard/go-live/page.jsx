@@ -1069,9 +1069,9 @@ export default function () {
 
 							</div>
 							<div className="rounded-b-md shadow-md p-3 h-[21rem] overflow-x-auto">
-								{/* <audio ref={callsElementRef} controls autoPlay>
+								<audio ref={callsElementRef} controls autoPlay>
 
-								</audio> */}
+								</audio>
 								{
 									Object.keys(callers)?.map((key) => (
 										<div className='flex items-center rounded-md py-2 my-4 shadow-sm justify-between'>

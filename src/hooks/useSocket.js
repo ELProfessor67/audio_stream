@@ -442,7 +442,7 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 			console.log(stream);
 			console.log(peersRef.current[data.senderId].connected);
 			callerStreamsRef.current[data.senderId] = stream;
-			// callsElementRef.current.srcObject = stream;
+			callsElementRef.current.srcObject = stream;
 			addStreamInMain(data.senderId);
 	    });
 

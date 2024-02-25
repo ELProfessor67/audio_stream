@@ -56,6 +56,29 @@ function checkInTimeRange(startTime,endTime,date){
 }
 
 
+function checkInTimeRangeForDay(startTime,endTime,user){
+    const currentHour = new Date().getHours();
+    const currentMinute = new Date().getMinutes();
+  
+
+    const rangeStartHour = +startTime?.split(':')[0];
+    const rangeStartMinute = +startTime?.split(':')[1];
+
+    const rangeEndHour = +endTime?.split(':')[0];
+    const rangeEndMinute = +endTime?.split(':')[1];
+
+    const timeInRange = (currentHour > rangeStartHour || (currentHour === rangeStartHour && currentMinute >= rangeStartMinute)) && (currentHour < rangeEndHour || (currentHour === rangeEndHour && currentMinute <= rangeEndMinute));
+
+    const checkDay = user?.djDays?.includes((new Date().getDay()).toString())
+    if(checkDay && timeInRange){
+        return true;
+    }else{
+        return false;
+    }
+    // return timeInRange;
+}
+
+
 const SidebarContext = createContext();
 
 export const SidebarBody = ({children}) => {
@@ -152,7 +175,7 @@ export default function Sidebar(){
             if(user?.djPermissions.includes(permissionName)){
                 if(permissionName === 'live'){
                     if(user?.djTimeInDays){
-                        return user?.djDays?.includes((new Date().getDay()).toString());
+                        return checkInTimeRangeForDay(user?.djStartTime,user?.djEndTime,user);
                     }else{
                         const isTimeRange = checkInTimeRange(user?.djStartTime,user?.djEndTime,user?.djDate);
                         return isTimeRange;
@@ -367,7 +390,7 @@ function HideLink({show,text,active,alert,icon}){
                         {icon}
                         <span className={`overflow-hidden transition-all ${
                             expanded ? "w-52 ml-3": "w-0"
-                        }`}>{user.djTimeInDays ? `${user?.djDays?.map((p,i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]}`)}`: `${user.djDate} / ${user.djStartTime}-${user?.djEndTime}`}</span>
+                        }`}>{user.djTimeInDays ? `${user?.djDays?.map((p,i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${user.djStartTime}-${user?.djEndTime}`)}`: `${user.djDate} / ${user.djStartTime}-${user?.djEndTime}`}</span>
                         {
                             alert && (
                                 <div className={`absolute right-2 w-2 h-2 rounded-full bg-indigo-400 ${

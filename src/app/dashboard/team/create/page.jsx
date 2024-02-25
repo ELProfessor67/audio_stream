@@ -142,13 +142,13 @@ const page = () => {
                                     </div> */}
                                     <div class="checkbox-wrapper-12">
                                         <div class="cbx">
-                                            <input id="cbx-12" type="checkbox" checked={timeInDays} onChange={() => setTimeInDays(prev => !prev)}/>
+                                            <input id="cbx-12" type="checkbox" checked={timeInDays} onChange={() => setTimeInDays(prev => !prev)} />
                                             <label for="cbx-12"></label>
                                             <svg width="15" height="14" viewbox="0 0 15 14" fill="none">
                                                 <path d="M2 8.36364L6.23077 12L13 2"></path>
                                             </svg>
                                         </div>
-                                        
+
                                         <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
                                             <defs>
                                                 <filter id="goo-12">
@@ -186,23 +186,24 @@ const page = () => {
                                                 </div>
                                             </div>
 
-                                            <div className='input-group flex flex-col gap-1 mb-6'>
-                                                <label for="starttime" className='text-black text-lg'>Live Start Time</label>
-                                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                                                    <BsClock size={20} className='text-gray-400' />
-                                                    <input type='time' value={starttime} onChange={(e) => setStarttime(e.target.value)} className='w-[95%] outline-none ml-1' id='starttime' name='starttime' required />
-                                                </div>
-                                            </div>
 
-                                            <div className='input-group flex flex-col gap-1 mb-6'>
-                                                <label for="endtime" className='text-black text-lg'>Live End Time</label>
-                                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                                                    <BsClock size={20} className='text-gray-400' />
-                                                    <input type='time' value={endtime} onChange={(e) => setEndtime(e.target.value)} className='w-[95%] outline-none ml-1' id='endtime' name='endtime' required />
-                                                </div>
-                                            </div>
                                         </>
                                 }
+                                <div className='input-group flex flex-col gap-1 mb-6'>
+                                    <label for="starttime" className='text-black text-lg'>Live Start Time</label>
+                                    <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                        <BsClock size={20} className='text-gray-400' />
+                                        <input type='time' value={starttime} onChange={(e) => setStarttime(e.target.value)} className='w-[95%] outline-none ml-1' id='starttime' name='starttime' required />
+                                    </div>
+                                </div>
+
+                                <div className='input-group flex flex-col gap-1 mb-6'>
+                                    <label for="endtime" className='text-black text-lg'>Live End Time</label>
+                                    <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                        <BsClock size={20} className='text-gray-400' />
+                                        <input type='time' value={endtime} onChange={(e) => setEndtime(e.target.value)} className='w-[95%] outline-none ml-1' id='endtime' name='endtime' required />
+                                    </div>
+                                </div>
 
                             </>
                         }

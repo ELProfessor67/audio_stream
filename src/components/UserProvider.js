@@ -14,12 +14,12 @@ function isToday(year,month,date){
     }
 }
 
-function checkInTimeRange(startTime,endTime,date){
+function checkInTimeRange(startTime,endTime){
     const currentHour = new Date().getHours();
     const currentMinute = new Date().getMinutes();
 
     // check date 
-    const [userYear,userMonth,userDate] = date?.split('-');
+
   
 
     const rangeStartHour = +startTime?.split(':')[0];
@@ -32,12 +32,47 @@ function checkInTimeRange(startTime,endTime,date){
 
     console.log('range',timeInRange)
 
-    if(isToday(userYear,userMonth,userDate) && timeInRange){
-        return true;
-    }else{
-        return false;
+
+    return timeInRange;
+}
+
+function checkIsStreamingDay(user){
+    const [userYear,userMonth,userDate] = user?.djDate?.split('-');
+
+    if(isToday(userYear,userMonth,userDate)){
+        return true
     }
-    // return timeInRange;
+    const checkDay = user?.djDays?.includes((new Date().getDay()).toString())
+    if(checkDay){
+        return true
+    }
+    return false;
+}
+
+function addOneMinute(hours,minutes) {
+    // Split the time string into hours and minutes
+    // let [hours, minutes] = time.split(':').map(Number);
+    
+    // Increment the minutes
+    minutes++;
+
+    // If minutes exceed 59, adjust hours and minutes
+    if (minutes > 59) {
+        hours++;
+        minutes = 0;
+    }
+
+    // If hours exceed 23, reset to 00
+    if (hours > 23) {
+        hours = 0;
+    }
+
+    // Format hours and minutes to have leading zeros if necessary
+    hours = +hours;
+    minutes = +minutes;
+
+    // Return the result
+    return [hours, minutes];
 }
 
 const UserProvider = ({children}) => {
@@ -50,15 +85,16 @@ const UserProvider = ({children}) => {
     },[]);
 
     useEffect(() => {
-            if(user?.isDJ && !user?.djTimeInDays){
+            if(user?.isDJ && checkIsStreamingDay(user)){
 
-            const isRange = checkInTimeRange(user?.djStartTime,user?.djEndTime,user?.djDate);
+            const isRange = checkInTimeRange(user?.djStartTime,user?.djEndTime);
+            console.info(isRange,'isRange');
             if(isRange && !ref.current){
                 ref.current = setInterval(function(){
-                    const currentHour = new Date().getHours();
-                    const currentMinute = new Date().getMinutes();
-                    const rangeEndHour = +user?.djEndTime?.split(':')[0];
-                    const rangeEndMinute = +user?.djEndTime?.split(':')[1];
+                    let currentHour = new Date().getHours();
+                    let currentMinute = new Date().getMinutes();
+                    let rangeEndHour = +user?.djEndTime?.split(':')[0];
+                    let rangeEndMinute = +user?.djEndTime?.split(':')[1];
 
                     if(currentHour === rangeEndHour && currentMinute === rangeEndMinute-5){
                         toast.info('5 min left');
@@ -68,8 +104,10 @@ const UserProvider = ({children}) => {
                         toast.info('2 min left');
                     }
 
+                    let [hours, minutes] = addOneMinute(rangeEndHour,rangeEndMinute);
 
-                    if(currentHour === rangeEndHour && currentMinute === rangeEndMinute){
+
+                    if(currentHour === hours && currentMinute === minutes){
                         toast.info('live time is end');
 
                         if(window.location.pathname === '/dashboard/go-live'){

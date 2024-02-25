@@ -187,12 +187,12 @@ export default function page({ params }) {
 	}
 
 	return (
-		<section className="flex justify-center items-center h-[100vh] w-full">
+		<section className="flex justify-center items-center h-[100vh] w-full px-4">
 			<a className="hidden" ref={downloadLink}></a>
-			<div className="w-[38rem] p-4 shadow-md rounded-md border border-gray-100">
-				<div className="flex justify-between items-center relative">
+			<div className="max-w-[38rem] p-4 shadow-md rounded-md border border-gray-100">
+				<div className="flex justify-between flex-col md:flex-row items-center relative gap-5 md:gap-5">
 					<h2 className="text-2xl para whitespace-pre">HGC LIVE RADIO</h2>
-					<div className="flex items-center">
+					<div className="flex items-center flex-wrap md:flex-nowrap gap-3 md:gap-0 justify-center md:justify-start">
 						<button className="bg-indigo-500 text-xs border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200 mr-2" disabled={!isLive} title="live chat" onClick={handleCall}>Call</button>
 						<button className="bg-indigo-500 text-xs border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200 mr-2" disabled={!isLive} title="live chat" onClick={() => setChatOpen(true)}>Chat</button>
 
@@ -201,9 +201,9 @@ export default function page({ params }) {
 						<button className="bg-indigo-500 text-xs border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200" disabled={!isLive} title="request for songs play" onClick={() => setROPen(true)}>Request for song</button>
 					</div>
 				</div>
-				<div className="flex items-start py-4 border-b border-gray-200">
+				<div className="flex py-4 border-b border-gray-200 flex-col items-center md:items-start md:flex-row">
 					<Image className="w-[8rem] h-[8rem] rounded-md" src="/upload/cover/ads.jpeg" width={200} height={200} />
-					<div className="p-4 flex flex-col gap-2 h-full">
+					<div className="p-4 flex flex-col gap-2 h-full items-center md:items-start">
 						<div>
 							<span className="px-5 py-1 rounded-3xl bg-indigo-500 text-white">{isLive ? 'LIVE' : 'AUTO DJ'}</span>
 						</div>
@@ -211,7 +211,7 @@ export default function page({ params }) {
 						<h4 className="text-sm opacity-40">You'Listen {user?.name} Radio Channel</h4>
 					</div>
 				</div>
-				<div className="w-full px-2 pt-1 mt-2 flex justify-between items-center">
+				<div className="w-full px-2 pt-1 mt-2 flex justify-between items-center flex-col md:flex-row gap-5 md:gap-0">
 					<div className='flex items-center gap-3'>
 						<button className="bg-indigo-500 disabled:bg-indigo-300 p-2 rounded-full border-none outline-none text-white" disabled={!roomActive} onClick={handlePlay}>
 							{
@@ -221,7 +221,7 @@ export default function page({ params }) {
 						<span className='text-lg text-gray-700'>Listen Now</span>
 					</div>
 
-					<div className="w-[50%] flex items-center">
+					<div className="md:w-[50%] w-full flex items-center">
 						<button className="text-gray-300 mr-3" onClick={() => volume === 0 ? setVolume(0.5) : setVolume(0)}>
 							{
 								volume === 0 ? <HiSpeakerXMark size={22} /> : <HiSpeakerWave size={22} />

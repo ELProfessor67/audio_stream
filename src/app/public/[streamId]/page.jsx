@@ -13,6 +13,8 @@ import ChatBox from '@/components/ChatBox';
 import Message from '@/components/Message';
 import { MdCall } from "react-icons/md";
 import CallComponents from '@/components/CallComponents';
+import { FaUser } from "react-icons/fa";
+import { FaLocationDot } from "react-icons/fa6";
 
 function toTitleCase(str) {
 	return str.replace(
@@ -75,6 +77,8 @@ export default function page({ params }) {
 	const [isPlay, setIsPlay] = useState(false);
 	const [message, setMessage] = useState('');
 	const [name, setName] = useState('');
+	const [location, setLocation] = useState('');
+	const [gedetailOpen,setGetDetailsOpne] = useState(false);
 	const [callOpen, setCallOpen] = useState(false);
 	const [permissionReset,setPermissionReset] = useState(false);
 	// null,processing,accepted,rejected
@@ -89,7 +93,7 @@ export default function page({ params }) {
 	const downloadLink = useRef();
 
 	// console.log('isPlay from components side', isPlay)
-	const { roomActive, handleRequestSong, isLive, autodj, messageList, handleSendMessage, callAdmin, cutCall } = useSocketUser(params.streamId, audioRef, name, isPlay, setIsPlay, message, setMessage, setCallStatus);
+	const { roomActive, handleRequestSong, isLive, autodj, messageList, handleSendMessage, callAdmin, cutCall } = useSocketUser(params.streamId, audioRef, name, isPlay, setIsPlay, message, setMessage, setCallStatus,location);
 	// const [more,setMore] = useState(false);
 	const [rOpen, setROPen] = useState(false);
 	console.log(roomActive)
@@ -178,6 +182,13 @@ export default function page({ params }) {
 		if (audioPermissionStatus.state === 'granted' || audioPermissionStatus.state === 'denied') {
 				setPermissionReset(true);
 				return
+		}
+
+		if(!name || !location){
+			setGetDetailsOpne(true);
+			return
+		}else{
+			setGetDetailsOpne(false);
 		}
 		setCallOpen(true);
 		if (callStatus == 'processing' || callStatus == 'accepted') return
@@ -311,6 +322,30 @@ export default function page({ params }) {
 							<button className='p-2 text-red-600 rounded-full bg-gray-200' onClick={cutCall}><MdCall size={23} /></button>
 					}
 				</div>
+			</CallComponents>
+
+
+			<CallComponents open={gedetailOpen} onClose={() => setGetDetailsOpne(false)}>
+					<div>
+						<div className='input-group flex flex-col gap-1 mb-6'>
+							<label for="password" className='text-black text-lg'>Name</label>
+							<div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+								<FaUser size={20} className='text-gray-400'/>
+								<input type='text' value={name} onChange={(e) => setName(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your password' id='password' name='password' required/>
+							</div>   
+						</div>
+						<div className='input-group flex flex-col gap-1 mb-6'>
+							<label for="password" className='text-black text-lg'>Location</label>
+							<div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+								<FaLocationDot size={20} className='text-gray-400'/>
+								<input type='text' value={location} onChange={(e) => setLocation(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your password' id='password' name='password' required/>
+							</div>   
+						</div>
+
+						<div className='flex justify-center items-center'>
+							<button type='submit' onClick={handleCall} className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-al disabled:opacity-40' disabled={!name || !location}>Call Now</button>
+						</div>
+					</div>
 			</CallComponents>
 		</section>
 	);

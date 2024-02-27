@@ -16,7 +16,7 @@ const socketInit = () => {
 	return io(process.env.NEXT_PUBLIC_SOCKET_URL, options);
 }
 
-const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,setCallStatus) => {
+const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,setCallStatus,location) => {
 	const socketRef = useRef();
 	const peerRef = useRef({});
 	const [owner,setOwner] = useState('');
@@ -302,7 +302,7 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 	async function callAdmin (){
 		
 		myStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
-		socketRef.current.emit('call-admin',{roomId:streamId,name: name || 'unknown'});
+		socketRef.current.emit('call-admin',{roomId:streamId,name: `${name}|${location}` || 'unknown'});
 	}
 
 	async function cutCall(){

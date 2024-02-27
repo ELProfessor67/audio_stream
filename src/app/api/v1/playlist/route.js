@@ -5,11 +5,16 @@ import playlistModel from "@/models/playlist";
 import { auth } from "@/middleswares/auth";
 
 export const POST = connectDB(auth(async function (req){
-    const {title,description,songs} = await req.json();
+    let {title,description,songs,isTemp} = await req.json();
+    if(isTemp === undefined){
+        isTemp = false
+    }else{
+        isTemp = true
+    }
 
     if(!title || !description || !songs) return NextResponse.json({success: false,message: 'all fields are required'});
 
-    const playlist = await playlistModel.create({title,description,songs,owner: req.user._id});
+    const playlist = await playlistModel.create({title,description,songs,owner: req.user._id, isTemp});
 
     return NextResponse.json({success: true,message: 'playlist create successfully'});
 }));

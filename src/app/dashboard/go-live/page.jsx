@@ -1075,7 +1075,10 @@ export default function () {
 								{
 									Object.keys(callers)?.map((key) => (
 										<div className='flex items-center rounded-md py-2 my-4 shadow-sm justify-between'>
-											<h1 className='text-xl to-gray-700'>{callers[key]?.name}</h1>
+											<div className='flex flex-col gap-1'>
+												<h1 className='text-xl to-gray-700'>{callers[key]?.name}</h1>
+												<p className='text-gray-500'>{callers[key]?.location}</p>
+											</div>
 											<button className='p-2 text-red-600 rounded-full bg-gray-200' onClick={() => handleCallCut(key)}><MdCall size={23} /></button>
 										</div>
 

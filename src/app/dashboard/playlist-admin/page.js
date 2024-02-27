@@ -45,7 +45,7 @@ export default function Page(){
 			
 			const seletdSongs =  data.songs.map(({_id}) => _id)
 
-            const {data:res} = await axios.post('/api/v1/playlist',{title: data.title,description: data.description,songs: seletdSongs});
+            const {data:res} = await axios.post('/api/v1/playlist',{title: data.title,description: data.description,songs: seletdSongs,isTemp: true});
             await dispatch(showMessage(res.message));
             await dispatch(clearMessage());
             setMyList(prev => [...prev,data]);

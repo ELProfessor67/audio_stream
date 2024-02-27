@@ -165,7 +165,7 @@ const page = () => {
                                     timeInDays ?
                                         (<>
                                             <div className='input-group flex flex-col gap-1 mb-6'>
-                                                <label for="endtime" className='text-black text-lg'>Live Date</label>
+                                                <label for="endtime" className='text-black text-lg'>Live Days</label>
 
                                                 <MultiSelect
                                                     options={options}

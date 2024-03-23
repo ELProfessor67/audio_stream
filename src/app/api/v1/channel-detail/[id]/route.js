@@ -19,5 +19,9 @@ export const GET = connectDB(async function (req){
         name: user.name,
         avatar: user?.avatar?.url || null
      }
-    return NextResponse.json({success: true,user: userMailFiel,schedules,songs});
+    return NextResponse.json({success: true,user: userMailFiel,schedules,songs},{headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      }});
 });

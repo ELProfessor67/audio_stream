@@ -37,6 +37,7 @@ export const POST = connectDB(auth(async function (req){
         // const filterAudioData = audio.substr(audio.indexOf(',')+1);
         // const bufferAudio = new Buffer(filterAudioData,'base64');
         const audioFileName = `${title}-${Date.now()}.${audioEx}`;
+        console.log(audioFileName)
         // writeFileSync(`./public/upload/songs/${audioFileName}`,bufferAudio,'binary');
         try{
             const post = await axios.post(`${process.env.NEXT_PUBLIC_SOCKET_URL}/upload`,{
@@ -44,6 +45,7 @@ export const POST = connectDB(auth(async function (req){
                 base64: audio
             })
         }catch(err){
+            console.log(err.message)
             return NextResponse.json({success: false,message: err?.response?.data?.message},{status: 501});
         }
         console.log('3')

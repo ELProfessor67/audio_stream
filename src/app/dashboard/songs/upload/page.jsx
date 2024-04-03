@@ -35,9 +35,10 @@ const page = () => {
             const {data} = await axios.post('/api/v1/song',{audioEx,coverEx,title,description,artist,size,type,cover,audio: audiofile,duration,album},{
                 onUploadProgress: (ProgressEvent) => {
                     const progress = Math.round((ProgressEvent.loaded * 100) / ProgressEvent.total);
-                    setLoadPerc(progress);
+                    setLoadPerc(progress-7);
                 }
             });
+            setLoadPerc(100);
             setTitle('');
             setDescription('');
             setArtist('');

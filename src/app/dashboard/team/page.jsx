@@ -78,7 +78,7 @@ const daysObject = {
 };
 
 
-const TableRow = ({name,email,djPermissions,_id,djStartTime,djEndTime,deleteTeam,djDate,djTimeInDays,djDays}) => (
+const TableRow = ({name,email,djPermissions,_id,djStartTime,djEndTime,deleteTeam,djDate,djTimeInDays,djDays,rawTime}) => (
 	<tr className="bg-gray-50 font-midium border-b text-sm">
 	  <td className="px-6 py-4 whitespace-nowarp">{name}</td>
 	  <td className="px-6 py-4 whitespace-nowarp">{email}</td>
@@ -88,7 +88,7 @@ const TableRow = ({name,email,djPermissions,_id,djStartTime,djEndTime,deleteTeam
 	  {
 		djTimeInDays ?
 		<td className="px-6 py-4 whitespace-nowarp">{djDays?.map((p,i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]}`)}</td>
-		:<td className="px-6 py-4 whitespace-nowarp">{djDate} / {djStartTime} - {djEndTime}</td>
+		:<td className="px-6 py-4 whitespace-nowarp">{djDate} / {rawTime.split("|")[0]} - {rawTime.split("|")[1]}</td>
 	  }
 	  {/* <td className="px-6 py-4 whitespace-nowarp">{djDate} / {djStartTime} - {djEndTime}</td> */}
 	  <td className="px-16 py-4 whitespace-nowarp flex gap-7 justify-center">

@@ -19,6 +19,28 @@ import {toast} from 'react-toastify';
 import { current } from '@reduxjs/toolkit'
 
 
+
+function convertUTCToLocalTime(utctime) {
+    // Split the input time string into hours and minutes
+    const [hourStr, minuteStr] = utctime.split(':');
+    
+    // Parse hours and minutes as integers
+    const hour = parseInt(hourStr, 10);
+    const minute = parseInt(minuteStr, 10);
+
+    // Create a new Date object with UTC time
+    const utcDate = new Date();
+    utcDate.setUTCHours(hour);
+    utcDate.setUTCMinutes(minute);
+
+    // Format local time in 24-hour format
+    const localHour = utcDate.getHours().toString().padStart(2, '0');
+    const localMinute = utcDate.getMinutes().toString().padStart(2, '0');
+
+    return `${localHour}:${localMinute}`;
+}
+
+
 function isToday(year,month,date){
     const Currntdate = new Date();
     if(+year == Currntdate.getFullYear() && +month == Currntdate.getMonth()+1 && +date == Currntdate.getDate()){
@@ -364,7 +386,7 @@ function HideLink({show,text,active,alert,icon}){
                 position: "top-center"
             });
         }else{
-            toast.info(`You can start streaming only ${user?.djStartTime} to ${user?.djEndTime}`,{
+            toast.info(`You can start streaming only ${convertUTCToLocalTime(user?.djStartTime)} to ${convertUTCToLocalTime(user?.djEndTime)}`,{
                 position: "top-center"
             });
         }
@@ -390,7 +412,7 @@ function HideLink({show,text,active,alert,icon}){
                         {icon}
                         <span className={`overflow-hidden transition-all ${
                             expanded ? "w-52 ml-3": "w-0"
-                        }`}>{user.djTimeInDays ? `${user?.djDays?.map((p,i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${user.djStartTime}-${user?.djEndTime}`)}`: `${user.djDate} / ${user.djStartTime}-${user?.djEndTime}`}</span>
+                        }`}>{user.djTimeInDays ? `${user?.djDays?.map((p,i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${user.djStartTime}-${user?.djEndTime}`)}`: `${user.djDate} / ${convertUTCToLocalTime(user.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`}</span>
                         {
                             alert && (
                                 <div className={`absolute right-2 w-2 h-2 rounded-full bg-indigo-400 ${

@@ -12,6 +12,7 @@ import { useDispatch } from 'react-redux';
 import { BsCalendarDate, BsClock, BsMailbox } from 'react-icons/bs';
 import { FaAccessibleIcon, FaLock } from 'react-icons/fa6';
 import { MultiSelect } from "react-multi-select-component";
+import { toast } from 'react-toastify';
 
 const options = [
     { label: "Sunday", value: 0 },
@@ -115,6 +116,11 @@ const page = ({ params }) => {
             }
         })();
     }, [params.id])
+
+
+    const handlebottomSave = () => {
+        toast.success("save successfully");
+    }
 
     return (
         <section className='w-full py-5 px-4'>
@@ -255,7 +261,7 @@ const page = ({ params }) => {
                 </div>
             </div>
 
-            <Dialog open={open} onClose={() => setOpen(false)}>
+            <Dialog open={open} onClose={() => setOpen(false)} bottomSave={handlebottomSave}>
                 {
                     permissions && permissions.map((permission) => (
                         <div className="flex justify-between items-center my-6">

@@ -13,6 +13,7 @@ import { BsCalendarDate, BsClock, BsMailbox } from 'react-icons/bs';
 import { FaAccessibleIcon, FaLock } from 'react-icons/fa6';
 
 import { MultiSelect } from "react-multi-select-component";
+import { toast } from 'react-toastify';
 
 
 function convertToUTC(timeString) {
@@ -75,7 +76,9 @@ const page = () => {
             }
         })
     }
-
+    const handlebottomSave = () => {
+        toast.success("save successfully");
+    }
 
 
     const handleSubmit = async (e) => {
@@ -243,7 +246,7 @@ const page = () => {
                 </div>
             </div>
 
-            <Dialog open={open} onClose={() => setOpen(false)}>
+            <Dialog open={open} onClose={() => setOpen(false)} bottomSave={handlebottomSave}>
                 {
                     permissions && permissions.map((permission) => (
                         <div className="flex justify-between items-center my-6">

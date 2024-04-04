@@ -14,6 +14,7 @@ const page = () => {
     const [loading,setLoading] = useState(false);
     const {isAuth,user} = useSelector(store => store.user);
     const dispatch = useDispatch();
+    const [type, setType] = useState('Admin');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -51,9 +52,14 @@ const page = () => {
                 <div className='py-4 flex justify-center items-center'>
                     <Image src="/images/logo.svg" width={200} height={300} className='w-28'/>
                 </div>
+
+                <div className='div p-3 px-20 flex justify-between items-center mb-2'>
+                    <button className={`text-xl font-semibold text-black/90 pb-1 ${type == 'Admin'? 'border-b-4 border-indigo-500' : '' }`} onClick={() => setType('Admin')}>Admin</button>
+                    <button className={`text-xl font-semibold text-black/90 pb-1 ${type == 'DJ'? 'border-b-4 border-indigo-500' : '' }`} onClick={() => setType('DJ')}>DJ</button>
+                </div>
                 <form className='p-3 px-6' onSubmit={handleSubmit}>
                     <div className='input-group flex flex-col gap-1 mb-6'>
-                        <label for="email" className='text-black text-lg'>Email</label>
+                        <label for="email" className='text-black text-lg'>{type} Email</label>
                         <div className='flex items-center relative  py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                             <MdAlternateEmail size={20} className='text-gray-400'/>
                             <input type='email' value={email} onChange={(e) => setEmail(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your email' id='email' name='email' required/>
@@ -61,17 +67,13 @@ const page = () => {
                     </div>
 
                     <div className='input-group flex flex-col gap-1 mb-6'>
-                        <label for="password" className='text-black text-lg'>Password</label>
+                        <label for="password" className='text-black text-lg'>{type} Password</label>
                         <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                             <MdKey size={20} className='text-gray-400'/>
                             <input type='password' value={password} onChange={(e) => setPassword(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your password' id='password' name='password' required/>
                         </div>   
                     </div>
 
-                    <div className='input-group flex items-center justify-between mb-6'>
-                        <p className='text-lg text-black'>If you {`don't`} have account <Link className='text-indigo-500 hover:underline' href={'/register'}>Sign Up</Link></p>  
-                        <p className='text-lg text-black'><Link className='text-indigo-500 hover:underline' href={'/forgot-password'}>Forgot Password</Link></p>  
-                    </div>
 
                     <div className='flex justify-center items-center'>
                         <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>{!loading ? 'Login' : 'Loading...'}</button>

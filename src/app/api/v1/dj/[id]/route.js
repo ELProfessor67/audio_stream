@@ -18,11 +18,17 @@ export const GET = connectDB(auth(async function (req){
 export const PUT = connectDB(auth(async function (req){
     try{
         const id = req.url.split('/')[6];
-        const {name,email,password,permissions,starttime,endtime,djDate,djTimeInDays,djDays} = await req.json();
+        const {name,email,password,permissions,starttime,endtime,djDate,djTimeInDays,djDays, rawTime} = await req.json();
+        
 
-        const team = await userModel.findByIdAndUpdate(id,{name,email,password,djPermissions: permissions,djStartTime:starttime,
-            djEndTime: endtime,djDate,djTimeInDays,djDays});
-        console.log(team,starttime,endtime)
+        const team = await userModel.findByIdAndUpdate(id,{name,email,djPermissions: permissions,djStartTime:starttime,
+            djEndTime: endtime,djDate,djTimeInDays,djDays, rawTime});
+            if(password){
+                team.password = password;
+                team.save();
+            }
+            
+        // console.log(team,starttime,endtime)
         return NextResponse.json({success: true,message: 'update success'});
     }catch(err){
         return NextResponse.json({success: false,message: err.message},{status: 501});

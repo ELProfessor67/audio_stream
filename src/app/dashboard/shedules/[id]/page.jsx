@@ -11,6 +11,7 @@ import Dialog from '@/components/Dialog';
 import {FaArrowUpRightFromSquare} from 'react-icons/fa6';
 import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert';
 import {useDispatch} from 'react-redux';
+import { toast } from 'react-toastify';
 
 
 const page = ({params}) => {
@@ -100,10 +101,14 @@ const page = ({params}) => {
     	setSelectedSong(prev => [...prev,...ids]);
     }
 
+    const handlebottomSave = () => {
+        toast.success("save successfully");
+    }
+
   return (
     <section className='w-full py-5 px-4'>
         <div className='flex justify-start items-center h-full flex-col'>
-            <h1 className='main-heading mb-10'>Create Schedule</h1>
+            <h1 className='main-heading mb-10'>Update Song Schedule</h1>
             <div className='w-[40rem] max-w-[40rem] border border-x-gray-100 shadow-md p-3 rounded-md mb-6'>
                 <form className='p-3 px-6' onSubmit={handleSubmit}>
 
@@ -149,7 +154,7 @@ const page = ({params}) => {
             </div>
         </div>
 
-        <Dialog open={open} onClose={() => setOpen(false)}>
+        <Dialog open={open} onClose={() => setOpen(false)} heading={'Select Playlist'}>
         	{playlists.map(data => (
 				<div className="flex justify-between items-center my-2 py-1 border-b border-gray-100">
 				    <div className="flex items-center gap-4">
@@ -168,7 +173,7 @@ const page = ({params}) => {
         </Dialog>
 
 
-        <Dialog open={songOpen} onClose={() => setSongOpen(false)} seletdSongs={selectedSong} selectAll={handleSelectAll}>
+        <Dialog open={songOpen} onClose={() => setSongOpen(false)} seletdSongs={selectedSong} selectAll={handleSelectAll} bottomSave={handlebottomSave}>
         	{
         		selectedPlaylist && selectedPlaylist.map((data) => (
         			<div className="flex justify-between items-center my-6">

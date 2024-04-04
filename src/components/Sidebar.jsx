@@ -30,8 +30,8 @@ function isToday(year,month,date){
 
 
 function checkInTimeRange(startTime,endTime,date){
-    const currentHour = new Date().getHours();
-    const currentMinute = new Date().getMinutes();
+    const currentHour = new Date().getUTCHours();
+    const currentMinute = new Date().getUTCMinutes();
 
     // check date 
     const [userYear,userMonth,userDate] = date?.split('-');
@@ -57,8 +57,8 @@ function checkInTimeRange(startTime,endTime,date){
 
 
 function checkInTimeRangeForDay(startTime,endTime,user){
-    const currentHour = new Date().getHours();
-    const currentMinute = new Date().getMinutes();
+    const currentHour = new Date().getUTCHours();
+    const currentMinute = new Date().getUTCMinutes();
   
 
     const rangeStartHour = +startTime?.split(':')[0];
@@ -259,16 +259,16 @@ export default function Sidebar(){
         
         {
             icon: <BsCalendarDate size={30}/>,
-            text: "Schedules",
+            text: "Songs Schedules",
             alert: false,
             active: pathname == '/dashboard/shedules',
             link: '/dashboard/shedules',
             show: isAllow("schedules"),
-            desc: "You are able to create schedules"
+            desc: "You are able to schedule your shows and your songs at your decided time"
         },
         {
             icon: <PiUsersThreeDuotone size={30}/>,
-            text: "My DJ Team",
+            text: "My DJs",
             alert: false,
             active: pathname == '/dashboard/team',
             link: '/dashboard/team',

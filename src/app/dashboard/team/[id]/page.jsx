@@ -23,6 +23,30 @@ const options = [
     { label: "Saturday", value: 6 }
 ];
 
+
+function convertToUTC(timeString) {
+    // Split timeString into hours and minutes
+    const [hours, minutes] = timeString.split(':').map(Number);
+    
+    // Create a new Date object with today's date and the input time in local time
+    const localDate = new Date();
+    localDate.setHours(hours);
+    localDate.setMinutes(minutes);
+
+    const localOffsetMinutes = localDate.getTimezoneOffset();
+    
+    // Convert local time to UTC
+    const utcTimestamp = localDate.getTime() + (localOffsetMinutes * 60000); // Convert minutes to milliseconds
+    const utcDate = new Date(utcTimestamp);
+    
+    // Format UTC time as 'HH:mm' string
+    const utcHours = utcDate.getHours().toString().padStart(2, '0');
+    const utcMinutes = utcDate.getMinutes().toString().padStart(2, '0');
+    const utcTimeString = `${utcHours}:${utcMinutes}`;
+    return utcTimeString;
+}
+
+
 const page = ({ params }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -33,6 +57,7 @@ const page = ({ params }) => {
     const [loading, setLoading] = useState(false);
     const [djDate, setdjDate] = useState('');
     const [timeInDays, setTimeInDays] = useState(false);
+    const [password, setPassword] = useState('');
     const [selectedDays, setSelectedDays] = useState([]);
 
     const permissions = ['songs', 'playlists', 'schedules', 'live', 'dashboard', 'requests', 'ads'];
@@ -57,7 +82,7 @@ const page = ({ params }) => {
         try {
             let djDays = [];
             selectedDays.forEach((data) => djDays.push(data.value));
-            const { data } = await axios.put(`/api/v1/dj/${params.id}`, { name, email, permissions: selectPermission, starttime, endtime, djDate, djTimeInDays: timeInDays, djDays });
+            const { data } = await axios.put(`/api/v1/dj/${params.id}`, {password, name, email, permissions: selectPermission, starttime: convertToUTC(starttime), endtime: convertToUTC(endtime), djDate, djTimeInDays: timeInDays, djDays,rawTime: `${starttime}|${endtime}` });
             await dispatch(showMessage(data.message));
             await dispatch(clearMessage());
             console.log(data)
@@ -73,11 +98,12 @@ const page = ({ params }) => {
         (async function () {
             try {
                 const { data } = await axios.get(`/api/v1/dj/${params.id}`);
+                const [start,end] = data.team?.rawTime.split('|');
                 setName(data?.team.name);
                 setEmail(data?.team?.email);
                 setSelectedPermission(data?.team.djPermissions);
-                setStarttime(data?.team.djStartTime);
-                setEndtime(data?.team.djEndTime);
+                setStarttime(start);
+                setEndtime(end);
                 setdjDate(data?.team.djDate);
                 setTimeInDays(data?.team?.djTimeInDays);
                 setSelectedDays([]);
@@ -93,7 +119,7 @@ const page = ({ params }) => {
     return (
         <section className='w-full py-5 px-4'>
             <div className='flex justify-start items-center h-full flex-col'>
-                <h1 className='main-heading mb-10'>Create Team</h1>
+                <h1 className='main-heading mb-10'>Update DJ</h1>
                 <div className='w-[40rem] max-w-[40rem] border border-x-gray-100 shadow-md p-3 rounded-md mb-6'>
                     <form className='p-3 px-6' onSubmit={handleSubmit}>
 
@@ -110,6 +136,14 @@ const page = ({ params }) => {
                             <div className='flex items-center relative  py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                                 <BsMailbox size={20} className='text-gray-400' />
                                 <input type='email' value={email} onChange={(e) => setEmail(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter dj email' id='email' name='email' required />
+                            </div>
+                        </div>
+
+                        <div className='input-group flex flex-col gap-1 mb-6'>
+                            <label for="password" className='text-black text-lg'>Password</label>
+                            <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                <FaLock size={20} className='text-gray-400' />
+                                <input type='text' value={password} onChange={(e) => setPassword(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='If you want to change password then change otherwise leave empty' id='password' name='password' />
                             </div>
                         </div>
 

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { MdAlternateEmail, MdAudiotrack, MdKey } from 'react-icons/md'
 import Link from 'next/link'
@@ -13,6 +13,30 @@ import { BsCalendarDate, BsClock, BsMailbox } from 'react-icons/bs';
 import { FaAccessibleIcon, FaLock } from 'react-icons/fa6';
 
 import { MultiSelect } from "react-multi-select-component";
+
+
+function convertToUTC(timeString) {
+    // Split timeString into hours and minutes
+    const [hours, minutes] = timeString.split(':').map(Number);
+    
+    // Create a new Date object with today's date and the input time in local time
+    const localDate = new Date();
+    localDate.setHours(hours);
+    localDate.setMinutes(minutes);
+
+    const localOffsetMinutes = localDate.getTimezoneOffset();
+    
+    // Convert local time to UTC
+    const utcTimestamp = localDate.getTime() + (localOffsetMinutes * 60000); // Convert minutes to milliseconds
+    const utcDate = new Date(utcTimestamp);
+    
+    // Format UTC time as 'HH:mm' string
+    const utcHours = utcDate.getHours().toString().padStart(2, '0');
+    const utcMinutes = utcDate.getMinutes().toString().padStart(2, '0');
+    const utcTimeString = `${utcHours}:${utcMinutes}`;
+    return utcTimeString;
+}
+
 
 const options = [
     { label: "Sunday", value: 0 },
@@ -30,13 +54,14 @@ const page = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [open, setOpen] = useState(false);
-    const [selectPermission, setSelectedPermission] = useState(['live', 'dashboard']);
+    const [selectPermission, setSelectedPermission] = useState(['songs', 'schedules', 'live', 'dashboard', 'requests', 'ads']);
     const [starttime, setStarttime] = useState();
     const [endtime, setEndtime] = useState();
     const [djDate, setdjDate] = useState('');
     const [loading, setLoading] = useState(false);
     const [timeInDays, setTimeInDays] = useState(false);
     const [selectedDays, setSelectedDays] = useState([]);
+    
 
     const permissions = ['songs', 'playlists', 'schedules', 'live', 'dashboard', 'requests', 'ads'];
     const dispatch = useDispatch();
@@ -60,7 +85,7 @@ const page = () => {
         try {
             let djDays = [];
             selectedDays.forEach((data) => djDays.push(data.value));
-            const { data } = await axios.post('/api/v1/dj', { name, email, password, permissions: selectPermission, starttime, endtime, djDate, djTimeInDays: timeInDays, djDays });
+            const { data } = await axios.post('/api/v1/dj', { name, email, password, permissions: selectPermission, starttime: convertToUTC(starttime), endtime: convertToUTC(endtime), djDate, djTimeInDays: timeInDays, djDays,rawTime: `${starttime}|${endtime}` });
             setName('');
             setEmail('');
             setPassword('');
@@ -83,7 +108,7 @@ const page = () => {
     return (
         <section className='w-full py-5 px-4'>
             <div className='flex justify-start items-center h-full flex-col'>
-                <h1 className='main-heading mb-10'>Create Team</h1>
+                <h1 className='main-heading mb-10'>Create DJ</h1>
                 <div className='w-[40rem] max-w-[40rem] border border-x-gray-100 shadow-md p-3 rounded-md mb-6'>
                     <form className='p-3 px-6' onSubmit={handleSubmit}>
 
@@ -224,7 +249,7 @@ const page = () => {
                         <div className="flex justify-between items-center my-6">
                             <div className="flex items-center gap-4">
 
-                                <h2 className="text-xl text-black">{permission}</h2>
+                                <h2 className="text-xl text-black">{permission == 'playlists' ? 'admin playlists' : permission}</h2>
                             </div>
 
                             <div className="mr-10">

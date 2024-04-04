@@ -15,8 +15,8 @@ function isToday(year,month,date){
 }
 
 function checkInTimeRange(startTime,endTime){
-    const currentHour = new Date().getHours();
-    const currentMinute = new Date().getMinutes();
+    const currentHour = new Date().getUTCHours();
+    const currentMinute = new Date().getUTCMinutes();
 
     // check date 
 
@@ -91,8 +91,8 @@ const UserProvider = ({children}) => {
             console.info(isRange,'isRange');
             if(isRange && !ref.current){
                 ref.current = setInterval(function(){
-                    let currentHour = new Date().getHours();
-                    let currentMinute = new Date().getMinutes();
+                    let currentHour = new Date().getUTCHours();
+                    let currentMinute = new Date().getUTCMinutes();
                     let rangeEndHour = +user?.djEndTime?.split(':')[0];
                     let rangeEndMinute = +user?.djEndTime?.split(':')[1];
 

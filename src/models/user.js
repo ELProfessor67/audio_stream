@@ -31,7 +31,8 @@ const userSchema = new mongoose.Schema({
     djTimeInDays: {type: Boolean,default: false},
     djDays: [{type: String}],
     welcomeTone: {type: String,default: undefined},
-    endingTone: {type: String,default: undefined}
+    endingTone: {type: String,default: undefined},
+    rawTime: {type: String,default: ''}
 },{timestamps: true});
 
 

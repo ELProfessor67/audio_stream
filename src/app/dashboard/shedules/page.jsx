@@ -40,10 +40,10 @@ export default function page(){
 	return(
 		<section className="w-full py-5 px-4 reletive">
       <div className="flex justify-center items-center">
-        <h1 className='main-heading mt-10'>Schedules</h1>
+        <h1 className='main-heading mt-10'>Songs Schedules</h1>
       </div>
       <div className="flex justify-end items-center mb-5">
-      	<Link href="/dashboard/shedules/create" className="py-2 px-4 rounded-md bg-indigo-500 text-white">Add Schedule</Link>
+      	<Link href="/dashboard/shedules/create" className="py-2 px-4 rounded-md bg-indigo-500 text-white">Add Song Schedule</Link>
       </div>
       <div className="reletive overflow-x-auto">
       	<table className="w-full text-sm text-left">

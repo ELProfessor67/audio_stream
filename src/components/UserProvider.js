@@ -89,6 +89,20 @@ const UserProvider = ({children}) => {
 
             const isRange = checkInTimeRange(user?.djStartTime,user?.djEndTime);
             console.info(isRange,'isRange');
+
+            if(!isRange && !ref.current){
+                ref.current = setInterval(function(){
+                    let currentHour = new Date().getUTCHours();
+                    let currentMinute = new Date().getUTCMinutes();
+                    let hours = +user?.djStartTime?.split(':')[0];
+                    let minutes = +user?.djStartTime?.split(':')[1];
+                    if(currentHour === hours && currentMinute === minutes){
+                        window.location.reload();
+                    }
+
+                },5000)
+            }
+
             if(isRange && !ref.current){
                 ref.current = setInterval(function(){
                     let currentHour = new Date().getUTCHours();

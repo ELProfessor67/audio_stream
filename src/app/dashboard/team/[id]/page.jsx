@@ -146,7 +146,7 @@ const page = ({ params }) => {
                         </div>
 
                         <div className='input-group flex flex-col gap-1 mb-6'>
-                            <label for="password" className='text-black text-lg'>Password</label>
+                            <label for="password" className='text-black text-lg'>Change Password</label>
                             <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                                 <FaLock size={20} className='text-gray-400' />
                                 <input type='text' value={password} onChange={(e) => setPassword(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='If you want to change password then change otherwise leave empty' id='password' name='password' />
@@ -154,7 +154,7 @@ const page = ({ params }) => {
                         </div>
 
                         <div className='input-group flex flex-col gap-1 mb-6'>
-                            <label for="permissions" className='text-black text-lg'>Permissions</label>
+                            <label for="permissions" className='text-black text-lg'>Allow Permissions</label>
                             <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                                 <FaAccessibleIcon size={20} className='text-gray-400' />
                                 <button type="button" className="w-full h-full text-gray-400 text-left bg-none border-none outline-none px-1" onClick={() => setOpen(true)}>
@@ -201,7 +201,7 @@ const page = ({ params }) => {
                                             </defs>
                                         </svg>
                                     </div>
-                                    <p className='text-gray-700'>Given Time in Days ?</p>
+                                    <p className='text-gray-700'>Given Time in  Days/Date ?</p>
                                 </div>
                                 {
                                     timeInDays ?

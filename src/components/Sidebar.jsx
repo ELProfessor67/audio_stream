@@ -290,7 +290,7 @@ export default function Sidebar(){
         },
         {
             icon: <PiUsersThreeDuotone size={30}/>,
-            text: "My DJs",
+            text: "Create DJs",
             alert: false,
             active: pathname == '/dashboard/team',
             link: '/dashboard/team',
@@ -412,7 +412,7 @@ function HideLink({show,text,active,alert,icon}){
                         {icon}
                         <span className={`overflow-hidden transition-all ${
                             expanded ? "w-52 ml-3": "w-0"
-                        }`}>{user.djTimeInDays ? `${user?.djDays?.map((p,i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${user.djStartTime}-${user?.djEndTime}`)}`: `${user.djDate} / ${convertUTCToLocalTime(user.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`}</span>
+                        }`}>{user.djTimeInDays ? `${user?.djDays?.map((p,i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)}`: `${user.djDate} / ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`}</span>
                         {
                             alert && (
                                 <div className={`absolute right-2 w-2 h-2 rounded-full bg-indigo-400 ${

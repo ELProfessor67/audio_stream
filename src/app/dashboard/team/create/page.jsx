@@ -187,7 +187,7 @@ const page = () => {
                                             </defs>
                                         </svg>
                                     </div>
-                                    <p className='text-gray-700 ml-2'>Given Time in Days ?</p>
+                                    <p className='text-gray-700 ml-2'>Given Time in Days/Date ?</p>
                                 </div>
                                 {
                                     timeInDays ?

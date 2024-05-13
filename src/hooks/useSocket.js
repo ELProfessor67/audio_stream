@@ -21,7 +21,7 @@ const sleep = ms => new Promise(r => window.setTimeout(r,ms))
 
 
 
-const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,setSeletedSong,volume,micVolume,filterPlaying, chatMessage,setChatMessage, setUnread, chatOpen) => {
+const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,setSeletedSong,volume,micVolume,filterPlaying, chatMessage,setChatMessage, setUnread, chatOpen, nextSong) => {
 	const socketRef = useRef();
 	const {user} = useSelector(store => store.user);
 	const peersRef = useRef({});
@@ -90,6 +90,8 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	const callerStreamsRef = useRef({});
 	const callerDetailsRef = useRef({});
 	const callsElementRef = useRef(null);
+	const nextSongRef = useRef({});
+	
 
 	useEffect(() => {
 		selectPlayListSongRef.current = selectPlayListSong;
@@ -128,6 +130,12 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	useEffect(() => {
 		filterPlayingRef.current = filterPlaying;
 	},[filterPlaying]);
+
+
+	useEffect(() => {
+		nextSongRef.current = nextSong;
+	},[nextSong])
+	
 
 
 
@@ -539,6 +547,9 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 		    Object.keys(peersRef.current).forEach((peerId) => {
 		        peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'),combinedStream.getTracks()[0],localStreamRef.current);
 		    });
+
+			nextSongRef.current.user = user;
+			socketRef.current?.emit("next-song",{roomId: user?._id.toString(),nextSong: nextSongRef.current, currentSong: selectedSongRef.current});
 			
 		}catch(err){
 			setSongStreamLoading(false);

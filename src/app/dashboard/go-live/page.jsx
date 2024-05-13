@@ -21,6 +21,124 @@ import { MdDelete, MdAdd } from 'react-icons/md'
 import ChatBox from '@/components/ChatBox';
 import Message from '@/components/Message';
 import { MdCall } from "react-icons/md";
+import { FaFolder,FaFolderOpen } from "react-icons/fa";
+import { GiLoveSong } from "react-icons/gi";
+import CreatePlaylistComponets from '@/components/CreatePlaylistComponets';
+import EditPlaylistComponets from '@/components/EditPlaylistComponets';
+
+
+
+
+
+const TimeRemaining = ({ user }) => {
+    const [remainingTime, setRemainingTime] = useState("00:00:00");
+
+    useEffect(() => {
+        const calculateRemainingTime = () => {
+            if (!user || !user.djStartTime || !user.djEndTime) {
+                setRemainingTime("00:00:00");
+                return;
+            }
+
+            // Get current UTC time
+            const nowUTC = new Date();
+            const nowUTCTimestamp = nowUTC.getTime();
+
+            // Parse start time and end time
+            const startTimeUTC = new Date();
+            const endTimeUTC = new Date();
+
+            // Adjust start time and end time to UTC
+            startTimeUTC.setUTCHours(parseInt(user.djStartTime.split(':')[0]), parseInt(user.djStartTime.split(':')[1]), 0, 0);
+            endTimeUTC.setUTCHours(parseInt(user.djEndTime.split(':')[0]), parseInt(user.djEndTime.split(':')[1]), 0, 0);
+
+            // Calculate remaining time in milliseconds
+            let timeDiff = endTimeUTC.getTime() - nowUTCTimestamp;
+
+            // If current time is after end time, set remaining time to 0
+            timeDiff = Math.max(0, timeDiff);
+
+            const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+            // Format the remaining time
+            const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            setRemainingTime(formattedTime);
+        };
+
+        const interval = setInterval(calculateRemainingTime, 1000); // Update every second
+
+        return () => clearInterval(interval);
+    }, [user]);
+
+    return (
+        <h2 className="text-white text-xl text-center">{remainingTime}</h2>
+    );
+}
+
+
+
+const CustomContextMenu = ({ xPos, yPos, clickedData,handleDelete,setCreatePlaylistOpen,setEditPlaylistOpen }) => {
+	return (
+		<>
+		{
+		xPos != 0 && yPos != 0 &&
+			<div
+				style={{
+					position: 'fixed',
+					top: yPos,
+					left: xPos,
+					backgroundColor: 'white',
+					
+					padding: '10px',
+				}}
+				className='iscotext rounded-md shadow-md'
+				>
+				
+				<ul className='iscotext'>
+					<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => handleDelete(clickedData)}>Delete</li>
+					{
+						clickedData?.type == "playlist" &&
+						<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={setEditPlaylistOpen}>Edit Song</li>
+					}
+					<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => setCreatePlaylistOpen(true)}>New Playlist</li>
+				</ul>
+			</div>
+		}
+		</>
+	);
+  };
+
+
+function RenderPlayList({playlist, onSongDragStart,onSongDrop,handleContextMenu}){
+	const [open, setOpen] = useState(false);
+	const handleDragStart = (e) => {
+		e.dataTransfer.setData("id",playlist._id)
+		e.dataTransfer.setData("isPlaylist",true)
+	}
+	return(
+		<div onDragOver={(e) => e.preventDefault()} onDrop={(e) => onSongDrop(e,playlist._id)}>
+		 <p onClick={() => setOpen(prev => !prev)} className='text-black/90 rounded-md hover:bg-gray-100 transition-all p-1 px-2 cursor-pointer flex items-center gap-2' onContextMenu={(e) => handleContextMenu(e, {type: "playlist",_id: playlist._id})} draggable onDragStart={handleDragStart}>
+			<span className='text-yellow-500'>{open ? <FaFolderOpen/> : <FaFolder/>}</span>
+			{playlist.title}
+		</p>
+		 { open &&
+			<div className='flex flex-col gap-2 pl-5' >
+				{
+					playlist?.songs?.map((song) => (
+						<p className='text-black/80 rounded-md hover:bg-gray-100 transition-all p-1 px-2 cursor-pointer flex items-center gap-2' draggable onDragStart={(e) => onSongDragStart(e,song,playlist._id)} onContextMenu={(e) => handleContextMenu(e, {type: "song",_id: song._id,playlistId: playlist._id})}>
+							<span className='text-blue-300'>{<GiLoveSong/>}</span>
+							{song.title}
+						</p>
+					))
+				}
+			</div>
+		 }
+		</div>
+	)
+}
 
 function organizeHistoryByDate(history) {
 	const organizedHistory = {};
@@ -179,13 +297,18 @@ export default function () {
 	const [chatOpen, setChatOpen] = useState(false);
 	const [unread, setUnread] = useState(0);
 	const [callers, setCallers] = useState({});
-
+	const [nextSong, setNextSong] = useState({});
+	const [allplaylists, setAllPlaylists] = useState([])
+	const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
+  	const [clickedData, setClickedData] = useState(null);
+	const [createPlaylistOpen, setCreatePlaylistOpen] = useState(false);
+	const [editPlaylistOpen, setEditPlaylistOpen] = useState(false);
 	// console.log(dbackward,dforward)
 
 
 	const dispatch = useDispatch();
 
-	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen);
+	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong);
 
 	// console.info('voiceAcitce',voiceAcitce);
 
@@ -259,6 +382,12 @@ export default function () {
 	}
 
 	function setHistory(data) {
+		setSelectPlayListSong(prev => {
+			let copy = JSON.parse(JSON.stringify(prev));
+			copy.songs = copy.songs.filter(song => song._id.toString() != data._id.toString());
+			
+			return copy;
+		})
 		const userhistoryname = `${user?.email}-history`;
 		const date = new Date();
 		const hour = date.getHours();
@@ -296,6 +425,8 @@ export default function () {
 				try {
 					const { data } = await axios.get('/api/v1/temp-playlist');
 					setPlaylists(data?.playlists);
+					// setSelectPlayListSong(data?.playlists[0]);
+					setSelectPlayListSong({songs:[]});
 					const { data: mdata } = await axios.get('/api/v1/announcement');
 					if (mdata?.announcement) {
 						setMessage(mdata?.announcement?.message);
@@ -310,6 +441,10 @@ export default function () {
 					const { data: fdata } = await axios.get('/api/v1/filter');
 					setEffectSong(fdata.filter);
 					setFilterSearch(fdata.filter);
+
+
+					const {data:all} = await axios.get('/api/v1/playlist');
+					setAllPlaylists(all?.playlists);
 
 				} catch (err) {
 					console.log(err?.response?.data?.message);
@@ -344,7 +479,7 @@ export default function () {
 	}
 
 
-	const handleSelectedSong = (data) => {
+	const handleSelectedSong = (data, index) => {
 		setSeletedSong(data);
 		setOpen(false);
 		setSongPlaying(true);
@@ -352,6 +487,15 @@ export default function () {
 		playSong(data.audio, volume);
 		// setQue(prev => [data,...prev]);
 		setHistory(data);
+		if (selectPlayListSong.songs.length - 1 <= index) {
+			console.log(selectPlayListSong.songs[0])
+			setNextSong(selectPlayListSong.songs[0]);
+		} else {
+			console.log(selectPlayListSong.songs[index + 1])
+			setNextSong(selectPlayListSong.songs[index + 1]);
+		}
+
+
 	}
 
 	const handleSongPlay = () => {
@@ -403,11 +547,14 @@ export default function () {
 							}
 						});
 						setFileLoad(0);
-						setPlaylists(prev => {
-							prev[0].songs.push(data?.song)
-							return prev
-						});
-						handleSelectedSong(data.song);
+						// setPlaylists(prev => {
+						// 	prev[0].songs.push(data?.song)
+						// 	return prev
+						// });
+						// handleSelectedSong(data.song);
+						const { data: sdata } = await axios.get('/api/v1/song');
+						console.log('sdata', sdata)
+						setAllSongs(sdata.songs);
 						console.log(data.song);
 					} catch (err) {
 						console.log(err)
@@ -430,6 +577,12 @@ export default function () {
 		console.log(sindex)
 		const song = selectPlayListSong?.songs[sindex - 1];
 		handleSelectedSong(song);
+
+		if (selectPlayListSong.songs.length - 1 <= sindex) {
+			setNextSong(selectPlayListSong.songs[0])
+		} else {
+			setNextSong(selectPlayListSong.songs[sindex + 1])
+		}
 	}
 
 	function handleForward() {
@@ -441,6 +594,11 @@ export default function () {
 		console.log(sindex)
 		const song = selectPlayListSong?.songs[sindex + 1];
 		handleSelectedSong(song);
+		if (selectPlayListSong.songs.length - 1 <= sindex + 1) {
+			setNextSong(selectPlayListSong.songs[0])
+		} else {
+			setNextSong(selectPlayListSong.songs[sindex + 2])
+		}
 	}
 
 	useEffect(() => {
@@ -649,16 +807,16 @@ export default function () {
 		clone.splice(index, 1);
 		setSelectPlayListSong({ ...selectPlayListSong, songs: clone })
 
-		setPlaylists(prev => {
-			let index = 0;
-			prev.forEach((data, i) => {
-				if (data._id.toString() === selectPlayListSong._id.toString()) {
-					index = i
-				}
-			})
-			prev[index].songs = clone;
-			return prev
-		})
+		// setPlaylists(prev => {
+		// 	let index = 0;
+		// 	prev.forEach((data, i) => {
+		// 		if (data._id.toString() === selectPlayListSong._id.toString()) {
+		// 			index = i
+		// 		}
+		// 	})
+		// 	prev[index].songs = clone;
+		// 	return prev
+		// })
 
 	}
 
@@ -668,16 +826,16 @@ export default function () {
 		clone.push(data);
 		setSelectPlayListSong({ ...selectPlayListSong, songs: clone })
 
-		setPlaylists(prev => {
-			let index = 0;
-			prev.forEach((data, i) => {
-				if (data._id.toString() === selectPlayListSong._id.toString()) {
-					index = i
-				}
-			})
-			prev[index].songs = clone;
-			return prev
-		})
+		// setPlaylists(prev => {
+		// 	let index = 0;
+		// 	prev.forEach((data, i) => {
+		// 		if (data._id.toString() === selectPlayListSong._id.toString()) {
+		// 			index = i
+		// 		}
+		// 	})
+		// 	prev[index].songs = clone;
+		// 	return prev
+		// })
 	}
 
 	function handleOnDragEnd(result) {
@@ -698,7 +856,21 @@ export default function () {
 			prev[index].songs = items;
 			return prev
 		})
+		
 	}
+
+
+	useEffect(() => {
+		if(selectPlayListSong?.songs && selectedSong?.title){
+			const sindex = selectPlayListSong?.songs?.indexOf(selectedSong);
+			if (selectPlayListSong.songs.length - 1 <= sindex) {
+				setNextSong(selectPlayListSong.songs[0])
+			} else {
+				setNextSong(selectPlayListSong.songs[sindex + 1])
+			}
+		}
+		
+	},[selectPlayListSong.songs])
 
 	const isAllow = (permissionName) => {
 		if (user?.isDJ) {
@@ -721,6 +893,79 @@ export default function () {
 		}
 	}
 
+
+
+	const onSongDragStart = (e,song,playlistId) => {
+		console.log('start')
+		e.dataTransfer.setData("song",JSON.stringify(song));
+		e.dataTransfer.setData("playlistId",playlistId);
+	}
+
+	const onSongDrop = async (e,targetPlaylistId) => {
+		const sourceId = e.dataTransfer.getData("playlistId")
+		const song = JSON.parse(e.dataTransfer.getData("song"));
+		const sourcePlaylist = allplaylists.find(playlist => playlist._id.toString() === sourceId);
+		const targetPlaylist = allplaylists.find(playlist => playlist._id.toString() === targetPlaylistId.toString());
+
+		const sourceSeletdSongs = sourcePlaylist.songs.map(song => song._id).filter(id => id.toString() != song._id);
+		const targetSeletdSongs = targetPlaylist.songs.map(song => song._id);
+		targetSeletdSongs.push(song._id)
+
+		
+		await Promise.all([axios.post(`/api/v1/playlist/${sourceId}`,{songs: sourceSeletdSongs}),axios.post(`/api/v1/playlist/${targetPlaylistId}`,{songs: targetSeletdSongs})]);
+		const {data:all} = await axios.get('/api/v1/playlist');
+					setAllPlaylists(all?.playlists);
+		
+	}
+
+
+	const handleContextMenu = (e, data) => {
+		e.preventDefault();
+		setContextMenuPosition({ x: e.clientX, y: e.clientY });
+		setClickedData(data);
+	};
+
+	useEffect(() => {
+		window.addEventListener("click", (e) => {
+			const element = e.target;
+			// if(element.classList)
+			if(!element.classList.contains("iscotext")) setContextMenuPosition({ x: 0, y: 0 })
+		},false);
+	},[])
+
+
+	const handleDelete = async (data) => {
+		
+		if(data.type == "song"){
+			const sourcePlaylist = allplaylists.find(playlist => playlist._id.toString() === data.playlistId);
+			const sourceSeletdSongs = sourcePlaylist.songs.map(song => song._id).filter(id => id != data._id);
+			await axios.post(`/api/v1/playlist/${data.playlistId}`,{songs: sourceSeletdSongs})
+		}else{
+			await axios.delete(`/api/v1/playlist?id=${data._id}`);
+		}
+		const {data:all} = await axios.get('/api/v1/playlist');
+		setAllPlaylists(all?.playlists);
+	}
+
+	const handleSongDropOnPlaylintList = (e) => {
+		const isPlaylist = e.dataTransfer.getData("isPlaylist");
+		if(isPlaylist){
+			const id = e.dataTransfer.getData("id");
+			const sourcePlaylist = allplaylists.find(playlist => playlist._id.toString() === id);
+			setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs,...sourcePlaylist.songs] })
+			return
+		}
+		const data = JSON.parse(e.dataTransfer.getData("song"));
+		handleAddPlaylist(data)
+	}
+
+
+	const getPlaylist = async () => {
+		const {data:all} = await axios.get('/api/v1/playlist');
+		setAllPlaylists(all?.playlists);
+	}
+	
+
 	return (
 		<>
 			<section className="w-full py-5 px-4 reletive">
@@ -739,6 +984,10 @@ export default function () {
 						</button>
 					</div>
 				</div>
+
+				
+
+
 
 
 				<div className="w-full reletive px-2">
@@ -807,10 +1056,26 @@ export default function () {
 					<div className="side-box flex-1 p-2 reletive">
 						<div className="w-full">
 							<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between">
-								<h2 className="text-white text-xl text-center">Streaming Time</h2>
-								<Timer timerStart={timerStart} />
+								<div>
+									<h2 className="text-white text-lg text-center">Streaming Time</h2>
+									<Timer timerStart={timerStart} />
+								</div>
+
+
+								{
+									user?.isDJ &&
+									<div>
+										<h2 className="text-white text-lg text-center">Remaining Time</h2>
+										<TimeRemaining user={user}/>
+									</div>
+								}
+								
 							</div>
-							<div className="py-2 rounded-b-md flex justify-center shadow-md">
+							<div className="py-2 rounded-b-md flex justify-around items-center shadow-md">
+								<h3 className="text-black text-xl text-center">{listners}
+									<br/>
+									Listeners
+								</h3>
 								<div className="flex flex-col items-center gap-3">
 									<button onClick={handleStart} className={`bg-none outline-none border-none ${start ? 'text-green-400' : 'text-red-600'}`}><LuPower size={40} /></button>
 
@@ -824,27 +1089,30 @@ export default function () {
 
 
 							<div className="p-3 pt-0">
+								<div className='flex items-center justify-evenly'>
+
 								<div className="flex justify-center mt-5">
 									<div className="flex flex-col items-center gap-3">
 
-										<button className="bg-none outline-none border-none text-black" onClick={SwitchOn}>
-											{
-												micOn && voiceAcitce ? <BsSoundwave size={40} />
+											<button className="bg-none outline-none border-none text-black" onClick={SwitchOn}>
+												{
+													micOn && voiceAcitce ? <BsSoundwave size={40} />
 													: micOn ? <IoMdMic size={40} />
-														: <IoMdMicOff size={40} />
-											}
-										</button>
+													: <IoMdMicOff size={40} />
+												}
+											</button>
 
-										<span className="text-black text-2xl">{micOn ? 'Mute' : "Unmute"}</span>
+											<span className="text-black text-xl">{micOn ? 'Mute' : "Unmute"}</span>
+										</div>
 									</div>
-								</div>
 
-								<div className="flex justify-center mt-5">
-									<div className="flex flex-col items-center gap-3">
-										<button className="bg-none outline-none border-none text-black" onClick={handleShare}>
-											<IoMdShare size={40} />
-										</button>
-										<span className="text-black text-2xl">Share Link</span>
+									<div className="flex justify-center mt-5">
+										<div className="flex flex-col items-center gap-3">
+											<button className="bg-none outline-none border-none text-black" onClick={handleShare}>
+												<IoMdShare size={40} />
+											</button>
+											<span className="text-black text-xl">Share Link</span>
+										</div>
 									</div>
 								</div>
 
@@ -860,50 +1128,27 @@ export default function () {
 							</div>
 						</div>
 
+
 						<div className="w-full shadow-md rounded-md mt-5 border border-gray-100 h-[40vh]" id="history">
 							<div className="w-full bg-indigo-600 px-2 py-4 flex justify-between items-center rounded-t-md">
-								<h3 className="text-xl text-white">History</h3>
-								<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => window.print()}>Print</button>
+								<h3 className="text-xl text-white">Playlists</h3>
 							</div>
 
 
-							<div className="p-2 overflow-y-auto h-[70%]">
+							<div className="p-2 overflow-y-auto h-[80%] flex flex-col gap-3">
 								{
-									Object.keys(que).length != 0 && Object.keys(que)?.map((date) => (
-										<>
-											{
-												que[date]?.length != 0 &&
-												<time className="text-gray-400 text-xl mb-3">{date}</time>
-											}
-											{
-												que[date]?.map((data, index) => (
-													<div className="w-full p-1 my-2 border-b border-gray-100">
-														<div className="flex justify-between items-center">
-															<span className="text-black text-lg ml-3">{index + 1}</span>
-															<div className="flex items-center gap-4">
-																<time className="text-black">{data?.time}</time>
-
-																<h2 className="text-black">{data?.title?.slice(0, 20)}</h2>
-																<time className="text-black">{Math.floor(data?.duration / 60)}:{Math.floor(data?.duration % 60)}</time>
-															</div>
-
-															<button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => { handleSelectedSong(data); setDforward(false); setDbackward(false) }}><FaPlay size={20} /></button>
-														</div>
-													</div>
-												))
-											}
-										</>
+									allplaylists.length != 0 && allplaylists?.map((data) => (
+										<RenderPlayList playlist={data} onSongDragStart={onSongDragStart} onSongDrop={onSongDrop} handleContextMenu={handleContextMenu}/>
 									))
 								}
 							</div>
 
 						</div>
 
-
 						<div className="w-full shadow-md rounded-md mt-5 border border-gray-100 h-[40vh]">
 							<div className="w-full bg-indigo-600 px-2 py-4 flex justify-between items-center rounded-t-md">
 								<h3 className="text-xl text-white">Requests</h3>
-								<h3 className="text-white text-sm">{listners} Listening</h3>
+								
 							</div>
 							<div className="p-2 overflow-y-auto h-[70%]">
 								{
@@ -924,13 +1169,23 @@ export default function () {
 
 							</div>
 						</div>
+
+
+						
+
 					</div>
 
 					<div className="side-box-right w-[30rem] p-2 reletive">
 						{selectedSong?.title &&
 							<div className="w-full mb-5">
 								<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
-									<h2 className="text-white text-xl text-center">Deck A</h2>
+									<div>
+										<h2 className="text-white text-xl text-left">Deck A</h2>
+										<div className='flex items-center gap-3'>
+											<h6 className='text-white text-sm'>Remainning</h6>
+											<time className="text-white text-sm">{Math.floor(remaining / 60)}:{Math.floor(remaining % 60)}</time>
+										</div>
+									</div>
 
 									<div className='flex flex-col gap-3'>
 										<div className='flex items-center'>
@@ -1025,8 +1280,10 @@ export default function () {
 
 
 						<div className="w-full">
-							<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
+							<div className="bg-indigo-600 p-3 rounded-t-md ">
 								{/*<h2 className="text-white text-xl text-center">Playlists</h2>*/}
+
+								<div className='flex justify-between reletive items-center'>
 
 								<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => setsopen(true)}><IoSearch size={25} /><span className="ml-2 text-white text-xl">{user?.isDJ ? 'Search DJ Playlist' : 'Search Admin Playlist'}</span></button>
 
@@ -1038,11 +1295,14 @@ export default function () {
 										<input type="file" accept="audio/*" className="hidden" id="audio" onChange={handleUpload} />
 									</>
 								}
+								</div>
+							
 
 
 							</div>
-							<div className="rounded-b-md shadow-md p-3 px-0 h-[21rem] overflow-x-auto">
-								{playlists.map(data => (
+							<h2 className='text-black/90 my-2 text-center text-2xl'>Queue</h2>
+							<div className="rounded-b-md shadow-md p-3 px-0 h-[21rem] overflow-x-auto" onDragOver={(e) => e.preventDefault()} onDrop={handleSongDropOnPlaylintList}>
+								{/* {playlists.map(data => (
 									<div className={`${selectPlayListSong?._id?.toString() === data._id.toString() ? 'bg-gray-100' : ''} px-3 flex justify-between items-center my-2 py-1 border-b border-gray-100`}>
 										<div className="flex items-center gap-4">
 											<Image src={data?.songs[0]?.cover} width={200} height={200} alt="cover" className="w-[5rem] h-[5rem] rounded-md" />
@@ -1056,36 +1316,102 @@ export default function () {
 											<button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handlePlaylist(data)}><FaArrowUpRightFromSquare size={20} /></button>
 										</div>
 									</div>
-								))}
+								))} */}
+								<DragDropContext onDragEnd={handleOnDragEnd}>
+									<Droppable droppableId="characters">
+										{(provided) => (
+											<div {...provided.droppableProps} ref={provided.innerRef}>
+												{
+													selectPlayListSong?.songs && selectPlayListSong?.songs?.map((data, index) => (
+														<Draggable key={data._id.toString()} draggableId={data._id.toString()} index={index}>
+															{(provided) => (
+																<div className={`flex justify-between items-center my-6 rounded-md ${data._id.toString() === nextSong?._id?.toString() ? "bg-yellow-200" : ''}`} ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
+																	<div className="flex items-center gap-4">
+																		<span className="text-black text-2xl">{index + 1}</span>
+																		<Image src={data.cover} width={200} height={200} alt="cover" className="h-[6rem] w-28 object-conver rounded" />
+																		<h2 className="text-xl text-black">{data?.title?.slice(0, 40)}</h2>
+																	</div>
+																	<div>
+																		<button disabled={songStreamloading} title='delete song from playlist' className="p-2 rounded-full text-red-400 hover:text-white hover:bg-red-400 mr-4" onClick={() => handleDeleteFromPlaylist(data)}><MdDelete size={20} /></button>
+																		<button disabled={songStreamloading} className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handleSelectedSong(data, index)}><FaPlay size={20} /></button>
+																	</div>
+																</div>
+															)}
+														</Draggable>
+													))
+												}
+											</div>
+										)}
+									</Droppable>
+								</DragDropContext>
 							</div>
 						</div>
 
+						{/* <div className="w-full shadow-md rounded-md mt-5 border border-gray-100 h-[40vh]">
+							<div className="w-full bg-indigo-600 px-2 py-4 flex justify-between items-center rounded-t-md">
+								<h3 className="text-xl text-white">Requests</h3>
+								<h3 className="text-white text-sm">{listners} Listening</h3>
+							</div>
+							<div className="p-2 overflow-y-auto h-[70%]">
+								{
+									requests?.length != 0 && requests.map((data) => (
+										<div className="w-full p-1 my-2 border-b border-gray-100">
+											<h4 className="text-sm text-gray-300">{data?.name} requested</h4>
+											<div className="flex justify-between items-center my-2">
+												<div className="flex items-center gap-4">
+													<Image src={data?.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
+													<h2 className="text-black">{data?.title?.slice(0, 20)}</h2>
+												</div>
 
-
-						{/* calls  */}
-						<div className="w-full mt-2">
-							<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
-								<h2 className="text-white text-xl text-center">Listeners Calls</h2>
+												<button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => { handleSelectedSong(data); setDforward(false); setDbackward(false) }}><FaPlay size={20} /></button>
+											</div>
+										</div>
+									))
+								}
 
 							</div>
-							<div className="rounded-b-md shadow-md p-3 h-[21rem] overflow-x-auto">
-								<audio ref={callsElementRef} controls autoPlay>
+						</div> */}
 
-								</audio>
+						<div className="w-full shadow-md rounded-md mt-5 border border-gray-100 h-[40vh]" id="history">
+							<div className="w-full bg-indigo-600 px-2 py-4 flex justify-between items-center rounded-t-md">
+								<h3 className="text-xl text-white">History</h3>
+								<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => window.print()}>Print</button>
+							</div>
+
+
+							<div className="p-2 overflow-y-auto h-[70%]">
 								{
-									Object.keys(callers)?.map((key) => (
-										<div className='flex items-center rounded-md py-2 my-4 shadow-sm justify-between'>
-											<div className='flex flex-col gap-1'>
-												<h1 className='text-xl to-gray-700'>{callers[key]?.name}</h1>
-												<p className='text-gray-500'>{callers[key]?.location}</p>
-											</div>
-											<button className='p-2 text-red-600 rounded-full bg-gray-200' onClick={() => handleCallCut(key)}><MdCall size={23} /></button>
-										</div>
+									Object.keys(que).length != 0 && Object.keys(que)?.map((date) => (
+										<>
+											{
+												que[date]?.length != 0 &&
+												<time className="text-gray-400 text-xl mb-3">{date}</time>
+											}
+											{
+												que[date]?.map((data, index) => (
+													<div className="w-full p-1 my-2 border-b border-gray-100">
+														<div className="flex justify-between items-center">
+															<span className="text-black text-lg ml-3">{index + 1}</span>
+															<div className="flex items-center gap-4">
+																<time className="text-black">{data?.time}</time>
 
+																<h2 className="text-black">{data?.title?.slice(0, 20)}</h2>
+																<time className="text-black">{Math.floor(data?.duration / 60)}:{Math.floor(data?.duration % 60)}</time>
+															</div>
+
+															<button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => { handleSelectedSong(data); setDforward(false); setDbackward(false) }}><FaPlay size={20} /></button>
+														</div>
+													</div>
+												))
+											}
+										</>
 									))
 								}
 							</div>
+
 						</div>
+
+						
 					</div>
 
 
@@ -1093,7 +1419,13 @@ export default function () {
 						{selectedFilter?.title &&
 							<div className="w-full mb-5">
 								<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
-									<h2 className="text-white text-xl text-center">Deck B</h2>
+									<div>
+										<h2 className="text-white text-xl text-left">Deck B</h2>
+										<div className='flex items-center gap-3'>
+											<h6 className='text-white text-sm'>Remainning</h6>
+											<time className="text-white text-sm">{Math.floor(fremaining / 60)}:{Math.floor(fremaining % 60)}</time>
+										</div>
+									</div>
 
 								</div>
 								<div className="py-2 rounded-b-md shadow-md p-3">
@@ -1179,7 +1511,7 @@ export default function () {
 						<div className="w-full">
 							<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
 								{/*<h2 className="text-white text-xl text-center">fsetsopen</h2>*/}
-
+								
 								<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => fsetsopen(true)}><IoSearch size={25} /><span className="ml-2 text-white text-xl">{user?.isDJ ? 'Search DJ Filter' : 'Search Admin Filter'}</span></button>
 
 								{
@@ -1192,6 +1524,7 @@ export default function () {
 								}
 
 							</div>
+							<h2 className='text-black/90 my-2 text-center text-2xl'>Sound FX</h2>
 							<div className="py-2 rounded-b-md shadow-md p-3 h-[21rem] overflow-x-auto">
 								{effectsong?.map(data => (
 									<div className="flex justify-between items-center my-6">
@@ -1207,6 +1540,31 @@ export default function () {
 								))}
 							</div>
 						</div>
+
+
+						<div className="w-full mt-5">
+							<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
+								<h2 className="text-white text-xl text-center">Listeners Calls</h2>
+
+							</div>
+							<div className="rounded-b-md shadow-md p-3 h-[21rem] overflow-x-auto">
+								<audio ref={callsElementRef} controls autoPlay>
+
+								</audio>
+								{
+									Object.keys(callers)?.map((key) => (
+										<div className='flex items-center rounded-md py-2 my-4 shadow-sm justify-between'>
+											<div className='flex flex-col gap-1'>
+												<h1 className='text-xl to-gray-700'>{callers[key]?.name}</h1>
+												<p className='text-gray-500'>{callers[key]?.location}</p>
+											</div>
+											<button className='p-2 text-red-600 rounded-full bg-gray-200' onClick={() => handleCallCut(key)}><MdCall size={23} /></button>
+										</div>
+
+									))
+								}
+							</div>
+						</div>
 					</div>
 				</div>
 
@@ -1220,7 +1578,7 @@ export default function () {
 										selectPlayListSong?.songs && selectPlayListSong?.songs?.map((data, index) => (
 											<Draggable key={data._id.toString()} draggableId={data._id.toString()} index={index}>
 												{(provided) => (
-													<div className="flex justify-between items-center my-6" ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
+													<div className={`flex justify-between items-center my-6 rounded-md ${data._id.toString() === nextSong?._id?.toString() ? "bg-yellow-200" : ''}`} ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
 														<div className="flex items-center gap-4">
 															<span className="text-black text-2xl">{index + 1}</span>
 															<Image src={data.cover} width={200} height={200} alt="cover" className="h-[6rem] w-28 object-conver rounded" />
@@ -1228,7 +1586,7 @@ export default function () {
 														</div>
 														<div>
 															<button disabled={songStreamloading} title='delete song from playlist' className="p-2 rounded-full text-red-400 hover:text-white hover:bg-red-400 mr-4" onClick={() => handleDeleteFromPlaylist(data)}><MdDelete size={20} /></button>
-															<button disabled={songStreamloading} className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handleSelectedSong(data)}><FaPlay size={20} /></button>
+															<button disabled={songStreamloading} className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handleSelectedSong(data, index)}><FaPlay size={20} /></button>
 														</div>
 													</div>
 												)}
@@ -1309,6 +1667,10 @@ export default function () {
 				</ChatBox>
 
 
+				<CreatePlaylistComponets createPlaylistOpen={createPlaylistOpen} setCreatePlaylistOpen={setCreatePlaylistOpen} allsongs={allsongs} getPlaylist={getPlaylist}/>
+				<EditPlaylistComponets createPlaylistOpen={editPlaylistOpen} setCreatePlaylistOpen={setEditPlaylistOpen} _id={clickedData?._id} allsongs={allsongs} getPlaylist={getPlaylist} allplaylists={allplaylists}/>
+				
+
 			</section>
 			{
 				callComing &&
@@ -1320,6 +1682,10 @@ export default function () {
 					</div>
 				</div>
 			}
+
+		{contextMenuPosition && (
+			<CustomContextMenu xPos={contextMenuPosition.x} yPos={contextMenuPosition.y} clickedData={clickedData} handleDelete={handleDelete} setCreatePlaylistOpen={setCreatePlaylistOpen} setEditPlaylistOpen={setEditPlaylistOpen}/>
+		)}
 		</>
 	);
 }

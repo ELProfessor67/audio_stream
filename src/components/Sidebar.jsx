@@ -229,54 +229,54 @@ export default function Sidebar(){
             show: isAllow('dashboard'),
             desc: "overview of channel"
         },
-        {
-            icon: <BsCloudUpload size={30}/>,
-            text:  `${user?.isDJ ? 'DJ' : 'Admin'} Uploads Song`,
-            alert: false,
-            active: pathname == '/dashboard/songs/upload',
-            link: '/dashboard/songs/upload',
-            show: isAllow('songs'),
-            desc: "You are able to upload your songs"
+        // {
+        //     icon: <BsCloudUpload size={30}/>,
+        //     text:  `${user?.isDJ ? 'DJ' : 'Admin'} Uploads Song`,
+        //     alert: false,
+        //     active: pathname == '/dashboard/songs/upload',
+        //     link: '/dashboard/songs/upload',
+        //     show: isAllow('songs'),
+        //     desc: "You are able to upload your songs"
     
-        },
-        {
-            icon: <GiLoveSong size={30}/>,
-            text: `${user?.isDJ ? 'DJ' : 'Admin'} Uploaded Songs`,
-            alert: false,
-            active: pathname == '/dashboard/songs',
-            link: '/dashboard/songs',
-            show: true,
-            desc: "All your uploaded songs will display here"
-        },
-        {
-            icon: <MdPlaylistAdd size={30}/>,
-            text: `${user?.isDJ ? 'DJ' : 'Admin'} Create Playlist`,
-            alert: false,
-            active: pathname == '/dashboard/playlist-create',
-            link: '/dashboard/playlist-create',
-            show: true,
-            desc: "You are able to add your songs in the form of playlist to arrange them well"
+        // },
+        // {
+        //     icon: <GiLoveSong size={30}/>,
+        //     text: `${user?.isDJ ? 'DJ' : 'Admin'} Uploaded Songs`,
+        //     alert: false,
+        //     active: pathname == '/dashboard/songs',
+        //     link: '/dashboard/songs',
+        //     show: true,
+        //     desc: "All your uploaded songs will display here"
+        // },
+        // {
+        //     icon: <MdPlaylistAdd size={30}/>,
+        //     text: `${user?.isDJ ? 'DJ' : 'Admin'} Create Playlist`,
+        //     alert: false,
+        //     active: pathname == '/dashboard/playlist-create',
+        //     link: '/dashboard/playlist-create',
+        //     show: true,
+        //     desc: "You are able to add your songs in the form of playlist to arrange them well"
     
-        },
-        {
-            icon: <BsMusicNoteList size={30}/>,
-            text: `${user?.isDJ ? 'DJ' : 'Admin'}  Created Playlists`,
-            alert: false,
-            active: pathname == '/dashboard/playlist',
-            link: '/dashboard/playlist',
-            show: true,
-            desc: "All your created playlists will display here"
-        },
-        {
-            icon: <MdOutlineAdminPanelSettings size={30}/>,
-            text: "Admin Playlists",
-            alert: false,
-            active: pathname == '/dashboard/playlist-admin',
-            link: '/dashboard/playlist-admin',
-            show: isAllow('playlists'),
-            desc: "You are able to copy admin playlists"
+        // },
+        // {
+        //     icon: <BsMusicNoteList size={30}/>,
+        //     text: `${user?.isDJ ? 'DJ' : 'Admin'}  Created Playlists`,
+        //     alert: false,
+        //     active: pathname == '/dashboard/playlist',
+        //     link: '/dashboard/playlist',
+        //     show: true,
+        //     desc: "All your created playlists will display here"
+        // },
+        // {
+        //     icon: <MdOutlineAdminPanelSettings size={30}/>,
+        //     text: "Admin/Autodj Playlists",
+        //     alert: false,
+        //     active: pathname == '/dashboard/playlist-admin',
+        //     link: '/dashboard/playlist-admin',
+        //     show: isAllow('playlists'),
+        //     desc: "You are able to copy admin playlists"
     
-        },
+        // },
        
         
         {
@@ -315,15 +315,15 @@ export default function Sidebar(){
             show: true,
             desc: "Admin is able to add Filter effects"
         },
-        {
-            icon: <BsMailbox size={30}/>,
-            text: "Manage Live Playlist",
-            alert: true,
-            active: pathname == '/dashboard/manage-live',
-            link: '/dashboard/manage-live',
-            show: true,
-            desc: "You can create a playlist before going to live which will be shown to during streaming"
-        },
+        // {
+        //     icon: <BsMailbox size={30}/>,
+        //     text: "Manage Live Playlist",
+        //     alert: true,
+        //     active: pathname == '/dashboard/manage-live',
+        //     link: '/dashboard/manage-live',
+        //     show: true,
+        //     desc: "You can create a playlist before going to live which will be shown to during streaming"
+        // },
         {
             icon: <CiStreamOn size={30}/>,
             text: "Start Streaming",

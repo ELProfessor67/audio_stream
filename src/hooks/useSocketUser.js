@@ -26,6 +26,7 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 	const [isLive,setIsLive] = useState(false);
 	const [autodj,setAutoDj] = useState(false);
 	const [messageList,setMessageList] = useState([]);
+	const [nextSong, setNextSong]  = useState({});
 	const cuurentTimeRef = useRef();
 	const playRef = useRef();
 	const isLiveRef = useRef();
@@ -76,6 +77,7 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 		audioRef.current.src = data?.currentSong?.url;
 		
 		cuurentTimeRef.current = data?.currentSong?.currentTime;
+		setNextSong(data?.currentSong.nextSong);
 		
 		handleAutoDjPlay();
 		console.log('isPlay',playRef.current)
@@ -272,12 +274,18 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 			setCallStatus('complete');
 		});
 
+
+		socketRef.current.on('next-song',(({nextSong}) => {
+			setNextSong(nextSong);
+		}))
+
 		return () => {
 			socketRef.current.off('room-active');
 			socketRef.current.off('room-unactive');
 			socketRef.current.off('room-active-now');
 			socketRef.current.off('song-change');
 			socketRef.current.off('receive-message');
+			socketRef.current.off('next-song');
 		}
 
 	},[]);
@@ -315,7 +323,7 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 
 	
 
-	return {socketRef,userJoin,roomActive,isLive,handleRequestSong, autodj, handleSendMessage, messageList,callAdmin,cutCall}
+	return {socketRef,userJoin,roomActive,isLive,handleRequestSong, autodj, handleSendMessage, messageList,callAdmin,cutCall, nextSong}
 }
 
 export default useSocket;

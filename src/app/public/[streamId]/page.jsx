@@ -93,7 +93,7 @@ export default function page({ params }) {
 	const downloadLink = useRef();
 
 	// console.log('isPlay from components side', isPlay)
-	const { roomActive, handleRequestSong, isLive, autodj, messageList, handleSendMessage, callAdmin, cutCall } = useSocketUser(params.streamId, audioRef, name, isPlay, setIsPlay, message, setMessage, setCallStatus,location);
+	const { roomActive, handleRequestSong, isLive, autodj, messageList, handleSendMessage, callAdmin, cutCall,nextSong } = useSocketUser(params.streamId, audioRef, name, isPlay, setIsPlay, message, setMessage, setCallStatus,location);
 	// const [more,setMore] = useState(false);
 	const [rOpen, setROPen] = useState(false);
 	console.log(roomActive)
@@ -220,6 +220,17 @@ export default function page({ params }) {
 						</div>
 						<h3 className="text-xl para">{user?.name}</h3>
 						<h4 className="text-sm opacity-40">You'Listen {user?.name} Radio Channel</h4>
+						{
+							nextSong?.title &&
+							<>
+							<h4 className='text-lg'>Next song :  <span className='text-gray-500'>{nextSong?.title}</span></h4>
+							{
+								isLive ? 
+								<h4>{nextSong?.user?.name}</h4>
+								: <h4>Auto DJ</h4>
+							}
+							</>
+						}
 					</div>
 				</div>
 				<div className="w-full px-2 pt-1 mt-2 flex justify-between items-center flex-col md:flex-row gap-5 md:gap-0">

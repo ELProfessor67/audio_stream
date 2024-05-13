@@ -36,7 +36,7 @@ export default function Page(){
 
             // window.alert(data.message)
         }catch(err){
-            await dispatch(showError(error.response.data.message));
+            await dispatch(showError(err.response.data.message));
             await dispatch(clearError());
             console.log(err.message);
         }

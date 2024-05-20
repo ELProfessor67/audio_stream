@@ -98,10 +98,16 @@ const CustomContextMenu = ({ xPos, yPos, clickedData,handleDelete,setCreatePlayl
 				>
 				
 				<ul className='iscotext'>
-					<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => handleDelete(clickedData)}>Delete</li>
 					{
-						clickedData?.type == "playlist" &&
-						<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={setEditPlaylistOpen}>Edit Song</li>
+						clickedData?.type != "empty" &&
+						<>
+						<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => handleDelete(clickedData)}>Delete</li>
+						{
+							clickedData?.type == "playlist" &&
+							<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={setEditPlaylistOpen}>Edit Song</li>
+						}
+						<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => setCreatePlaylistOpen(true)}>New Playlist</li>
+						</>
 					}
 					<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => setCreatePlaylistOpen(true)}>New Playlist</li>
 				</ul>
@@ -920,6 +926,7 @@ export default function () {
 
 
 	const handleContextMenu = (e, data) => {
+		e.stopPropagation()
 		e.preventDefault();
 		setContextMenuPosition({ x: e.clientX, y: e.clientY });
 		setClickedData(data);
@@ -1132,10 +1139,11 @@ export default function () {
 						<div className="w-full shadow-md rounded-md mt-5 border border-gray-100 h-[40vh]" id="history">
 							<div className="w-full bg-indigo-600 px-2 py-4 flex justify-between items-center rounded-t-md">
 								<h3 className="text-xl text-white">Playlists</h3>
+								<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => setsopen(true)}><IoSearch size={25} /></button>
 							</div>
 
 
-							<div className="p-2 overflow-y-auto h-[80%] flex flex-col gap-3">
+							<div className="p-2 overflow-y-auto h-[80%] flex flex-col gap-3" onContextMenu={(e) => handleContextMenu(e, {type: "empty"})}>
 								{
 									allplaylists.length != 0 && allplaylists?.map((data) => (
 										<RenderPlayList playlist={data} onSongDragStart={onSongDragStart} onSongDrop={onSongDrop} handleContextMenu={handleContextMenu}/>
@@ -1285,7 +1293,7 @@ export default function () {
 
 								<div className='flex justify-between reletive items-center'>
 
-								<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => setsopen(true)}><IoSearch size={25} /><span className="ml-2 text-white text-xl">{user?.isDJ ? 'Search DJ Playlist' : 'Search Admin Playlist'}</span></button>
+								{/* <button className="bg-none flex items-center outline-none border-none text-white" onClick={() => setsopen(true)}><IoSearch size={25} /><span className="ml-2 text-white text-xl">{user?.isDJ ? 'Search DJ Playlist' : 'Search Admin Playlist'}</span></button> */}
 
 								{
 									isAllow('songs') &&
@@ -1328,7 +1336,7 @@ export default function () {
 																<div className={`flex justify-between items-center my-6 rounded-md ${data._id.toString() === nextSong?._id?.toString() ? "bg-yellow-200" : ''}`} ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
 																	<div className="flex items-center gap-4">
 																		<span className="text-black text-2xl">{index + 1}</span>
-																		<Image src={data.cover} width={200} height={200} alt="cover" className="h-[6rem] w-28 object-conver rounded" />
+																		<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
 																		<h2 className="text-xl text-black">{data?.title?.slice(0, 40)}</h2>
 																	</div>
 																	<div>
@@ -1529,7 +1537,7 @@ export default function () {
 								{effectsong?.map(data => (
 									<div className="flex justify-between items-center my-6">
 										<div className="flex items-center gap-4">
-											<Image src={data.cover} width={200} height={200} alt="cover" className="h-[4rem] w-[4rem] object-conver rounded" />
+											<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
 											<h2 className="text-xl text-black">{data?.title}</h2>
 										</div>
 
@@ -1581,7 +1589,7 @@ export default function () {
 													<div className={`flex justify-between items-center my-6 rounded-md ${data._id.toString() === nextSong?._id?.toString() ? "bg-yellow-200" : ''}`} ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
 														<div className="flex items-center gap-4">
 															<span className="text-black text-2xl">{index + 1}</span>
-															<Image src={data.cover} width={200} height={200} alt="cover" className="h-[6rem] w-28 object-conver rounded" />
+															<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
 															<h2 className="text-xl text-black">{data?.title?.slice(0, 40)}</h2>
 														</div>
 														<div>
@@ -1622,7 +1630,7 @@ export default function () {
 						filtersongs && filtersongs.map((data) => (
 							<div className="flex justify-between items-center my-6">
 								<div className="flex items-center gap-4">
-									<Image src={data.cover} width={200} height={200} alt="cover" className="h-[4rem] w-[4rem] object-conver rounded" />
+									<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
 									<div className='flex flex-col gap-0'>
 										<h2 className="text-xl text-black">{data?.title}</h2>
 										<p className="para">~ {data?.artist}</p>
@@ -1646,7 +1654,7 @@ export default function () {
 						filterSearch && filterSearch.map((data) => (
 							<div className="flex justify-between items-center my-6">
 								<div className="flex items-center gap-4">
-									<Image src={data.cover} width={200} height={200} alt="cover" className="h-[4rem] w-[4rem] object-conver rounded" />
+									<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
 									<h2 className="text-xl text-black">{data?.title}</h2>
 								</div>
 

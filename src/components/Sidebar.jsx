@@ -151,7 +151,7 @@ export function SidebarItem({icon,text,active,alert,link='/',onClick,desc}){
     const {expanded} = useContext(SidebarContext);
     return(<>
         <li onClick={onClick}>
-            <Link href={link} className={` 
+            <a href={link} target='_zeeshan' className={` 
                 relative flex items-center py-2 px-3 my-1
                 font-medium rounded-md cursor-pointer
                 transition-colors
@@ -178,7 +178,7 @@ export function SidebarItem({icon,text,active,alert,link='/',onClick,desc}){
                         {text}
                     </div>
                 }
-            </Link>
+            </a>
         </li>
     </>);
 

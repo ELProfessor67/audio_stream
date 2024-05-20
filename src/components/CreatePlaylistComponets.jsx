@@ -95,7 +95,7 @@ const CreatePlaylistComponets = ({createPlaylistOpen,setCreatePlaylistOpen, alls
         		allsongs && allsongs.map((data) => (
         			<div className="flex justify-between items-center my-6">
         				<div className="flex items-center gap-4">
-                            <Image src={data.cover} width={200} height={200} alt="cover" className="h-[6rem] w-28 object-conver rounded"/> 
+                            <Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded"/> 
                             <h2 className="text-xl text-black">{data?.title}</h2>           
                         </div>
 

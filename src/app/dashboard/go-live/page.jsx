@@ -21,7 +21,7 @@ import { MdDelete, MdAdd } from 'react-icons/md'
 import ChatBox from '@/components/ChatBox';
 import Message from '@/components/Message';
 import { MdCall } from "react-icons/md";
-import { FaFolder,FaFolderOpen } from "react-icons/fa";
+import { FaFolder, FaFolderOpen } from "react-icons/fa";
 import { GiLoveSong } from "react-icons/gi";
 import CreatePlaylistComponets from '@/components/CreatePlaylistComponets';
 import EditPlaylistComponets from '@/components/EditPlaylistComponets';
@@ -31,117 +31,117 @@ import EditPlaylistComponets from '@/components/EditPlaylistComponets';
 
 
 const TimeRemaining = ({ user }) => {
-    const [remainingTime, setRemainingTime] = useState("00:00:00");
+	const [remainingTime, setRemainingTime] = useState("00:00:00");
 
-    useEffect(() => {
-        const calculateRemainingTime = () => {
-            if (!user || !user.djStartTime || !user.djEndTime) {
-                setRemainingTime("00:00:00");
-                return;
-            }
+	useEffect(() => {
+		const calculateRemainingTime = () => {
+			if (!user || !user.djStartTime || !user.djEndTime) {
+				setRemainingTime("00:00:00");
+				return;
+			}
 
-            // Get current UTC time
-            const nowUTC = new Date();
-            const nowUTCTimestamp = nowUTC.getTime();
+			// Get current UTC time
+			const nowUTC = new Date();
+			const nowUTCTimestamp = nowUTC.getTime();
 
-            // Parse start time and end time
-            const startTimeUTC = new Date();
-            const endTimeUTC = new Date();
+			// Parse start time and end time
+			const startTimeUTC = new Date();
+			const endTimeUTC = new Date();
 
-            // Adjust start time and end time to UTC
-            startTimeUTC.setUTCHours(parseInt(user.djStartTime.split(':')[0]), parseInt(user.djStartTime.split(':')[1]), 0, 0);
-            endTimeUTC.setUTCHours(parseInt(user.djEndTime.split(':')[0]), parseInt(user.djEndTime.split(':')[1]), 0, 0);
+			// Adjust start time and end time to UTC
+			startTimeUTC.setUTCHours(parseInt(user.djStartTime.split(':')[0]), parseInt(user.djStartTime.split(':')[1]), 0, 0);
+			endTimeUTC.setUTCHours(parseInt(user.djEndTime.split(':')[0]), parseInt(user.djEndTime.split(':')[1]), 0, 0);
 
-            // Calculate remaining time in milliseconds
-            let timeDiff = endTimeUTC.getTime() - nowUTCTimestamp;
+			// Calculate remaining time in milliseconds
+			let timeDiff = endTimeUTC.getTime() - nowUTCTimestamp;
 
-            // If current time is after end time, set remaining time to 0
-            timeDiff = Math.max(0, timeDiff);
+			// If current time is after end time, set remaining time to 0
+			timeDiff = Math.max(0, timeDiff);
 
-            const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+			const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+			const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+			const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
 
-            // Format the remaining time
-            const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+			// Format the remaining time
+			const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-            setRemainingTime(formattedTime);
-        };
+			setRemainingTime(formattedTime);
+		};
 
-        const interval = setInterval(calculateRemainingTime, 1000); // Update every second
+		const interval = setInterval(calculateRemainingTime, 1000); // Update every second
 
-        return () => clearInterval(interval);
-    }, [user]);
+		return () => clearInterval(interval);
+	}, [user]);
 
-    return (
-        <h2 className="text-white text-xl text-center">{remainingTime}</h2>
-    );
+	return (
+		<h2 className="text-white text-xl text-center">{remainingTime}</h2>
+	);
 }
 
 
 
-const CustomContextMenu = ({ xPos, yPos, clickedData,handleDelete,setCreatePlaylistOpen,setEditPlaylistOpen }) => {
+const CustomContextMenu = ({ xPos, yPos, clickedData, handleDelete, setCreatePlaylistOpen, setEditPlaylistOpen }) => {
 	return (
 		<>
-		{
-		xPos != 0 && yPos != 0 &&
-			<div
-				style={{
-					position: 'fixed',
-					top: yPos,
-					left: xPos,
-					backgroundColor: 'white',
-					
-					padding: '10px',
-				}}
-				className='iscotext rounded-md shadow-md'
+			{
+				xPos != 0 && yPos != 0 &&
+				<div
+					style={{
+						position: 'fixed',
+						top: yPos,
+						left: xPos,
+						backgroundColor: 'white',
+
+						padding: '10px',
+					}}
+					className='iscotext rounded-md shadow-md'
 				>
-				
-				<ul className='iscotext'>
-					{
-						clickedData?.type != "empty" &&
-						<>
-						<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => handleDelete(clickedData)}>Delete</li>
+
+					<ul className='iscotext'>
 						{
-							clickedData?.type == "playlist" &&
-							<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={setEditPlaylistOpen}>Edit Song</li>
+							clickedData?.type != "empty" &&
+							<>
+								<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => handleDelete(clickedData)}>Delete</li>
+								{
+									clickedData?.type == "playlist" &&
+									<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={setEditPlaylistOpen}>Edit Song</li>
+								}
+								<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => setCreatePlaylistOpen(true)}>New Playlist</li>
+							</>
 						}
 						<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => setCreatePlaylistOpen(true)}>New Playlist</li>
-						</>
-					}
-					<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => setCreatePlaylistOpen(true)}>New Playlist</li>
-				</ul>
-			</div>
-		}
+					</ul>
+				</div>
+			}
 		</>
 	);
-  };
+};
 
 
-function RenderPlayList({playlist, onSongDragStart,onSongDrop,handleContextMenu}){
+function RenderPlayList({ playlist, onSongDragStart, onSongDrop, handleContextMenu }) {
 	const [open, setOpen] = useState(false);
 	const handleDragStart = (e) => {
-		e.dataTransfer.setData("id",playlist._id)
-		e.dataTransfer.setData("isPlaylist",true)
+		e.dataTransfer.setData("id", playlist._id)
+		e.dataTransfer.setData("isPlaylist", true)
 	}
-	return(
-		<div onDragOver={(e) => e.preventDefault()} onDrop={(e) => onSongDrop(e,playlist._id)}>
-		 <p onClick={() => setOpen(prev => !prev)} className='text-black/90 rounded-md hover:bg-gray-100 transition-all p-1 px-2 cursor-pointer flex items-center gap-2' onContextMenu={(e) => handleContextMenu(e, {type: "playlist",_id: playlist._id})} draggable onDragStart={handleDragStart}>
-			<span className='text-yellow-500'>{open ? <FaFolderOpen/> : <FaFolder/>}</span>
-			{playlist.title}
-		</p>
-		 { open &&
-			<div className='flex flex-col gap-2 pl-5' >
-				{
-					playlist?.songs?.map((song) => (
-						<p className='text-black/80 rounded-md hover:bg-gray-100 transition-all p-1 px-2 cursor-pointer flex items-center gap-2' draggable onDragStart={(e) => onSongDragStart(e,song,playlist._id)} onContextMenu={(e) => handleContextMenu(e, {type: "song",_id: song._id,playlistId: playlist._id})}>
-							<span className='text-blue-300'>{<GiLoveSong/>}</span>
-							{song.title}
-						</p>
-					))
-				}
-			</div>
-		 }
+	return (
+		<div onDragOver={(e) => e.preventDefault()} onDrop={(e) => onSongDrop(e, playlist._id)}>
+			<p onClick={() => setOpen(prev => !prev)} className='text-black/90 rounded-md hover:bg-gray-100 transition-all p-1 px-2 cursor-pointer flex items-center gap-2' onContextMenu={(e) => handleContextMenu(e, { type: "playlist", _id: playlist._id })} draggable onDragStart={handleDragStart}>
+				<span className='text-yellow-500'>{open ? <FaFolderOpen /> : <FaFolder />}</span>
+				{playlist.title}
+			</p>
+			{open &&
+				<div className='flex flex-col gap-2 pl-5' >
+					{
+						playlist?.songs?.map((song) => (
+							<p className='text-black/80 rounded-md hover:bg-gray-100 transition-all p-1 px-2 cursor-pointer flex items-center gap-2' draggable onDragStart={(e) => onSongDragStart(e, song, playlist._id)} onContextMenu={(e) => handleContextMenu(e, { type: "song", _id: song._id, playlistId: playlist._id })}>
+								<span className='text-blue-300'>{<GiLoveSong />}</span>
+								{song.title}
+							</p>
+						))
+					}
+				</div>
+			}
 		</div>
 	)
 }
@@ -306,7 +306,7 @@ export default function () {
 	const [nextSong, setNextSong] = useState({});
 	const [allplaylists, setAllPlaylists] = useState([])
 	const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
-  	const [clickedData, setClickedData] = useState(null);
+	const [clickedData, setClickedData] = useState(null);
 	const [createPlaylistOpen, setCreatePlaylistOpen] = useState(false);
 	const [editPlaylistOpen, setEditPlaylistOpen] = useState(false);
 	// console.log(dbackward,dforward)
@@ -391,7 +391,7 @@ export default function () {
 		setSelectPlayListSong(prev => {
 			let copy = JSON.parse(JSON.stringify(prev));
 			copy.songs = copy.songs.filter(song => song._id.toString() != data._id.toString());
-			
+
 			return copy;
 		})
 		const userhistoryname = `${user?.email}-history`;
@@ -432,7 +432,7 @@ export default function () {
 					const { data } = await axios.get('/api/v1/temp-playlist');
 					setPlaylists(data?.playlists);
 					// setSelectPlayListSong(data?.playlists[0]);
-					setSelectPlayListSong({songs:[]});
+					setSelectPlayListSong({ songs: [] });
 					const { data: mdata } = await axios.get('/api/v1/announcement');
 					if (mdata?.announcement) {
 						setMessage(mdata?.announcement?.message);
@@ -449,7 +449,7 @@ export default function () {
 					setFilterSearch(fdata.filter);
 
 
-					const {data:all} = await axios.get('/api/v1/playlist');
+					const { data: all } = await axios.get('/api/v1/playlist');
 					setAllPlaylists(all?.playlists);
 
 				} catch (err) {
@@ -852,22 +852,22 @@ export default function () {
 		items.splice(result.destination.index, 0, reorderedItem);
 
 		setSelectPlayListSong({ ...selectPlayListSong, songs: items });
-		setPlaylists(prev => {
-			let index = 0;
-			prev.forEach((data, i) => {
-				if (data._id.toString() === selectPlayListSong._id.toString()) {
-					index = i
-				}
-			})
-			prev[index].songs = items;
-			return prev
-		})
-		
+		// setPlaylists(prev => {
+		// 	let index = 0;
+		// 	prev.forEach((data, i) => {
+		// 		if (data._id.toString() === selectPlayListSong._id.toString()) {
+		// 			index = i
+		// 		}
+		// 	})
+		// 	prev[index].songs = items;
+		// 	return prev
+		// })
+
 	}
 
 
 	useEffect(() => {
-		if(selectPlayListSong?.songs && selectedSong?.title){
+		if (selectPlayListSong?.songs && selectedSong?.title) {
 			const sindex = selectPlayListSong?.songs?.indexOf(selectedSong);
 			if (selectPlayListSong.songs.length - 1 <= sindex) {
 				setNextSong(selectPlayListSong.songs[0])
@@ -875,8 +875,8 @@ export default function () {
 				setNextSong(selectPlayListSong.songs[sindex + 1])
 			}
 		}
-		
-	},[selectPlayListSong.songs])
+
+	}, [selectPlayListSong.songs])
 
 	const isAllow = (permissionName) => {
 		if (user?.isDJ) {
@@ -901,13 +901,13 @@ export default function () {
 
 
 
-	const onSongDragStart = (e,song,playlistId) => {
+	const onSongDragStart = (e, song, playlistId) => {
 		console.log('start')
-		e.dataTransfer.setData("song",JSON.stringify(song));
-		e.dataTransfer.setData("playlistId",playlistId);
+		e.dataTransfer.setData("song", JSON.stringify(song));
+		e.dataTransfer.setData("playlistId", playlistId);
 	}
 
-	const onSongDrop = async (e,targetPlaylistId) => {
+	const onSongDrop = async (e, targetPlaylistId) => {
 		const sourceId = e.dataTransfer.getData("playlistId")
 		const song = JSON.parse(e.dataTransfer.getData("song"));
 		const sourcePlaylist = allplaylists.find(playlist => playlist._id.toString() === sourceId);
@@ -917,11 +917,11 @@ export default function () {
 		const targetSeletdSongs = targetPlaylist.songs.map(song => song._id);
 		targetSeletdSongs.push(song._id)
 
-		
-		await Promise.all([axios.post(`/api/v1/playlist/${sourceId}`,{songs: sourceSeletdSongs}),axios.post(`/api/v1/playlist/${targetPlaylistId}`,{songs: targetSeletdSongs})]);
-		const {data:all} = await axios.get('/api/v1/playlist');
-					setAllPlaylists(all?.playlists);
-		
+
+		await Promise.all([axios.post(`/api/v1/playlist/${sourceId}`, { songs: sourceSeletdSongs }), axios.post(`/api/v1/playlist/${targetPlaylistId}`, { songs: targetSeletdSongs })]);
+		const { data: all } = await axios.get('/api/v1/playlist');
+		setAllPlaylists(all?.playlists);
+
 	}
 
 
@@ -936,30 +936,30 @@ export default function () {
 		window.addEventListener("click", (e) => {
 			const element = e.target;
 			// if(element.classList)
-			if(!element.classList.contains("iscotext")) setContextMenuPosition({ x: 0, y: 0 })
-		},false);
-	},[])
+			if (!element.classList.contains("iscotext")) setContextMenuPosition({ x: 0, y: 0 })
+		}, false);
+	}, [])
 
 
 	const handleDelete = async (data) => {
-		
-		if(data.type == "song"){
+
+		if (data.type == "song") {
 			const sourcePlaylist = allplaylists.find(playlist => playlist._id.toString() === data.playlistId);
 			const sourceSeletdSongs = sourcePlaylist.songs.map(song => song._id).filter(id => id != data._id);
-			await axios.post(`/api/v1/playlist/${data.playlistId}`,{songs: sourceSeletdSongs})
-		}else{
+			await axios.post(`/api/v1/playlist/${data.playlistId}`, { songs: sourceSeletdSongs })
+		} else {
 			await axios.delete(`/api/v1/playlist?id=${data._id}`);
 		}
-		const {data:all} = await axios.get('/api/v1/playlist');
+		const { data: all } = await axios.get('/api/v1/playlist');
 		setAllPlaylists(all?.playlists);
 	}
 
 	const handleSongDropOnPlaylintList = (e) => {
 		const isPlaylist = e.dataTransfer.getData("isPlaylist");
-		if(isPlaylist){
+		if (isPlaylist) {
 			const id = e.dataTransfer.getData("id");
 			const sourcePlaylist = allplaylists.find(playlist => playlist._id.toString() === id);
-			setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs,...sourcePlaylist.songs] })
+			setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs, ...sourcePlaylist.songs] })
 			return
 		}
 		const data = JSON.parse(e.dataTransfer.getData("song"));
@@ -968,10 +968,10 @@ export default function () {
 
 
 	const getPlaylist = async () => {
-		const {data:all} = await axios.get('/api/v1/playlist');
+		const { data: all } = await axios.get('/api/v1/playlist');
 		setAllPlaylists(all?.playlists);
 	}
-	
+
 
 	return (
 		<>
@@ -992,7 +992,7 @@ export default function () {
 					</div>
 				</div>
 
-				
+
 
 
 
@@ -1073,14 +1073,14 @@ export default function () {
 									user?.isDJ &&
 									<div>
 										<h2 className="text-white text-lg text-center">Remaining Time</h2>
-										<TimeRemaining user={user}/>
+										<TimeRemaining user={user} />
 									</div>
 								}
-								
+
 							</div>
 							<div className="py-2 rounded-b-md flex justify-around items-center shadow-md">
 								<h3 className="text-black text-xl text-center">{listners}
-									<br/>
+									<br />
 									Listeners
 								</h3>
 								<div className="flex flex-col items-center gap-3">
@@ -1098,14 +1098,14 @@ export default function () {
 							<div className="p-3 pt-0">
 								<div className='flex items-center justify-evenly'>
 
-								<div className="flex justify-center mt-5">
-									<div className="flex flex-col items-center gap-3">
+									<div className="flex justify-center mt-5">
+										<div className="flex flex-col items-center gap-3">
 
 											<button className="bg-none outline-none border-none text-black" onClick={SwitchOn}>
 												{
 													micOn && voiceAcitce ? <BsSoundwave size={40} />
-													: micOn ? <IoMdMic size={40} />
-													: <IoMdMicOff size={40} />
+														: micOn ? <IoMdMic size={40} />
+															: <IoMdMicOff size={40} />
 												}
 											</button>
 
@@ -1136,7 +1136,40 @@ export default function () {
 						</div>
 
 
-						<div className="w-full shadow-md rounded-md mt-5 border border-gray-100 h-[40vh]" id="history">
+						<div className="w-full mt-4">
+							<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
+
+
+								<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => fsetsopen(true)}><IoSearch size={25} /><span className="ml-2 text-white text-xl">{user?.isDJ ? 'Search DJ Filter' : 'Search Admin Filter'}</span></button>
+
+								{
+									isAllow('songs') &&
+									<>
+										<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => document.getElementById('filter').click()}>{filterload == 0 ? 'Upload' : `${filterload}%`}</button>
+
+										<input type="file" accept="audio/*" className="hidden" id="filter" onChange={handleFilterUpload} />
+									</>
+								}
+
+							</div>
+							<h2 className='text-black/90 my-2 text-center text-2xl'>Sound FX</h2>
+							<div className="py-2 rounded-b-md shadow-md p-3 h-[21rem] overflow-x-auto">
+								{effectsong?.map(data => (
+									<div className="flex justify-between items-center my-6">
+										<div className="flex items-center gap-4">
+											<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
+											<h2 className="text-xl text-black">{data?.title}</h2>
+										</div>
+
+										<div className="mr-10">
+											<button disabled={filterStreamloading} className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handleSelectFilter(data)}><FaPlay size={20} /></button>
+										</div>
+									</div>
+								))}
+							</div>
+						</div>
+
+						{/* <div className="w-full shadow-md rounded-md mt-5 border border-gray-100 h-[40vh]" id="history">
 							<div className="w-full bg-indigo-600 px-2 py-4 flex justify-between items-center rounded-t-md">
 								<h3 className="text-xl text-white">Playlists</h3>
 								<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => setsopen(true)}><IoSearch size={25} /></button>
@@ -1151,12 +1184,12 @@ export default function () {
 								}
 							</div>
 
-						</div>
+						</div> */}
 
 						<div className="w-full shadow-md rounded-md mt-5 border border-gray-100 h-[40vh]">
 							<div className="w-full bg-indigo-600 px-2 py-4 flex justify-between items-center rounded-t-md">
 								<h3 className="text-xl text-white">Requests</h3>
-								
+
 							</div>
 							<div className="p-2 overflow-y-auto h-[70%]">
 								{
@@ -1179,7 +1212,7 @@ export default function () {
 						</div>
 
 
-						
+
 
 					</div>
 
@@ -1293,18 +1326,18 @@ export default function () {
 
 								<div className='flex justify-between reletive items-center'>
 
-								{/* <button className="bg-none flex items-center outline-none border-none text-white" onClick={() => setsopen(true)}><IoSearch size={25} /><span className="ml-2 text-white text-xl">{user?.isDJ ? 'Search DJ Playlist' : 'Search Admin Playlist'}</span></button> */}
+									{/* <button className="bg-none flex items-center outline-none border-none text-white" onClick={() => setsopen(true)}><IoSearch size={25} /><span className="ml-2 text-white text-xl">{user?.isDJ ? 'Search DJ Playlist' : 'Search Admin Playlist'}</span></button> */}
 
-								{
-									isAllow('songs') &&
-									<>
-										<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => document.getElementById('audio').click()}>{fileload == 0 ? 'Upload' : `${fileload}%`}</button>
+									{
+										isAllow('songs') &&
+										<>
+											<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => document.getElementById('audio').click()}>{fileload == 0 ? 'Upload' : `${fileload}%`}</button>
 
-										<input type="file" accept="audio/*" className="hidden" id="audio" onChange={handleUpload} />
-									</>
-								}
+											<input type="file" accept="audio/*" className="hidden" id="audio" onChange={handleUpload} />
+										</>
+									}
 								</div>
-							
+
 
 
 							</div>
@@ -1419,7 +1452,7 @@ export default function () {
 
 						</div>
 
-						
+
 					</div>
 
 
@@ -1516,9 +1549,9 @@ export default function () {
 
 
 
-						<div className="w-full">
+						{/* <div className="w-full">
 							<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
-								{/*<h2 className="text-white text-xl text-center">fsetsopen</h2>*/}
+								
 								
 								<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => fsetsopen(true)}><IoSearch size={25} /><span className="ml-2 text-white text-xl">{user?.isDJ ? 'Search DJ Filter' : 'Search Admin Filter'}</span></button>
 
@@ -1547,6 +1580,24 @@ export default function () {
 									</div>
 								))}
 							</div>
+						</div> */}
+
+
+						<div className="w-full shadow-md rounded-md mt-5 border border-gray-100 h-[40vh]" id="history">
+							<div className="w-full bg-indigo-600 px-2 py-4 flex justify-between items-center rounded-t-md">
+								<h3 className="text-xl text-white">Playlists</h3>
+								<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => setsopen(true)}><IoSearch size={25} /></button>
+							</div>
+
+
+							<div className="p-2 overflow-y-auto h-[80%] flex flex-col gap-3" onContextMenu={(e) => handleContextMenu(e, { type: "empty" })}>
+								{
+									allplaylists.length != 0 && allplaylists?.map((data) => (
+										<RenderPlayList playlist={data} onSongDragStart={onSongDragStart} onSongDrop={onSongDrop} handleContextMenu={handleContextMenu} />
+									))
+								}
+							</div>
+
 						</div>
 
 
@@ -1627,7 +1678,7 @@ export default function () {
 
 				<Dialog open={sopen} onClose={() => setsopen(false)} name={query} setName={setQuery} search={true}>
 					{
-						filtersongs && filtersongs.map((data) => (
+						query && filtersongs && filtersongs.map((data) => (
 							<div className="flex justify-between items-center my-6">
 								<div className="flex items-center gap-4">
 									<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
@@ -1675,9 +1726,9 @@ export default function () {
 				</ChatBox>
 
 
-				<CreatePlaylistComponets createPlaylistOpen={createPlaylistOpen} setCreatePlaylistOpen={setCreatePlaylistOpen} allsongs={allsongs} getPlaylist={getPlaylist}/>
-				<EditPlaylistComponets createPlaylistOpen={editPlaylistOpen} setCreatePlaylistOpen={setEditPlaylistOpen} _id={clickedData?._id} allsongs={allsongs} getPlaylist={getPlaylist} allplaylists={allplaylists}/>
-				
+				<CreatePlaylistComponets createPlaylistOpen={createPlaylistOpen} setCreatePlaylistOpen={setCreatePlaylistOpen} allsongs={allsongs} getPlaylist={getPlaylist} />
+				<EditPlaylistComponets createPlaylistOpen={editPlaylistOpen} setCreatePlaylistOpen={setEditPlaylistOpen} _id={clickedData?._id} allsongs={allsongs} getPlaylist={getPlaylist} allplaylists={allplaylists} />
+
 
 			</section>
 			{
@@ -1691,9 +1742,9 @@ export default function () {
 				</div>
 			}
 
-		{contextMenuPosition && (
-			<CustomContextMenu xPos={contextMenuPosition.x} yPos={contextMenuPosition.y} clickedData={clickedData} handleDelete={handleDelete} setCreatePlaylistOpen={setCreatePlaylistOpen} setEditPlaylistOpen={setEditPlaylistOpen}/>
-		)}
+			{contextMenuPosition && (
+				<CustomContextMenu xPos={contextMenuPosition.x} yPos={contextMenuPosition.y} clickedData={clickedData} handleDelete={handleDelete} setCreatePlaylistOpen={setCreatePlaylistOpen} setEditPlaylistOpen={setEditPlaylistOpen} />
+			)}
 		</>
 	);
 }

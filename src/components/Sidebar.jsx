@@ -104,7 +104,7 @@ function checkInTimeRangeForDay(startTime,endTime,user){
 const SidebarContext = createContext();
 
 export const SidebarBody = ({children}) => {
-    const [expanded, setExpanded] = useState(true);
+    const [expanded, setExpanded] = useState(false);
     const {user} = useSelector(store => store.user);
   return (
     <aside className='h-screen'>

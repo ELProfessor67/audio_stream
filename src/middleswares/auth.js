@@ -10,9 +10,14 @@ export const auth = (func) => async (req) => {
         if (!user){
             throw new Error('user unauthorized');
         }
-
+        // '/playlist',
         const url = req.url;
+        
         const djList = ['/playlist','/filter','/temp-playlist','/welcome-tone','/ending-tone','/song','/filter','/dashboard']
+
+        // if(user.isDJ && !user.djPermissions.includes('playlists')){
+        //    djList.push('/playlist');
+        // }
         let change = true;
         djList.forEach((ele) => {
             if(url.includes(ele)){

@@ -25,18 +25,21 @@ import { FaFolder, FaFolderOpen } from "react-icons/fa";
 import { GiLoveSong } from "react-icons/gi";
 import CreatePlaylistComponets from '@/components/CreatePlaylistComponets';
 import EditPlaylistComponets from '@/components/EditPlaylistComponets';
+import { toast } from 'react-toastify';
+import { useRouter } from 'next/navigation';
 
 
 
 
 
 const TimeRemaining = ({ user }) => {
-	const [remainingTime, setRemainingTime] = useState("00:00:00");
+	const [remainingTime, setRemainingTime] = useState("00:00");
+	const router = useRouter()
 
 	useEffect(() => {
 		const calculateRemainingTime = () => {
 			if (!user || !user.djStartTime || !user.djEndTime) {
-				setRemainingTime("00:00:00");
+				setRemainingTime("00:00");
 				return;
 			}
 
@@ -65,6 +68,10 @@ const TimeRemaining = ({ user }) => {
 			// Format the remaining time
 			const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
+			if(formattedTime == "00:00:00"){
+				toast.info("Your times is up");
+				router.push("/dashboard");
+			}
 			setRemainingTime(formattedTime);
 		};
 
@@ -1583,7 +1590,7 @@ export default function () {
 						</div> */}
 
 
-						<div className="w-full shadow-md rounded-md mt-5 border border-gray-100 h-[40vh]" id="history">
+						<div className="w-full shadow-md rounded-md border border-gray-100 h-[40vh]" id="history">
 							<div className="w-full bg-indigo-600 px-2 py-4 flex justify-between items-center rounded-t-md">
 								<h3 className="text-xl text-white">Playlists</h3>
 								<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => setsopen(true)}><IoSearch size={25} /></button>
@@ -1621,6 +1628,17 @@ export default function () {
 										</div>
 
 									))
+								}
+
+								{
+									callComing &&
+									<div className='flex items-center rounded-md py-2 my-4 shadow-sm justify-between'>
+										<h2 className='text-2xl text-gray-800'>{callerName}</h2>
+										<div className='flex items-center gap-10'>
+											<button className='p-2 text-green-600 rounded-full bg-gray-200' onClick={() => handleCallComing(true)}><MdCall size={23} /></button>
+											<button className='p-2 text-red-600 rounded-full bg-gray-200' onClick={() => handleCallComing(false)}><MdCall size={23} /></button>
+										</div>
+									</div>
 								}
 							</div>
 						</div>
@@ -1731,7 +1749,7 @@ export default function () {
 
 
 			</section>
-			{
+			{/* {
 				callComing &&
 				<div className='w-[10rem] h-[10rem] absolute left-[calc(50%-5rem)] top-14 bg-white shadow-md rounded-md flex flex-col items-center justify-center gap-6'>
 					<h2 className='text-2xl text-gray-800'>{callerName}</h2>
@@ -1740,7 +1758,7 @@ export default function () {
 						<button className='p-2 text-red-600 rounded-full bg-gray-200' onClick={() => handleCallComing(false)}><MdCall size={23} /></button>
 					</div>
 				</div>
-			}
+			} */}
 
 			{contextMenuPosition && (
 				<CustomContextMenu xPos={contextMenuPosition.x} yPos={contextMenuPosition.y} clickedData={clickedData} handleDelete={handleDelete} setCreatePlaylistOpen={setCreatePlaylistOpen} setEditPlaylistOpen={setEditPlaylistOpen} />

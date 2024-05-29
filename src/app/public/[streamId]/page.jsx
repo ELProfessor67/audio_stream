@@ -342,14 +342,14 @@ export default function page({ params }) {
 							<label for="password" className='text-black text-lg'>Name</label>
 							<div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
 								<FaUser size={20} className='text-gray-400'/>
-								<input type='text' value={name} onChange={(e) => setName(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your password' id='password' name='password' required/>
+								<input type='text' value={name} onChange={(e) => setName(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your name' id='password' name='password' required/>
 							</div>   
 						</div>
 						<div className='input-group flex flex-col gap-1 mb-6'>
 							<label for="password" className='text-black text-lg'>Location</label>
 							<div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
 								<FaLocationDot size={20} className='text-gray-400'/>
-								<input type='text' value={location} onChange={(e) => setLocation(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your password' id='password' name='password' required/>
+								<input type='text' value={location} onChange={(e) => setLocation(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your localtion' id='password' name='password' required/>
 							</div>   
 						</div>
 

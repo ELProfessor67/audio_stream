@@ -22,6 +22,15 @@ export const POST = connectDB(auth(async function (req){
 export const GET = connectDB(auth(async function (req){
     const {_id} = req.user;
     let playlists = await playlistModel.find({owner: _id}).populate('owner').populate('songs');
+    console.log("inside....",playlists)
+    if(req.user.isDJ && req.user.djPermissions.includes('playlists')){
+        let adminplaylists = await playlistModel.find({owner: req.user.djOwner}).populate('owner').populate('songs');
+        adminplaylists.forEach(p => {
+            playlists.push(p)
+        })
+        
+    }
+    console.log("inside....",playlists[0].songs)
     playlists = playlists.filter((ele) => !ele.isTemp);
 
     playlists = JSON.parse(JSON.stringify(playlists));

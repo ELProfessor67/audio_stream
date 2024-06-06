@@ -29,22 +29,83 @@ import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
 
 
+function addOneMinute(hours,minutes) {
+    // Split the time string into hours and minutes
+    // let [hours, minutes] = time.split(':').map(Number);
+    
+    // Increment the minutes
+    minutes++;
+
+    // If minutes exceed 59, adjust hours and minutes
+    if (minutes > 59) {
+        hours++;
+        minutes = 0;
+    }
+
+    // If hours exceed 23, reset to 00
+    if (hours > 23) {
+        hours = 0;
+    }
+
+    // Format hours and minutes to have leading zeros if necessary
+    hours = +hours;
+    minutes = +minutes;
+
+    // Return the result
+    return [hours, minutes];
+}
+
+function checkInTimeRangeForDay(startTime,endTime,user){
+    let currentHour = new Date().getUTCHours();
+    let currentMinute = new Date().getUTCMinutes();
+	[currentHour, currentMinute] = addOneMinute(currentHour,currentMinute);
+  
+
+    const rangeStartHour = +startTime?.split(':')[0];
+    const rangeStartMinute = +startTime?.split(':')[1];
+
+    const rangeEndHour = +endTime?.split(':')[0];
+    const rangeEndMinute = +endTime?.split(':')[1];
+
+    const timeInRange = (currentHour > rangeStartHour || (currentHour === rangeStartHour && currentMinute >= rangeStartMinute)) && (currentHour < rangeEndHour || (currentHour === rangeEndHour && currentMinute <= rangeEndMinute));
+
+    const checkDay = user?.djDays?.includes((new Date().getDay()).toString())
+    if(checkDay && timeInRange){
+        return true;
+    }else{
+        return false;
+    }
+    // return timeInRange;
+}
 
 
 
-const TimeRemaining = ({ user }) => {
+
+
+const TimeRemaining = ({ user,setActive,ownerLeft,start,setStart,setTimerStart }) => {
 	const [remainingTime, setRemainingTime] = useState("00:00");
+	const startRef = useRef()
 	const router = useRouter()
 
 	useEffect(() => {
+		startRef.current = start
+	},[start])
+
+	useEffect(() => {
 		const calculateRemainingTime = () => {
+			const range = checkInTimeRangeForDay(user?.djStartTime,user?.djEndTime,user)
+			setActive(range);
+			if(!range){
+				setRemainingTime(`${convertUTCToLocalTime(user?.djStartTime)} to ${convertUTCToLocalTime(user?.djEndTime)}`);
+				return
+			}
 			if (!user || !user.djStartTime || !user.djEndTime) {
 				setRemainingTime("00:00");
 				return;
 			}
-
-			// Get current UTC time
+			
 			const nowUTC = new Date();
+			// Get current UTC time
 			const nowUTCTimestamp = nowUTC.getTime();
 
 			// Parse start time and end time
@@ -67,10 +128,14 @@ const TimeRemaining = ({ user }) => {
 
 			// Format the remaining time
 			const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
+			
 			if(formattedTime == "00:00:00"){
-				toast.info("Your times is up");
-				router.push("/dashboard");
+				toast.info(`Your times is up ${startRef.current}`);
+				if(startRef.current){
+					setTimerStart(false)
+					ownerLeft();
+					setStart();
+				}
 			}
 			setRemainingTime(formattedTime);
 		};
@@ -222,6 +287,39 @@ function mergeAudioObjectURLs(audioURLs) {
 		});
 }
 
+const daysObject = {
+    0: "Sunday",
+    1: "Monday",
+    2: "Tuesday",
+    3: "Wednesday",
+    4: "Thursday",
+    5: "Friday",
+    6: "Saturday"
+};
+
+function convertUTCToLocalTime(utctime) {
+	if(!utctime){
+		return
+	}
+    // Split the input time string into hours and minutes
+    const [hourStr, minuteStr] = utctime.split(':');
+    
+    // Parse hours and minutes as integers
+    const hour = parseInt(hourStr, 10);
+    const minute = parseInt(minuteStr, 10);
+
+    // Create a new Date object with UTC time
+    const utcDate = new Date();
+    utcDate.setUTCHours(hour);
+    utcDate.setUTCMinutes(minute);
+
+    // Format local time in 24-hour format
+    const localHour = utcDate.getHours().toString().padStart(2, '0');
+    const localMinute = utcDate.getMinutes().toString().padStart(2, '0');
+
+    return `${localHour}:${localMinute}`;
+}
+
 
 
 const Timer = ({ timerStart }) => {
@@ -316,6 +414,7 @@ export default function () {
 	const [clickedData, setClickedData] = useState(null);
 	const [createPlaylistOpen, setCreatePlaylistOpen] = useState(false);
 	const [editPlaylistOpen, setEditPlaylistOpen] = useState(false);
+	const [active, setActive] = useState(false);
 	// console.log(dbackward,dforward)
 
 
@@ -1079,8 +1178,13 @@ export default function () {
 								{
 									user?.isDJ &&
 									<div>
-										<h2 className="text-white text-lg text-center">Remaining Time</h2>
-										<TimeRemaining user={user} />
+										
+											<>
+												<h2 className="text-white text-lg text-center">Remaining Time</h2>
+												<TimeRemaining user={user} setTimerStart={setTimerStart} setActive={setActive} ownerLeft={ownerLeft} start={start} setStart={setStart}/>
+											</>
+										
+										
 									</div>
 								}
 
@@ -1091,7 +1195,7 @@ export default function () {
 									Listeners
 								</h3>
 								<div className="flex flex-col items-center gap-3">
-									<button onClick={handleStart} className={`bg-none outline-none border-none ${start ? 'text-green-400' : 'text-red-600'}`}><LuPower size={40} /></button>
+									<button onClick={handleStart} className={`bg-none outline-none border-none disabled:opacity-20 ${start ? 'text-green-400' : 'text-red-600'}`} disabled={user?.isDJ && !active} title={user?.djTimeInDays ? `${user?.djDays?.map((p,i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)}`: `${user?.djDate} / ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`}><LuPower size={40} /></button>
 
 									<span className="text-black text-2xl">{start ? 'ON' : "OFF"}</span>
 								</div>
@@ -1116,7 +1220,7 @@ export default function () {
 												}
 											</button>
 
-											<span className="text-black text-xl">{micOn ? 'Mute' : "Unmute"}</span>
+											<span className="text-black text-lg">{micOn ? 'Mute' : "Unmute"}</span>
 										</div>
 									</div>
 
@@ -1125,7 +1229,7 @@ export default function () {
 											<button className="bg-none outline-none border-none text-black" onClick={handleShare}>
 												<IoMdShare size={40} />
 											</button>
-											<span className="text-black text-xl">Share Link</span>
+											<span className="text-black text-lg">Copy Link</span>
 										</div>
 									</div>
 								</div>
@@ -1143,7 +1247,7 @@ export default function () {
 						</div>
 
 
-						<div className="w-full mt-4">
+						<div className="w-full mt-5">
 							<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
 
 
@@ -1160,7 +1264,7 @@ export default function () {
 
 							</div>
 							<h2 className='text-black/90 my-2 text-center text-2xl'>Sound FX</h2>
-							<div className="py-2 rounded-b-md shadow-md p-3 h-[21rem] overflow-x-auto">
+							<div className="py-2 rounded-b-md shadow-md p-3 h-[15.5rem] overflow-x-auto">
 								{effectsong?.map(data => (
 									<div className="flex justify-between items-center my-6">
 										<div className="flex items-center gap-4">
@@ -1343,13 +1447,14 @@ export default function () {
 											<input type="file" accept="audio/*" className="hidden" id="audio" onChange={handleUpload} />
 										</>
 									}
+									<h2 className='text-white my-2 text-center text-2xl'>Queue</h2>
 								</div>
 
 
 
 							</div>
-							<h2 className='text-black/90 my-2 text-center text-2xl'>Queue</h2>
-							<div className="rounded-b-md shadow-md p-3 px-0 h-[21rem] overflow-x-auto" onDragOver={(e) => e.preventDefault()} onDrop={handleSongDropOnPlaylintList}>
+							
+							<div className="rounded-b-md shadow-md p-3 px-0 h-[16.5rem] overflow-x-auto" onDragOver={(e) => e.preventDefault()} onDrop={handleSongDropOnPlaylintList}>
 								{/* {playlists.map(data => (
 									<div className={`${selectPlayListSong?._id?.toString() === data._id.toString() ? 'bg-gray-100' : ''} px-3 flex justify-between items-center my-2 py-1 border-b border-gray-100`}>
 										<div className="flex items-center gap-4">
@@ -1608,7 +1713,7 @@ export default function () {
 						</div>
 
 
-						<div className="w-full mt-5">
+						<div className="w-full mt-6">
 							<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
 								<h2 className="text-white text-xl text-center">Listeners Calls</h2>
 

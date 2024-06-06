@@ -153,7 +153,7 @@ export function SidebarItem({icon,text,active,alert,link='/',onClick,desc}){
         <li onClick={onClick}>
             {
                 text == "Logout"
-                ? <button target='_blank' className={` 
+                ? <button target='_blank' title={text} className={` 
                 relative flex items-center py-2 px-3 my-1
                 font-medium rounded-md cursor-pointer
                 transition-colors
@@ -181,7 +181,7 @@ export function SidebarItem({icon,text,active,alert,link='/',onClick,desc}){
                     </div>
                 }
             </button>
-                : <button onClick={() => window.open(link)} target='_blank' className={` 
+                : <button onClick={() => window.open(link)} target='_blank' title={text} className={` 
                 relative flex items-center py-2 px-3 my-1
                 font-medium rounded-md cursor-pointer
                 transition-colors
@@ -221,23 +221,29 @@ export default function Sidebar(){
     const dispatch = useDispatch();
     const {user} = useSelector(store => store.user);
     const handleLogout = async () => {
-        dispatch(logout());
+        const confirm = window.confirm("You want to logout.")
+        if(confirm){
+
+            dispatch(logout());
+        }
+        console.log(confirm)
     }
 
     const isAllow = (permissionName) => {
         if(user?.isDJ){
             if(user?.djPermissions.includes(permissionName)){
-                if(permissionName === 'live'){
-                    if(user?.djTimeInDays){
-                        return checkInTimeRangeForDay(user?.djStartTime,user?.djEndTime,user);
-                    }else{
-                        const isTimeRange = checkInTimeRange(user?.djStartTime,user?.djEndTime,user?.djDate);
-                        return isTimeRange;
-                    }
+                // if(permissionName === 'live'){
+                //     if(user?.djTimeInDays){
+                //         return checkInTimeRangeForDay(user?.djStartTime,user?.djEndTime,user);
+                //     }else{
+                //         const isTimeRange = checkInTimeRange(user?.djStartTime,user?.djEndTime,user?.djDate);
+                //         return isTimeRange;
+                //     }
                     
-                }else{
-                    return true
-                }   
+                // }else{
+                //     return true
+                // }   
+                return true
             }else{
                return false
             }
@@ -329,15 +335,15 @@ export default function Sidebar(){
             show: isAllow('team'),
             desc: "Admin is able to add djs from here and to assign time and date to djs"
         },
-        {
-            icon: <LiaAdSolid size={30}/>,
-            text: "Ads Jingles",
-            alert: false,
-            active: pathname == '/dashboard/ads',
-            link: '/dashboard/ads',
-            show: isAllow('ads'),
-            desc: "You is able to add Ads Jingles"
-        },
+        // {
+        //     icon: <LiaAdSolid size={30}/>,
+        //     text: "Ads Jingles",
+        //     alert: false,
+        //     active: pathname == '/dashboard/ads',
+        //     link: '/dashboard/ads',
+        //     show: isAllow('ads'),
+        //     desc: "You is able to add Ads Jingles"
+        // },
         {
             icon: <GiMusicalScore size={30}/>,
             text: "Manage Filter Effects",

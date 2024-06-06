@@ -87,7 +87,7 @@ const TableRow = ({name,email,djPermissions,_id,djStartTime,djEndTime,deleteTeam
 	  </td>
 	  {
 		djTimeInDays ?
-		<td className="px-6 py-4 whitespace-nowarp">{djDays?.map((p,i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]}`)}</td>
+		<td className="px-6 py-4 whitespace-nowarp">{djDays?.map((p,i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]}`)} on {rawTime.split("|")[0]} - {rawTime.split("|")[1]}</td>
 		:<td className="px-6 py-4 whitespace-nowarp">{djDate} / {rawTime.split("|")[0]} - {rawTime.split("|")[1]}</td>
 	  }
 	  {/* <td className="px-6 py-4 whitespace-nowarp">{djDate} / {djStartTime} - {djEndTime}</td> */}

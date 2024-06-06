@@ -446,7 +446,7 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 
 		// test
 		peersRef.current[data.senderId].on('stream', (stream) => {
-	        console.log('stream coming');
+	        console.info('stream coming');
 			console.log(stream);
 			console.log(peersRef.current[data.senderId].connected);
 			callerStreamsRef.current[data.senderId] = stream;

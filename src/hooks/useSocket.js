@@ -449,8 +449,16 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 	        console.info('stream coming');
 			console.log(stream);
 			console.log(peersRef.current[data.senderId].connected);
+
 			callerStreamsRef.current[data.senderId] = stream;
-			callsElementRef.current.srcObject = stream;
+			// callsElementRef.current.srcObject = stream;
+			const audio = new Audio();
+			audio.srcObject = stream;
+			audio.controls = true;
+			audio.play()
+			// document.getElementById("call-contaier").appendChild(audio);
+			
+			// callsElementRef.current.srcObject = stream;
 			addStreamInMain(data.senderId);
 	    });
 

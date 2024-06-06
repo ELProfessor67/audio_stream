@@ -179,10 +179,10 @@ export default function page({ params }) {
 
 	const handleCall = async () => {
 		const audioPermissionStatus = await navigator.permissions.query({ name: 'microphone' });
-		if (audioPermissionStatus.state === 'granted' || audioPermissionStatus.state === 'denied') {
-				setPermissionReset(true);
-				return
-		}
+		// if (audioPermissionStatus.state === 'granted' || audioPermissionStatus.state === 'denied') {
+		// 		setPermissionReset(true);
+		// 		return
+		// }
 
 		if(!name || !location){
 			setGetDetailsOpne(true);

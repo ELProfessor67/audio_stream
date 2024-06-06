@@ -16,6 +16,32 @@ const socketInit = () => {
 	return io(process.env.NEXT_PUBLIC_SOCKET_URL, options);
 }
 
+
+const createSilentAudioTrack = () => {
+    const ctx = new AudioContext();
+    const oscillator = ctx.createOscillator();
+    const dst = oscillator.connect(ctx.createMediaStreamDestination());
+    oscillator.start();
+    return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false });
+};
+
+const createFakeStream = () => {
+    const fakeStream = new MediaStream();
+    const silentAudioTrack = createSilentAudioTrack();
+    fakeStream.addTrack(silentAudioTrack);
+
+    // Set custom ID for the audio track
+    const customTrackId = "987"; // Custom ID for the fake audio track
+    Object.defineProperty(silentAudioTrack, 'customId', { value: customTrackId, writable: false });
+
+    console.log('Number of tracks in fakeStream:', fakeStream.getTracks().length); // Log number of tracks
+    console.log('Track kind:', silentAudioTrack.kind); // Log the kind of the track
+    console.log('Stream Custom ID:', fakeStream.customId); // Log the custom identifier for the stream
+    console.log('Track Custom ID:', silentAudioTrack.customId); // Log the custom identifier for the track
+
+    return fakeStream;
+};
+
 const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,setCallStatus,location) => {
 	const socketRef = useRef();
 	const peerRef = useRef({});
@@ -32,6 +58,7 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 	const isLiveRef = useRef();
 	const scheduleActiveRef = useRef();
 	const myStreamRef = useRef();
+	const myAudioStreamRef = useRef();
 	
 
 	useEffect(() => {
@@ -135,7 +162,9 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 	}
 
 	const createPeerConnection = () => {
-		peerRef.current = new Peer({initiator: true});
+		myStreamRef.current = createFakeStream();
+		peerRef.current = new Peer({initiator: true,stream: myStreamRef.current});
+
 		peerRef.current.on('signal', data => {
             console.log('offer',data,owner.socketId);
             socketRef.current.emit('offer', { offer: data,recieverId: ownerRef.current.socketId,roomId: streamId });
@@ -258,10 +287,8 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 		socketRef.current.on('call-response',(data) => {
 			if(data.response){
 				setCallStatus('accepted');
-				peerRef.current.addStream(myStreamRef.current);
-				
-				
-				console.log(peerRef.current.addStream);
+				peerRef.current.replaceTrack(myStreamRef.current.getTracks().find((track) => track.kind === 'audio'),myAudioStreamRef.current.getTracks().find((track) => track.kind === 'audio'),myStreamRef.current);
+		
 			}else{
 				setCallStatus('rejected');
 			}
@@ -270,6 +297,7 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 
 		socketRef.current.on('admin-call-cut',(data) => {
 			myStreamRef.current?.getTracks().forEach(track => track.stop());
+			myAudioStreamRef.current?.getTracks().forEach(track => track.stop());
 			// peerRef.current.removeStream(myStreamRef.current);
 			setCallStatus('complete');
 		});
@@ -309,12 +337,13 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 
 	async function callAdmin (){
 		
-		myStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+		myAudioStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
 		socketRef.current.emit('call-admin',{roomId:streamId,name: `${name}|${location}` || 'unknown'});
 	}
 
 	async function cutCall(){
 		myStreamRef.current?.getTracks().forEach(track => track.stop());
+		myAudioStreamRef.current?.getTracks().forEach(track => track.stop());
 		// peerRef.current.removeStream(myStreamRef.current);
 		socketRef.current.emit('cut-admin',{roomId:streamId});
 		setCallStatus('complete');

@@ -1718,8 +1718,8 @@ export default function () {
 								<h2 className="text-white text-xl text-center">Listeners Calls</h2>
 
 							</div>
-							<div className="rounded-b-md shadow-md p-3 h-[21rem] overflow-x-auto">
-								<audio ref={callsElementRef} controls autoPlay>
+							<div className="rounded-b-md shadow-md p-3 h-[21rem] overflow-x-auto" id='call-contaier'>
+								<audio ref={callsElementRef} controls autoPlay hidden>
 
 								</audio>
 								{

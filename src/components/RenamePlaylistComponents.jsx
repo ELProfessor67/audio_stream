@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Dialog from './Dialog'
 import { useDispatch } from 'react-redux';
 import { MdOutlineSubtitles, MdPlaylistAdd } from 'react-icons/md';
@@ -6,8 +6,8 @@ import Image from 'next/image';
 import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert';
 import axios from 'axios';
 
-const CreatePlaylistComponets = ({createPlaylistOpen,setCreatePlaylistOpen, allsongs,getPlaylist}) => {
-    const [title,setTitle] = useState('');
+const RenamePlaylistComponents = ({createPlaylistOpen,setCreatePlaylistOpen, allsongs,getPlaylist,_id,title:ptitle}) => {
+    const [title,setTitle] = useState(ptitle);
     const [description,setDescription] = useState('description');
     const [seletdSongs,setSelectedSongs] = useState([]);
     const [loading,setLoading] = useState(false);
@@ -24,13 +24,13 @@ const CreatePlaylistComponets = ({createPlaylistOpen,setCreatePlaylistOpen, alls
         try{
             if(!title || !description) return
             // if(seletdSongs.length === 0) return window.alert('please select atleast one songs');
-            const {data} = await axios.post('/api/v1/playlist',{title,description,songs: seletdSongs});
+            const {data} = await axios.post(`/api/v1/playlist/${_id}`,{title});
             setTitle('');
-            setSelectedSongs([]);
-            await dispatch(showMessage(data.message));
+            
+            getPlaylist();
+            await dispatch(showMessage("Rename successfully"));
             await dispatch(clearMessage());
             setCreatePlaylistOpen(false);
-            getPlaylist();
 
 
             // window.alert(data.message)
@@ -53,11 +53,15 @@ const CreatePlaylistComponets = ({createPlaylistOpen,setCreatePlaylistOpen, alls
             }
         })
     }
+
+    useEffect(() => {
+        setTitle(ptitle)
+    },[ptitle])
     return (
         <>
             <Dialog open={createPlaylistOpen} onClose={() => setCreatePlaylistOpen(false)} >
                 <div className='flex justify-start items-center h-full flex-col'>
-                    <h1 className='main-heading mb-10'>Create Playlist</h1>
+                    <h1 className='main-heading mb-10'>Rename Playlist</h1>
                     <div className='w-full max-w-[100%]'>
                         <form className='p-3 px-6' onSubmit={handleSubmit}>
 
@@ -69,45 +73,16 @@ const CreatePlaylistComponets = ({createPlaylistOpen,setCreatePlaylistOpen, alls
                                 </div>
                             </div>
 
-                            
-
-                            {/* <div className='input-group flex flex-col gap-1 mb-6'>
-                                <label for="description" className='text-black text-lg'>Select Songs</label>
-                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                                    <MdPlaylistAdd size={20} className='text-gray-400' />
-                                    <button type="button" className="w-full h-full text-gray-400 text-left bg-none border-none outline-none px-1" onClick={() => setOpen(true)}>
-                                        {seletdSongs.length === 0 ? "Select Song" : `${seletdSongs.length} song seleted`}
-                                    </button>
-                                </div>
-                            </div> */}
-
                             <div className='flex justify-center items-center'>
-                                <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>{!loading ? 'Create' : 'Loading...'}</button>
+                                <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>{!loading ? 'Update' : 'Loading...'}</button>
                             </div>
                         </form>
                         </div>
                     </div>
                 
             </Dialog>
-
-            <Dialog open={open} onClose={() => setOpen(false)} seletdSongs={seletdSongs} save={handleSubmit}>
-        	{
-        		allsongs && allsongs.map((data) => (
-        			<div className="flex justify-between items-center my-6">
-        				<div className="flex items-center gap-4">
-                            <Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded"/> 
-                            <h2 className="text-xl text-black">{data?.title}</h2>           
-                        </div>
-
-                        <div className="mr-10">
-                            <input type="checkbox" className="p-4" checked={seletdSongs.includes(data._id)} onChange={() => handleCheckbox(data._id)}/>
-                        </div>
-        			</div>
-        		))
-        	}
-        </Dialog>
         </>
     )
 }
 
-export default CreatePlaylistComponets
+export default  RenamePlaylistComponents

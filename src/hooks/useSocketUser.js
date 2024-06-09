@@ -30,19 +30,11 @@ const createFakeStream = () => {
     const silentAudioTrack = createSilentAudioTrack();
     fakeStream.addTrack(silentAudioTrack);
 
-    // Set custom ID for the audio track
-    const customTrackId = "987"; // Custom ID for the fake audio track
-    Object.defineProperty(silentAudioTrack, 'customId', { value: customTrackId, writable: false });
-
-    console.log('Number of tracks in fakeStream:', fakeStream.getTracks().length); // Log number of tracks
-    console.log('Track kind:', silentAudioTrack.kind); // Log the kind of the track
-    console.log('Stream Custom ID:', fakeStream.customId); // Log the custom identifier for the stream
-    console.log('Track Custom ID:', silentAudioTrack.customId); // Log the custom identifier for the track
 
     return fakeStream;
 };
 
-const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,setCallStatus,location) => {
+const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,setCallStatus,location,isCall=false) => {
 	const socketRef = useRef();
 	const peerRef = useRef({});
 	const [owner,setOwner] = useState('');
@@ -162,8 +154,15 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 	}
 
 	const createPeerConnection = () => {
-		myStreamRef.current = createFakeStream();
-		peerRef.current = new Peer({initiator: true,stream: myStreamRef.current});
+
+		if(isCall){
+			myStreamRef.current = createFakeStream();
+			peerRef.current = new Peer({initiator: true,stream: myStreamRef.current})
+		}else{
+			peerRef.current = new Peer({initiator: true})
+		}
+		
+		
 
 		peerRef.current.on('signal', data => {
             console.log('offer',data,owner.socketId);
@@ -287,8 +286,9 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 		socketRef.current.on('call-response',(data) => {
 			if(data.response){
 				setCallStatus('accepted');
-				peerRef.current.replaceTrack(myStreamRef.current.getTracks().find((track) => track.kind === 'audio'),myAudioStreamRef.current.getTracks().find((track) => track.kind === 'audio'),myStreamRef.current);
-		
+				
+				peerRef.current.replaceTrack(myStreamRef.current?.getTracks().find((track) => track.kind === 'audio'),myAudioStreamRef.current.getTracks().find((track) => track.kind === 'audio'),myStreamRef.current);
+				
 			}else{
 				setCallStatus('rejected');
 			}

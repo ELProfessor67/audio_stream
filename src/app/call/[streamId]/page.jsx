@@ -15,7 +15,6 @@ import { MdCall } from "react-icons/md";
 import CallComponents from '@/components/CallComponents';
 import { FaUser } from "react-icons/fa";
 import { FaLocationDot } from "react-icons/fa6";
-import { useRouter } from 'next/navigation';
 
 function toTitleCase(str) {
 	return str.replace(
@@ -92,10 +91,9 @@ export default function page({ params }) {
 	const mediaRecorder = useRef(null);
 	const recordedChunks = useRef([]);
 	const downloadLink = useRef();
-	const router = useRouter()
 
 	// console.log('isPlay from components side', isPlay)
-	const { roomActive, handleRequestSong, isLive, autodj, messageList, handleSendMessage, callAdmin, cutCall,nextSong } = useSocketUser(params.streamId, audioRef, name, isPlay, setIsPlay, message, setMessage, setCallStatus,location);
+	const { roomActive, handleRequestSong, isLive, autodj, messageList, handleSendMessage, callAdmin, cutCall,nextSong } = useSocketUser(params.streamId, audioRef, name, isPlay, setIsPlay, message, setMessage, setCallStatus,location,true);
 	// const [more,setMore] = useState(false);
 	const [rOpen, setROPen] = useState(false);
 	console.log(roomActive)
@@ -180,30 +178,35 @@ export default function page({ params }) {
 	}
 
 	const handleCall = async () => {
-		window.open(`/call/${params.streamId}`)
-		// const audioPermissionStatus = await navigator.permissions.query({ name: 'microphone' });
-		// // if (audioPermissionStatus.state === 'granted' || audioPermissionStatus.state === 'denied') {
-		// // 		setPermissionReset(true);
-		// // 		return
-		// // }
-
-		// if(!name || !location){
-		// 	setGetDetailsOpne(true);
-		// 	return
-		// }else{
-		// 	setGetDetailsOpne(false);
+		const audioPermissionStatus = await navigator.permissions.query({ name: 'microphone' });
+		// if (audioPermissionStatus.state === 'granted' || audioPermissionStatus.state === 'denied') {
+		// 		setPermissionReset(true);
+		// 		return
 		// }
-		// setCallOpen(true);
-		// if (callStatus == 'processing' || callStatus == 'accepted') return
-		// setCallStatus('processing');
-		// callAdmin();
+
+		if(!name || !location){
+			setGetDetailsOpne(true);
+			return
+		}else{
+			setGetDetailsOpne(false);
+		}
+		setCallOpen(true);
+		if (callStatus == 'processing' || callStatus == 'accepted') return
+		setCallStatus('processing');
+		callAdmin();
 		// handle calling
 	}
+
+	useEffect(() => {
+		if(isLive){
+			handleCall();
+		}
+	},[isLive])
 
 	return (
 		<section className="flex justify-center items-center h-[100vh] w-full px-4">
 			<a className="hidden" ref={downloadLink}></a>
-			<div className="max-w-[38rem] p-4 shadow-md rounded-md border border-gray-100">
+			<div className="max-w-[38rem] p-4 shadow-md rounded-md border border-gray-100 hidden">
 				<div className="flex justify-between flex-col md:flex-row items-center relative gap-5 md:gap-5">
 					<h2 className="text-2xl para whitespace-pre">HGC LIVE RADIO</h2>
 					<div className="flex items-center flex-wrap md:flex-nowrap gap-3 md:gap-0 justify-center md:justify-start">
@@ -258,6 +261,11 @@ export default function page({ params }) {
 				</div>
 				<audio ref={audioRef} controls className="w-full bg-none hidden"></audio>
 			</div>
+			
+			<div className="max-w-[38rem] p-4 shadow-md rounded-md border border-gray-100 h-[20rem] flex justify-center items-center">
+				<button className="bg-indigo-500 text-xs border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200 mr-2" disabled={!isLive} title="live chat" onClick={handleCall}>Click To Call</button>
+			</div>
+			
 			<Dialog open={rOpen} onClose={() => setROPen(false)} name={name} setName={setName}>
 				{
 					songs && songs.map((data) => (

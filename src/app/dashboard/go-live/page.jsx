@@ -29,73 +29,78 @@ import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
 
 
-function addOneMinute(hours,minutes) {
-    // Split the time string into hours and minutes
-    // let [hours, minutes] = time.split(':').map(Number);
-    
-    // Increment the minutes
-    minutes++;
+import {MdAlternateEmail,MdAudiotrack,MdKey} from 'react-icons/md'
+import {MdOutlineSubtitles,MdDescription, MdPhoto} from 'react-icons/md';
+import {FaUserAlt} from 'react-icons/fa';
+import RenamePlaylistComponents from '@/components/RenamePlaylistComponents';
 
-    // If minutes exceed 59, adjust hours and minutes
-    if (minutes > 59) {
-        hours++;
-        minutes = 0;
-    }
+function addOneMinute(hours, minutes) {
+	// Split the time string into hours and minutes
+	// let [hours, minutes] = time.split(':').map(Number);
 
-    // If hours exceed 23, reset to 00
-    if (hours > 23) {
-        hours = 0;
-    }
+	// Increment the minutes
+	minutes++;
 
-    // Format hours and minutes to have leading zeros if necessary
-    hours = +hours;
-    minutes = +minutes;
+	// If minutes exceed 59, adjust hours and minutes
+	if (minutes > 59) {
+		hours++;
+		minutes = 0;
+	}
 
-    // Return the result
-    return [hours, minutes];
+	// If hours exceed 23, reset to 00
+	if (hours > 23) {
+		hours = 0;
+	}
+
+	// Format hours and minutes to have leading zeros if necessary
+	hours = +hours;
+	minutes = +minutes;
+
+	// Return the result
+	return [hours, minutes];
 }
 
-function checkInTimeRangeForDay(startTime,endTime,user){
-    let currentHour = new Date().getUTCHours();
-    let currentMinute = new Date().getUTCMinutes();
-	[currentHour, currentMinute] = addOneMinute(currentHour,currentMinute);
-  
+function checkInTimeRangeForDay(startTime, endTime, user) {
+	let currentHour = new Date().getUTCHours();
+	let currentMinute = new Date().getUTCMinutes();
+	[currentHour, currentMinute] = addOneMinute(currentHour, currentMinute);
 
-    const rangeStartHour = +startTime?.split(':')[0];
-    const rangeStartMinute = +startTime?.split(':')[1];
 
-    const rangeEndHour = +endTime?.split(':')[0];
-    const rangeEndMinute = +endTime?.split(':')[1];
+	const rangeStartHour = +startTime?.split(':')[0];
+	const rangeStartMinute = +startTime?.split(':')[1];
 
-    const timeInRange = (currentHour > rangeStartHour || (currentHour === rangeStartHour && currentMinute >= rangeStartMinute)) && (currentHour < rangeEndHour || (currentHour === rangeEndHour && currentMinute <= rangeEndMinute));
+	const rangeEndHour = +endTime?.split(':')[0];
+	const rangeEndMinute = +endTime?.split(':')[1];
 
-    const checkDay = user?.djDays?.includes((new Date().getDay()).toString())
-    if(checkDay && timeInRange){
-        return true;
-    }else{
-        return false;
-    }
-    // return timeInRange;
+	const timeInRange = (currentHour > rangeStartHour || (currentHour === rangeStartHour && currentMinute >= rangeStartMinute)) && (currentHour < rangeEndHour || (currentHour === rangeEndHour && currentMinute <= rangeEndMinute));
+
+	const checkDay = user?.djDays?.includes((new Date().getDay()).toString())
+	if (checkDay && timeInRange) {
+		return true;
+	} else {
+		return false;
+	}
+	// return timeInRange;
 }
 
 
 
 
 
-const TimeRemaining = ({ user,setActive,ownerLeft,start,setStart,setTimerStart }) => {
+const TimeRemaining = ({ user, setActive, ownerLeft, start, setStart, setTimerStart }) => {
 	const [remainingTime, setRemainingTime] = useState("00:00");
 	const startRef = useRef()
 	const router = useRouter()
 
 	useEffect(() => {
 		startRef.current = start
-	},[start])
+	}, [start])
 
 	useEffect(() => {
 		const calculateRemainingTime = () => {
-			const range = checkInTimeRangeForDay(user?.djStartTime,user?.djEndTime,user)
+			const range = checkInTimeRangeForDay(user?.djStartTime, user?.djEndTime, user)
 			setActive(range);
-			if(!range){
+			if (!range) {
 				setRemainingTime(`${convertUTCToLocalTime(user?.djStartTime)} to ${convertUTCToLocalTime(user?.djEndTime)}`);
 				return
 			}
@@ -103,7 +108,7 @@ const TimeRemaining = ({ user,setActive,ownerLeft,start,setStart,setTimerStart }
 				setRemainingTime("00:00");
 				return;
 			}
-			
+
 			const nowUTC = new Date();
 			// Get current UTC time
 			const nowUTCTimestamp = nowUTC.getTime();
@@ -128,10 +133,10 @@ const TimeRemaining = ({ user,setActive,ownerLeft,start,setStart,setTimerStart }
 
 			// Format the remaining time
 			const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-			
-			if(formattedTime == "00:00:00"){
+
+			if (formattedTime == "00:00:00") {
 				toast.info(`Your times is up ${startRef.current}`);
-				if(startRef.current){
+				if (startRef.current) {
 					setTimerStart(false)
 					ownerLeft();
 					setStart();
@@ -152,7 +157,7 @@ const TimeRemaining = ({ user,setActive,ownerLeft,start,setStart,setTimerStart }
 
 
 
-const CustomContextMenu = ({ xPos, yPos, clickedData, handleDelete, setCreatePlaylistOpen, setEditPlaylistOpen }) => {
+const CustomContextMenu = ({ xPos, yPos, clickedData, handleDelete, setCreatePlaylistOpen, setEditPlaylistOpen, setRenameOpen }) => {
 	return (
 		<>
 			{
@@ -176,12 +181,16 @@ const CustomContextMenu = ({ xPos, yPos, clickedData, handleDelete, setCreatePla
 								<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => handleDelete(clickedData)}>Delete</li>
 								{
 									clickedData?.type == "playlist" &&
-									<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={setEditPlaylistOpen}>Edit Song</li>
+									(
+										<>
+										<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={setEditPlaylistOpen}>Upload Song</li>
+									<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => setRenameOpen(true)}>Rename Folder</li>
+										</>
+									)
 								}
-								<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => setCreatePlaylistOpen(true)}>New Playlist</li>
 							</>
 						}
-						<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => setCreatePlaylistOpen(true)}>New Playlist</li>
+						<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => setCreatePlaylistOpen(true)}>New Folder</li>
 					</ul>
 				</div>
 			}
@@ -198,7 +207,7 @@ function RenderPlayList({ playlist, onSongDragStart, onSongDrop, handleContextMe
 	}
 	return (
 		<div onDragOver={(e) => e.preventDefault()} onDrop={(e) => onSongDrop(e, playlist._id)}>
-			<p onClick={() => setOpen(prev => !prev)} className='text-black/90 rounded-md hover:bg-gray-100 transition-all p-1 px-2 cursor-pointer flex items-center gap-2' onContextMenu={(e) => handleContextMenu(e, { type: "playlist", _id: playlist._id })} draggable onDragStart={handleDragStart}>
+			<p onClick={() => setOpen(prev => !prev)} className='text-black/90 rounded-md hover:bg-gray-100 transition-all p-1 px-2 cursor-pointer flex items-center gap-2' onContextMenu={(e) => handleContextMenu(e, { type: "playlist", _id: playlist._id,title: playlist.title })} draggable onDragStart={handleDragStart}>
 				<span className='text-yellow-500'>{open ? <FaFolderOpen /> : <FaFolder />}</span>
 				{playlist.title}
 			</p>
@@ -288,36 +297,36 @@ function mergeAudioObjectURLs(audioURLs) {
 }
 
 const daysObject = {
-    0: "Sunday",
-    1: "Monday",
-    2: "Tuesday",
-    3: "Wednesday",
-    4: "Thursday",
-    5: "Friday",
-    6: "Saturday"
+	0: "Sunday",
+	1: "Monday",
+	2: "Tuesday",
+	3: "Wednesday",
+	4: "Thursday",
+	5: "Friday",
+	6: "Saturday"
 };
 
 function convertUTCToLocalTime(utctime) {
-	if(!utctime){
+	if (!utctime) {
 		return
 	}
-    // Split the input time string into hours and minutes
-    const [hourStr, minuteStr] = utctime.split(':');
-    
-    // Parse hours and minutes as integers
-    const hour = parseInt(hourStr, 10);
-    const minute = parseInt(minuteStr, 10);
+	// Split the input time string into hours and minutes
+	const [hourStr, minuteStr] = utctime.split(':');
 
-    // Create a new Date object with UTC time
-    const utcDate = new Date();
-    utcDate.setUTCHours(hour);
-    utcDate.setUTCMinutes(minute);
+	// Parse hours and minutes as integers
+	const hour = parseInt(hourStr, 10);
+	const minute = parseInt(minuteStr, 10);
 
-    // Format local time in 24-hour format
-    const localHour = utcDate.getHours().toString().padStart(2, '0');
-    const localMinute = utcDate.getMinutes().toString().padStart(2, '0');
+	// Create a new Date object with UTC time
+	const utcDate = new Date();
+	utcDate.setUTCHours(hour);
+	utcDate.setUTCMinutes(minute);
 
-    return `${localHour}:${localMinute}`;
+	// Format local time in 24-hour format
+	const localHour = utcDate.getHours().toString().padStart(2, '0');
+	const localMinute = utcDate.getMinutes().toString().padStart(2, '0');
+
+	return `${localHour}:${localMinute}`;
 }
 
 
@@ -415,6 +424,17 @@ export default function () {
 	const [createPlaylistOpen, setCreatePlaylistOpen] = useState(false);
 	const [editPlaylistOpen, setEditPlaylistOpen] = useState(false);
 	const [active, setActive] = useState(false);
+	const [songOpen, setSongOpen] = useState(false);
+	const [songTitle, setSongTitle] = useState("")
+	const [songAlbum, setSognAlbum] = useState("")
+	const [songArtist, setSognArtist] = useState("")
+	const [size,setSize] = useState('');
+    const [type,setType] = useState('');
+    const [audioEx,setAudioEx] = useState('');
+	const [audiofile,setAudio] = useState('');
+	const [duration,setDuration] = useState(0);
+	const [isaddInQue,setisaddInQue] = useState(false);
+	const [renameOpen, setRenameOpen] = useState(false)
 	// console.log(dbackward,dforward)
 
 
@@ -637,46 +657,53 @@ export default function () {
 	}
 
 
-	const handleUpload = async (e) => {
-		const [file] = e.target.files;
+	const handleSongSubmit = async (e,addInQue) => {
 
-		const reader = new FileReader();
+		
+        e.preventDefault();
 
-		reader.onload = function () {
-			if (reader.readyState == 2) {
-				const base64String = reader.result;
-				const extention = file.name.split('.').reverse()[0]
-				const title = file.name.split('.')[0];
-
-				const audio = new Audio(base64String);
-				audio.addEventListener('loadedmetadata', async function () {
-					// console.log('duration',audio.duration);
-					try {
-						const { data } = await axios.post('/api/v1/song', { audioEx: extention, coverEx: '', title, description: 'description', artist: 'unknown', size: file.size, type: file.type, cover: '/upload/cover/default.jpg', audio: base64String, duration: audio.duration, isUploadfromlive: true, playlisttitle: playlists[0]?.title }, {
-							onUploadProgress: (ProgressEvent) => {
-								const progress = Math.round((ProgressEvent.loaded * 100) / ProgressEvent.total);
-								setFileLoad(progress);
-							}
-						});
-						setFileLoad(0);
-						// setPlaylists(prev => {
-						// 	prev[0].songs.push(data?.song)
-						// 	return prev
-						// });
-						// handleSelectedSong(data.song);
-						const { data: sdata } = await axios.get('/api/v1/song');
-						console.log('sdata', sdata)
-						setAllSongs(sdata.songs);
-						console.log(data.song);
-					} catch (err) {
-						console.log(err)
-					}
-				})
-			}
+		if(!audiofile || !songAlbum || !songArtist){
+			await dispatch(showError("Please fill all the fields"));
+            await dispatch(clearError());
 		}
 
-		reader.readAsDataURL(file);
-	}
+		
+       
+        
+        try{
+            const {data} = await axios.post('/api/v1/song',{audioEx,coverEx: '',title: songTitle,description: "",artist: songArtist,size,type,audio: audiofile,duration,album: songAlbum,cover: '/upload/cover/default.jpg'},{
+                onUploadProgress: (ProgressEvent) => {
+                    const progress = Math.round((ProgressEvent.loaded * 100) / ProgressEvent.total);
+                    if(progress > 7){
+
+                        setFileLoad(progress-1);
+                    }else{
+                        setFileLoad(progress);
+                    }
+                }
+            });
+			const { data: sdata } = await axios.get('/api/v1/song');
+			setAllSongs(sdata.songs);
+			if(addInQue){
+				setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs, data?.song] })
+			}
+
+            setFileLoad(100);
+            setSongTitle('');
+            setSognArtist('');
+            e.target.reset();
+            setAudio('');
+            await dispatch(showMessage(data.message));
+            await dispatch(clearMessage());
+			
+        }catch(error){
+			console.log(error.message)
+            await dispatch(showError(error.response.data.message));
+            await dispatch(clearError());
+        }
+        setFileLoad(0);
+		setSongOpen(false)
+    }
 
 
 	function handleBackword() {
@@ -1079,6 +1106,32 @@ export default function () {
 	}
 
 
+	const fileToBase64 = (e,setState,setEx) => {
+        const [file] = e.target.files;
+
+        const reader = new FileReader();
+
+        reader.onload = function(){
+            if(reader.readyState == 2){
+                const base64String = reader.result;
+                setSize(file.size);
+                setType(file.type);
+                setState(base64String);
+                const extention = file.name.split('.').reverse()[0]
+                setEx(extention);
+                const audio = new Audio(base64String);
+                audio.addEventListener('loadedmetadata',function(){
+                    // console.log('duration',audio.duration);
+                    setDuration(audio.duration);
+                })
+            }
+        }
+
+        reader.readAsDataURL(file);
+    }
+
+
+
 	return (
 		<>
 			<section className="w-full py-5 px-4 reletive">
@@ -1178,13 +1231,13 @@ export default function () {
 								{
 									user?.isDJ &&
 									<div>
-										
-											<>
-												<h2 className="text-white text-lg text-center">Remaining Time</h2>
-												<TimeRemaining user={user} setTimerStart={setTimerStart} setActive={setActive} ownerLeft={ownerLeft} start={start} setStart={setStart}/>
-											</>
-										
-										
+
+										<>
+											<h2 className="text-white text-lg text-center">Remaining Time</h2>
+											<TimeRemaining user={user} setTimerStart={setTimerStart} setActive={setActive} ownerLeft={ownerLeft} start={start} setStart={setStart} />
+										</>
+
+
 									</div>
 								}
 
@@ -1195,7 +1248,7 @@ export default function () {
 									Listeners
 								</h3>
 								<div className="flex flex-col items-center gap-3">
-									<button onClick={handleStart} className={`bg-none outline-none border-none disabled:opacity-20 ${start ? 'text-green-400' : 'text-red-600'}`} disabled={user?.isDJ && !active} title={user?.djTimeInDays ? `${user?.djDays?.map((p,i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)}`: `${user?.djDate} / ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`}><LuPower size={40} /></button>
+									<button onClick={handleStart} className={`bg-none outline-none border-none disabled:opacity-20 ${start ? 'text-green-400' : 'text-red-600'}`} disabled={user?.isDJ && !active} title={user?.djTimeInDays ? `${user?.djDays?.map((p, i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)}` : `${user?.djDate} / ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`}><LuPower size={40} /></button>
 
 									<span className="text-black text-2xl">{start ? 'ON' : "OFF"}</span>
 								</div>
@@ -1442,9 +1495,9 @@ export default function () {
 									{
 										isAllow('songs') &&
 										<>
-											<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => document.getElementById('audio').click()}>{fileload == 0 ? 'Upload' : `${fileload}%`}</button>
+											<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => {setSongOpen(true);setisaddInQue(true)}}>Add Song</button>
 
-											<input type="file" accept="audio/*" className="hidden" id="audio" onChange={handleUpload} />
+											
 										</>
 									}
 									<h2 className='text-white my-2 text-center text-2xl'>Queue</h2>
@@ -1453,8 +1506,8 @@ export default function () {
 
 
 							</div>
-							
-							<div className="rounded-b-md shadow-md p-3 px-0 h-[16.5rem] overflow-x-auto" onDragOver={(e) => e.preventDefault()} onDrop={handleSongDropOnPlaylintList}>
+
+							<div className="rounded-b-md shadow-md p-3 px-0 h-[19.3rem] overflow-x-auto" onDragOver={(e) => e.preventDefault()} onDrop={handleSongDropOnPlaylintList}>
 								{/* {playlists.map(data => (
 									<div className={`${selectPlayListSong?._id?.toString() === data._id.toString() ? 'bg-gray-100' : ''} px-3 flex justify-between items-center my-2 py-1 border-b border-gray-100`}>
 										<div className="flex items-center gap-4">
@@ -1482,7 +1535,10 @@ export default function () {
 																	<div className="flex items-center gap-4">
 																		<span className="text-black text-2xl">{index + 1}</span>
 																		<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
-																		<h2 className="text-xl text-black">{data?.title?.slice(0, 40)}</h2>
+																		<div>
+																			<h2 className="text-xl text-black">{data?.title?.slice(0, 40)}</h2>
+																			<p className="para">~ {data?.artist}</p>
+																		</div>
 																	</div>
 																	<div>
 																		<button disabled={songStreamloading} title='delete song from playlist' className="p-2 rounded-full text-red-400 hover:text-white hover:bg-red-400 mr-4" onClick={() => handleDeleteFromPlaylist(data)}><MdDelete size={20} /></button>
@@ -1698,7 +1754,18 @@ export default function () {
 						<div className="w-full shadow-md rounded-md border border-gray-100 h-[40vh]" id="history">
 							<div className="w-full bg-indigo-600 px-2 py-4 flex justify-between items-center rounded-t-md">
 								<h3 className="text-xl text-white">Playlists</h3>
+
+								<div className='flex gap-3'>
 								<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => setsopen(true)}><IoSearch size={25} /></button>
+								
+								{
+									!user?.isDJ && (
+
+										<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => {setSongOpen(true);setisaddInQue(false)}}>Upload</button>
+									)
+								}
+
+								</div>
 							</div>
 
 
@@ -1841,6 +1908,58 @@ export default function () {
 				</Dialog>
 
 
+				{/* song upload  */}
+				<Dialog open={songOpen} onClose={() => setSongOpen(false)}>
+					<form className='p-3 px-6' onSubmit={(e) => handleSongSubmit(e,isaddInQue)}>
+
+						<div className='input-group flex flex-col gap-1 mb-6'>
+							<label for="title" className='text-black text-lg'>Title</label>
+							<div className='flex items-center relative  py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+								<MdOutlineSubtitles size={20} className='text-gray-400' />
+								<input type='text' value={songTitle} onChange={(e) => setSongTitle(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your title' id='title' name='title' required />
+							</div>
+						</div>
+
+						<div className='input-group flex flex-col gap-1 mb-6'>
+							<label for="album" className='text-black text-lg'>Album</label>
+							<div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+								<MdDescription size={20} className='text-gray-400' />
+								<input type='text' value={songAlbum} onChange={(e) => setSognAlbum(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter album name' id='album' name='album' required />
+							</div>
+						</div>
+
+						<div className='input-group flex flex-col gap-1 mb-6'>
+							<label for="artist" className='text-black text-lg'>Artist Name</label>
+							<div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+								<FaUserAlt size={20} className='text-gray-400' />
+								<input type='text' value={songArtist} onChange={(e) => setSognArtist(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your artist' id='artist' name='artist' required />
+							</div>
+						</div>
+
+						
+
+						<div className='input-group flex flex-col gap-1 mb-6'>
+							<label for="audio" className='text-black text-lg'>Audio File</label>
+							<div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+								<MdAudiotrack size={20} className='text-gray-400' />
+								<input type='file' onChange={(e) => fileToBase64(e, setAudio, setAudioEx)} className='w-[95%] outline-none ml-1' id='audio' name='audio' accept="audio/*" required />
+							</div>
+						</div>
+
+						{
+							audiofile && <div className="mb-6">
+								<audio controls src={audiofile} className="w-full"></audio>
+							</div>
+						}
+
+
+						<div className='flex justify-center items-center'>
+							<button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>{fileload == 0 ? 'Upload' : `${fileload}%`}</button>
+						</div>
+					</form>
+				</Dialog>
+
+
 
 				<ChatBox open={chatOpen} onClose={() => setChatOpen(false)} message={chatMessage} setMessage={setChatMessage} handleSendMessage={handleSendMessage}>
 					{
@@ -1851,6 +1970,7 @@ export default function () {
 
 				<CreatePlaylistComponets createPlaylistOpen={createPlaylistOpen} setCreatePlaylistOpen={setCreatePlaylistOpen} allsongs={allsongs} getPlaylist={getPlaylist} />
 				<EditPlaylistComponets createPlaylistOpen={editPlaylistOpen} setCreatePlaylistOpen={setEditPlaylistOpen} _id={clickedData?._id} allsongs={allsongs} getPlaylist={getPlaylist} allplaylists={allplaylists} />
+				<RenamePlaylistComponents createPlaylistOpen={renameOpen} setCreatePlaylistOpen={setRenameOpen} _id={clickedData?._id} title={clickedData?.title} allsongs={allsongs} getPlaylist={getPlaylist} allplaylists={allplaylists} />
 
 
 			</section>
@@ -1866,7 +1986,7 @@ export default function () {
 			} */}
 
 			{contextMenuPosition && (
-				<CustomContextMenu xPos={contextMenuPosition.x} yPos={contextMenuPosition.y} clickedData={clickedData} handleDelete={handleDelete} setCreatePlaylistOpen={setCreatePlaylistOpen} setEditPlaylistOpen={setEditPlaylistOpen} />
+				<CustomContextMenu xPos={contextMenuPosition.x} yPos={contextMenuPosition.y} setRenameOpen={setRenameOpen} clickedData={clickedData} handleDelete={handleDelete} setCreatePlaylistOpen={setCreatePlaylistOpen} setEditPlaylistOpen={setEditPlaylistOpen} />
 			)}
 		</>
 	);

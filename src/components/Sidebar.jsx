@@ -332,7 +332,7 @@ export default function Sidebar(){
             alert: false,
             active: pathname == '/dashboard/team',
             link: '/dashboard/team',
-            show: isAllow('team'),
+            show: !user?.isDJ,
             desc: "Admin is able to add djs from here and to assign time and date to djs"
         },
         // {

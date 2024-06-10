@@ -434,7 +434,8 @@ export default function () {
 	const [audiofile,setAudio] = useState('');
 	const [duration,setDuration] = useState(0);
 	const [isaddInQue,setisaddInQue] = useState(false);
-	const [renameOpen, setRenameOpen] = useState(false)
+	const [renameOpen, setRenameOpen] = useState(false);
+	const [showTitle, setShowTitle] = useState(false)
 	// console.log(dbackward,dforward)
 
 
@@ -1247,8 +1248,15 @@ export default function () {
 									<br />
 									Listeners
 								</h3>
-								<div className="flex flex-col items-center gap-3">
-									<button onClick={handleStart} className={`bg-none outline-none border-none disabled:opacity-20 ${start ? 'text-green-400' : 'text-red-600'}`} disabled={user?.isDJ && !active} title={user?.djTimeInDays ? `${user?.djDays?.map((p, i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)}` : `${user?.djDate} / ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`}><LuPower size={40} /></button>
+								<div className="flex flex-col items-center gap-3 relative cursor-pointer" onMouseEnter={() => setShowTitle(true)} onMouseLeave={() => setShowTitle(false)}>
+									<button onClick={handleStart}  className={`bg-none hover-button outline-none border-none disabled:opacity-20 ${start ? 'text-green-400' : 'text-red-600'}`} disabled={user?.isDJ && !active}><LuPower size={40} /></button>
+
+									{
+										showTitle && 
+									<span className='block absolute top-0 left-[50px] w-[30rem] p-2 bg-white shadow-md rounded-md'>
+									{user?.djTimeInDays ? `${user?.djDays?.map((p, i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)}` : `${user?.djDate} / ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`}
+									</span>
+									}
 
 									<span className="text-black text-2xl">{start ? 'ON' : "OFF"}</span>
 								</div>

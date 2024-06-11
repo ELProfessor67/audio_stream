@@ -183,14 +183,14 @@ const CustomContextMenu = ({ xPos, yPos, clickedData, handleDelete, setCreatePla
 									clickedData?.type == "playlist" &&
 									(
 										<>
-										<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={setEditPlaylistOpen}>Upload Song</li>
+										<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={setEditPlaylistOpen}>Add New Song</li>
 									<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => setRenameOpen(true)}>Rename Folder</li>
 										</>
 									)
 								}
 							</>
 						}
-						<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => setCreatePlaylistOpen(true)}>New Folder</li>
+						<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => setCreatePlaylistOpen(true)}>Create Folder</li>
 					</ul>
 				</div>
 			}
@@ -1254,7 +1254,22 @@ export default function () {
 									{
 										showTitle && 
 									<span className='block absolute top-0 left-[50px] w-[30rem] p-2 bg-white shadow-md rounded-md'>
-									{user?.djTimeInDays ? `${user?.djDays?.map((p, i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)}` : `${user?.djDate} / ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`}
+										{
+											user?.djTimeInDays ?
+											( 
+												user?.djDays.includes(new Date().getDay().toString()) ?
+												(
+													`${daysObject[new Date().getDay().toString()]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`
+												):
+												(
+													`${user?.djDays?.map((p, i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)}`
+												)
+												
+											)
+											:
+											(`${user?.djDate} / ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)
+										}
+									{/* {user?.djTimeInDays ? `${user?.djDays?.map((p, i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)}` : `${user?.djDate} / ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`} */}
 									</span>
 									}
 
@@ -1545,7 +1560,8 @@ export default function () {
 																		<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
 																		<div>
 																			<h2 className="text-xl text-black">{data?.title?.slice(0, 40)}</h2>
-																			<p className="para">~ {data?.artist}</p>
+																			<p className="para"> ~ {data?.artist} - {data?.album}</p>
+
 																		</div>
 																	</div>
 																	<div>

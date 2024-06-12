@@ -55,7 +55,7 @@ const page = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [open, setOpen] = useState(false);
-    const [selectPermission, setSelectedPermission] = useState(['songs', 'schedules', 'live', 'dashboard', 'requests', 'ads']);
+    const [selectPermission, setSelectedPermission] = useState(['songs', 'schedules', 'live', 'dashboard', 'requests', 'ads','add_song']);
     const [starttime, setStarttime] = useState();
     const [endtime, setEndtime] = useState();
     const [djDate, setdjDate] = useState('');
@@ -64,7 +64,7 @@ const page = () => {
     const [selectedDays, setSelectedDays] = useState([]);
     
 
-    const permissions = ['songs', 'playlists', 'schedules', 'live', 'dashboard', 'requests', 'ads'];
+    const permissions = ['songs', 'playlists', 'schedules', 'live', 'dashboard', 'requests', 'ads','add_song'];
     const dispatch = useDispatch();
 
     const handleCheckbox = (permission) => {
@@ -76,9 +76,7 @@ const page = () => {
             }
         })
     }
-    const handlebottomSave = () => {
-        toast.success("save successfully");
-    }
+    
 
 
     const handleSubmit = async (e) => {
@@ -106,6 +104,10 @@ const page = () => {
         }
         setLoading(false);
 
+    }
+
+    const handlebottomSave = () => {
+        handleSubmit(undefined);
     }
 
     return (

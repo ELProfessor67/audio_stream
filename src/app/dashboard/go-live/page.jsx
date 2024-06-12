@@ -29,9 +29,9 @@ import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
 
 
-import {MdAlternateEmail,MdAudiotrack,MdKey} from 'react-icons/md'
-import {MdOutlineSubtitles,MdDescription, MdPhoto} from 'react-icons/md';
-import {FaUserAlt} from 'react-icons/fa';
+import { MdAlternateEmail, MdAudiotrack, MdKey } from 'react-icons/md'
+import { MdOutlineSubtitles, MdDescription, MdPhoto } from 'react-icons/md';
+import { FaUserAlt } from 'react-icons/fa';
 import RenamePlaylistComponents from '@/components/RenamePlaylistComponents';
 
 function addOneMinute(hours, minutes) {
@@ -183,8 +183,8 @@ const CustomContextMenu = ({ xPos, yPos, clickedData, handleDelete, setCreatePla
 									clickedData?.type == "playlist" &&
 									(
 										<>
-										<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={setEditPlaylistOpen}>Add New Song</li>
-									<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => setRenameOpen(true)}>Rename Folder</li>
+											<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={setEditPlaylistOpen}>Add New Song</li>
+											<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => setRenameOpen(true)}>Rename Folder</li>
 										</>
 									)
 								}
@@ -207,7 +207,7 @@ function RenderPlayList({ playlist, onSongDragStart, onSongDrop, handleContextMe
 	}
 	return (
 		<div onDragOver={(e) => e.preventDefault()} onDrop={(e) => onSongDrop(e, playlist._id)}>
-			<p onClick={() => setOpen(prev => !prev)} className='text-black/90 rounded-md hover:bg-gray-100 transition-all p-1 px-2 cursor-pointer flex items-center gap-2' onContextMenu={(e) => handleContextMenu(e, { type: "playlist", _id: playlist._id,title: playlist.title })} draggable onDragStart={handleDragStart}>
+			<p onClick={() => setOpen(prev => !prev)} className='text-black/90 rounded-md hover:bg-gray-100 transition-all p-1 px-2 cursor-pointer flex items-center gap-2' onContextMenu={(e) => handleContextMenu(e, { type: "playlist", _id: playlist._id, title: playlist.title })} draggable onDragStart={handleDragStart}>
 				<span className='text-yellow-500'>{open ? <FaFolderOpen /> : <FaFolder />}</span>
 				{playlist.title}
 			</p>
@@ -426,14 +426,14 @@ export default function () {
 	const [active, setActive] = useState(false);
 	const [songOpen, setSongOpen] = useState(false);
 	const [songTitle, setSongTitle] = useState("")
-	const [songAlbum, setSognAlbum] = useState("")
-	const [songArtist, setSognArtist] = useState("")
-	const [size,setSize] = useState('');
-    const [type,setType] = useState('');
-    const [audioEx,setAudioEx] = useState('');
-	const [audiofile,setAudio] = useState('');
-	const [duration,setDuration] = useState(0);
-	const [isaddInQue,setisaddInQue] = useState(false);
+	const [songAlbum, setSognAlbum] = useState("Unkown")
+	const [songArtist, setSognArtist] = useState("Unkown")
+	const [size, setSize] = useState('');
+	const [type, setType] = useState('');
+	const [audioEx, setAudioEx] = useState('');
+	const [audiofile, setAudio] = useState('');
+	const [duration, setDuration] = useState(0);
+	const [isaddInQue, setisaddInQue] = useState(false);
 	const [renameOpen, setRenameOpen] = useState(false);
 	const [showTitle, setShowTitle] = useState(false)
 	// console.log(dbackward,dforward)
@@ -658,53 +658,53 @@ export default function () {
 	}
 
 
-	const handleSongSubmit = async (e,addInQue) => {
+	const handleSongSubmit = async (e, addInQue) => {
 
-		
-        e.preventDefault();
 
-		if(!audiofile || !songAlbum || !songArtist){
+		e.preventDefault();
+
+		if (!audiofile || !songAlbum || !songArtist) {
 			await dispatch(showError("Please fill all the fields"));
-            await dispatch(clearError());
+			await dispatch(clearError());
 		}
 
-		
-       
-        
-        try{
-            const {data} = await axios.post('/api/v1/song',{audioEx,coverEx: '',title: songTitle,description: "",artist: songArtist,size,type,audio: audiofile,duration,album: songAlbum,cover: '/upload/cover/default.jpg'},{
-                onUploadProgress: (ProgressEvent) => {
-                    const progress = Math.round((ProgressEvent.loaded * 100) / ProgressEvent.total);
-                    if(progress > 7){
 
-                        setFileLoad(progress-1);
-                    }else{
-                        setFileLoad(progress);
-                    }
-                }
-            });
+
+
+		try {
+			const { data } = await axios.post('/api/v1/song', { audioEx, coverEx: '', title: songTitle, description: "", artist: songArtist, size, type, audio: audiofile, duration, album: songAlbum, cover: '/upload/cover/default.jpg' }, {
+				onUploadProgress: (ProgressEvent) => {
+					const progress = Math.round((ProgressEvent.loaded * 100) / ProgressEvent.total);
+					if (progress > 7) {
+
+						setFileLoad(progress - 1);
+					} else {
+						setFileLoad(progress);
+					}
+				}
+			});
 			const { data: sdata } = await axios.get('/api/v1/song');
 			setAllSongs(sdata.songs);
-			if(addInQue){
+			if (addInQue) {
 				setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs, data?.song] })
 			}
 
-            setFileLoad(100);
-            setSongTitle('');
-            setSognArtist('');
-            e.target.reset();
-            setAudio('');
-            await dispatch(showMessage(data.message));
-            await dispatch(clearMessage());
-			
-        }catch(error){
+			setFileLoad(100);
+			setSongTitle('');
+			setSognArtist('');
+			e.target.reset();
+			setAudio('');
+			await dispatch(showMessage(data.message));
+			await dispatch(clearMessage());
+
+		} catch (error) {
 			console.log(error.message)
-            await dispatch(showError(error.response.data.message));
-            await dispatch(clearError());
-        }
-        setFileLoad(0);
+			await dispatch(showError(error.response.data.message));
+			await dispatch(clearError());
+		}
+		setFileLoad(0);
 		setSongOpen(false)
-    }
+	}
 
 
 	function handleBackword() {
@@ -1107,29 +1107,29 @@ export default function () {
 	}
 
 
-	const fileToBase64 = (e,setState,setEx) => {
-        const [file] = e.target.files;
+	const fileToBase64 = (e, setState, setEx) => {
+		const [file] = e.target.files;
 
-        const reader = new FileReader();
+		const reader = new FileReader();
 
-        reader.onload = function(){
-            if(reader.readyState == 2){
-                const base64String = reader.result;
-                setSize(file.size);
-                setType(file.type);
-                setState(base64String);
-                const extention = file.name.split('.').reverse()[0]
-                setEx(extention);
-                const audio = new Audio(base64String);
-                audio.addEventListener('loadedmetadata',function(){
-                    // console.log('duration',audio.duration);
-                    setDuration(audio.duration);
-                })
-            }
-        }
+		reader.onload = function () {
+			if (reader.readyState == 2) {
+				const base64String = reader.result;
+				setSize(file.size);
+				setType(file.type);
+				setState(base64String);
+				const extention = file.name.split('.').reverse()[0]
+				setEx(extention);
+				const audio = new Audio(base64String);
+				audio.addEventListener('loadedmetadata', function () {
+					// console.log('duration',audio.duration);
+					setDuration(audio.duration);
+				})
+			}
+		}
 
-        reader.readAsDataURL(file);
-    }
+		reader.readAsDataURL(file);
+	}
 
 
 
@@ -1176,6 +1176,21 @@ export default function () {
 								<span className="text-white">8</span>
 								<span className="text-white">9</span>
 							</div>
+
+							<div className="w-full flex items-center mt-2 px-1 relative gap-1">
+								<div className='border-t-2 border-green-500 w-[34%] flex items-center justify-center'>
+									<h3 className='text-md text-green-500'>low</h3>
+								</div>
+								<div className='border-t-2 border-yellow-500 w-[21%] flex items-center justify-center'>
+									<h3 className='text-md text-yellow-500'>medium</h3>
+								</div>
+								<div className='border-t-2 border-red-500 w-[21%] flex items-center justify-center'>
+									<h3 className='text-md text-red-500'>good</h3>
+								</div>
+								<div className='border-t-2 border-red-900 w-[21%] flex items-center justify-center'>
+									<h3 className='text-md text-red-900'>high</h3>
+								</div>
+							</div>
 						</div>
 
 						<div className="w-full reletive p-2">
@@ -1195,6 +1210,21 @@ export default function () {
 								<span className="text-white">9</span>
 
 							</div>
+
+							<div className="w-full flex items-center mt-2 px-1 relative gap-1">
+								<div className='border-t-2 border-green-500 w-[34%] flex items-center justify-center'>
+									<h3 className='text-md text-green-500'>low</h3>
+								</div>
+								<div className='border-t-2 border-yellow-500 w-[21%] flex items-center justify-center'>
+									<h3 className='text-md text-yellow-500'>medium</h3>
+								</div>
+								<div className='border-t-2 border-red-500 w-[21%] flex items-center justify-center'>
+									<h3 className='text-md text-red-500'>good</h3>
+								</div>
+								<div className='border-t-2 border-red-900 w-[21%] flex items-center justify-center'>
+									<h3 className='text-md text-red-900'>high</h3>
+								</div>
+							</div>
 						</div>
 
 						<div className="w-full reletive p-2">
@@ -1213,6 +1243,20 @@ export default function () {
 								<span className="text-white">8</span>
 								<span className="text-white">9</span>
 
+							</div>
+							<div className="w-full flex items-center mt-2 px-1 relative gap-1">
+								<div className='border-t-2 border-green-500 w-[34%] flex items-center justify-center'>
+									<h3 className='text-md text-green-500'>low</h3>
+								</div>
+								<div className='border-t-2 border-yellow-500 w-[21%] flex items-center justify-center'>
+									<h3 className='text-md text-yellow-500'>medium</h3>
+								</div>
+								<div className='border-t-2 border-red-500 w-[21%] flex items-center justify-center'>
+									<h3 className='text-md text-red-500'>good</h3>
+								</div>
+								<div className='border-t-2 border-red-900 w-[21%] flex items-center justify-center'>
+									<h3 className='text-md text-red-900'>high</h3>
+								</div>
 							</div>
 						</div>
 
@@ -1234,7 +1278,13 @@ export default function () {
 									<div>
 
 										<>
-											<h2 className="text-white text-lg text-center">Remaining Time</h2>
+
+											<h2 className="text-white text-lg text-center">
+												{
+													!active ? "Schedule Time" : "Remaining Time"
+												}
+
+											</h2>
 											<TimeRemaining user={user} setTimerStart={setTimerStart} setActive={setActive} ownerLeft={ownerLeft} start={start} setStart={setStart} />
 										</>
 
@@ -1249,28 +1299,28 @@ export default function () {
 									Listeners
 								</h3>
 								<div className="flex flex-col items-center gap-3 relative cursor-pointer" onMouseEnter={() => setShowTitle(true)} onMouseLeave={() => setShowTitle(false)}>
-									<button onClick={handleStart}  className={`bg-none hover-button outline-none border-none disabled:opacity-20 ${start ? 'text-green-400' : 'text-red-600'}`} disabled={user?.isDJ && !active}><LuPower size={40} /></button>
+									<button onClick={handleStart} className={`bg-none hover-button outline-none border-none disabled:opacity-20 ${start ? 'text-green-400' : 'text-red-600'}`} disabled={user?.isDJ && !active}><LuPower size={40} /></button>
 
 									{
-										showTitle && 
-									<span className='block absolute top-0 left-[50px] w-[30rem] p-2 bg-white shadow-md rounded-md'>
-										{
-											user?.djTimeInDays ?
-											( 
-												user?.djDays.includes(new Date().getDay().toString()) ?
-												(
-													`${daysObject[new Date().getDay().toString()]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`
-												):
-												(
-													`${user?.djDays?.map((p, i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)}`
-												)
-												
-											)
-											:
-											(`${user?.djDate} / ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)
-										}
-									{/* {user?.djTimeInDays ? `${user?.djDays?.map((p, i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)}` : `${user?.djDate} / ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`} */}
-									</span>
+										showTitle &&
+										<span className='block absolute top-0 left-[50px] w-[30rem] p-2 bg-white shadow-md rounded-md'>
+											{
+												user?.djTimeInDays ?
+													(
+														user?.djDays.includes(new Date().getDay().toString()) ?
+															(
+																`${daysObject[new Date().getDay().toString()]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`
+															) :
+															(
+																`${user?.djDays?.map((p, i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)}`
+															)
+
+													)
+													:
+													(`${user?.djDate} / ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)
+											}
+											{/* {user?.djTimeInDays ? `${user?.djDays?.map((p, i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)}` : `${user?.djDate} / ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`} */}
+										</span>
 									}
 
 									<span className="text-black text-2xl">{start ? 'ON' : "OFF"}</span>
@@ -1435,7 +1485,7 @@ export default function () {
 											<div className="flex">
 												<div className="flex flex-col px-3 justify-center">
 													<h2 className="text-black text-xl font-semibold">{selectedSong?.title?.slice(0, 20)}</h2>
-													<p className="para">~ {selectedSong?.artist}</p>
+													<p className="para text-xs">~ {selectedSong?.artist} - {selectedSong?.album}</p>
 												</div>
 												<div className="flex-1 gap-4 flex justify-center items-center">
 													<button className="bg-none outline-none border-none text-black cursor-pointer disabled:opacity-40" onClick={handleBackword} disabled={!dbackward}>
@@ -1516,11 +1566,11 @@ export default function () {
 									{/* <button className="bg-none flex items-center outline-none border-none text-white" onClick={() => setsopen(true)}><IoSearch size={25} /><span className="ml-2 text-white text-xl">{user?.isDJ ? 'Search DJ Playlist' : 'Search Admin Playlist'}</span></button> */}
 
 									{
-										isAllow('songs') &&
+										isAllow('add_song') &&
 										<>
-											<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => {setSongOpen(true);setisaddInQue(true)}}>Add Song</button>
+											<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => { setSongOpen(true); setisaddInQue(true) }}>Add Song</button>
 
-											
+
 										</>
 									}
 									<h2 className='text-white my-2 text-center text-2xl'>Queue</h2>
@@ -1780,14 +1830,14 @@ export default function () {
 								<h3 className="text-xl text-white">Playlists</h3>
 
 								<div className='flex gap-3'>
-								<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => setsopen(true)}><IoSearch size={25} /></button>
-								
-								{
-									!user?.isDJ && (
+									<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => setsopen(true)}><IoSearch size={25} /></button>
 
-										<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => {setSongOpen(true);setisaddInQue(false)}}>Upload</button>
-									)
-								}
+									{
+										!user?.isDJ && (
+
+											<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => { setSongOpen(true); setisaddInQue(false) }}>Upload</button>
+										)
+									}
 
 								</div>
 							</div>
@@ -1934,7 +1984,7 @@ export default function () {
 
 				{/* song upload  */}
 				<Dialog open={songOpen} onClose={() => setSongOpen(false)}>
-					<form className='p-3 px-6' onSubmit={(e) => handleSongSubmit(e,isaddInQue)}>
+					<form className='p-3 px-6' onSubmit={(e) => handleSongSubmit(e, isaddInQue)}>
 
 						<div className='input-group flex flex-col gap-1 mb-6'>
 							<label for="title" className='text-black text-lg'>Title</label>
@@ -1944,7 +1994,7 @@ export default function () {
 							</div>
 						</div>
 
-						<div className='input-group flex flex-col gap-1 mb-6'>
+						{/* <div className='input-group flex flex-col gap-1 mb-6'>
 							<label for="album" className='text-black text-lg'>Album</label>
 							<div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
 								<MdDescription size={20} className='text-gray-400' />
@@ -1958,9 +2008,9 @@ export default function () {
 								<FaUserAlt size={20} className='text-gray-400' />
 								<input type='text' value={songArtist} onChange={(e) => setSognArtist(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your artist' id='artist' name='artist' required />
 							</div>
-						</div>
+						</div> */}
 
-						
+
 
 						<div className='input-group flex flex-col gap-1 mb-6'>
 							<label for="audio" className='text-black text-lg'>Audio File</label>

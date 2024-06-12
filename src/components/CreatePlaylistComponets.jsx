@@ -1,30 +1,34 @@
 import React, { useState } from 'react'
 import Dialog from './Dialog'
 import { useDispatch } from 'react-redux';
-import { MdOutlineSubtitles, MdPlaylistAdd } from 'react-icons/md';
+import { MdDescription, MdOutlineSubtitles, MdPlaylistAdd } from 'react-icons/md';
 import Image from 'next/image';
-import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert';
+import { showMessage, showError, clearMessage, clearError } from '@/utils/showAlert';
 import axios from 'axios';
+import { FaUserAlt } from 'react-icons/fa';
 
-const CreatePlaylistComponets = ({createPlaylistOpen,setCreatePlaylistOpen, allsongs,getPlaylist}) => {
-    const [title,setTitle] = useState('');
-    const [description,setDescription] = useState('description');
-    const [seletdSongs,setSelectedSongs] = useState([]);
-    const [loading,setLoading] = useState(false);
+const CreatePlaylistComponets = ({ createPlaylistOpen, setCreatePlaylistOpen, allsongs, getPlaylist }) => {
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('description');
+    const [seletdSongs, setSelectedSongs] = useState([]);
+    const [loading, setLoading] = useState(false);
     const dispatch = useDispatch();
     const [open, setOpen] = useState(false);
+    
+	const [songAlbum, setSognAlbum] = useState("")
+	const [songArtist, setSognArtist] = useState("")
     // console.log(seletdSongs)
 
     const handleSubmit = async (e) => {
-        if(e.preventDefault){
+        if (e.preventDefault) {
             e.preventDefault();
         }
         setOpen(false);
         setLoading(true);
-        try{
-            if(!title || !description) return
+        try {
+            if (!title || !description) return
             // if(seletdSongs.length === 0) return window.alert('please select atleast one songs');
-            const {data} = await axios.post('/api/v1/playlist',{title,description,songs: seletdSongs});
+            const { data } = await axios.post('/api/v1/playlist', { title, description, songs: seletdSongs,artist: songArtist,album: songAlbum });
             setTitle('');
             setSelectedSongs([]);
             await dispatch(showMessage(data.message));
@@ -34,7 +38,7 @@ const CreatePlaylistComponets = ({createPlaylistOpen,setCreatePlaylistOpen, alls
 
 
             // window.alert(data.message)
-        }catch(err){
+        } catch (err) {
             await dispatch(showError(error.response.data.message));
             await dispatch(clearError());
             console.log(err.message);
@@ -46,10 +50,10 @@ const CreatePlaylistComponets = ({createPlaylistOpen,setCreatePlaylistOpen, alls
 
     const handleCheckbox = (_id) => {
         setSelectedSongs(prev => {
-            if(prev.includes(_id)){
+            if (prev.includes(_id)) {
                 return prev.filter(id => _id != id);
-            }else{
-                return [...prev,_id]
+            } else {
+                return [...prev, _id]
             }
         })
     }
@@ -69,43 +73,49 @@ const CreatePlaylistComponets = ({createPlaylistOpen,setCreatePlaylistOpen, alls
                                 </div>
                             </div>
 
-                            
 
-                            {/* <div className='input-group flex flex-col gap-1 mb-6'>
-                                <label for="description" className='text-black text-lg'>Select Songs</label>
+
+                            <div className='input-group flex flex-col gap-1 mb-6'>
+                                <label for="album" className='text-black text-lg'>Album</label>
                                 <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                                    <MdPlaylistAdd size={20} className='text-gray-400' />
-                                    <button type="button" className="w-full h-full text-gray-400 text-left bg-none border-none outline-none px-1" onClick={() => setOpen(true)}>
-                                        {seletdSongs.length === 0 ? "Select Song" : `${seletdSongs.length} song seleted`}
-                                    </button>
+                                    <MdDescription size={20} className='text-gray-400' />
+                                    <input type='text' value={songAlbum} onChange={(e) => setSognAlbum(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter album name' id='album' name='album' required />
                                 </div>
-                            </div> */}
+                            </div>
+
+                            <div className='input-group flex flex-col gap-1 mb-6'>
+                                <label for="artist" className='text-black text-lg'>Artist Name</label>
+                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                    <FaUserAlt size={20} className='text-gray-400' />
+                                    <input type='text' value={songArtist} onChange={(e) => setSognArtist(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your artist' id='artist' name='artist' required />
+                                </div>
+                            </div>
 
                             <div className='flex justify-center items-center'>
                                 <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>{!loading ? 'Create' : 'Loading...'}</button>
                             </div>
                         </form>
-                        </div>
                     </div>
-                
+                </div>
+
             </Dialog>
 
             <Dialog open={open} onClose={() => setOpen(false)} seletdSongs={seletdSongs} save={handleSubmit}>
-        	{
-        		allsongs && allsongs.map((data) => (
-        			<div className="flex justify-between items-center my-6">
-        				<div className="flex items-center gap-4">
-                            <Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded"/> 
-                            <h2 className="text-xl text-black">{data?.title}</h2>           
-                        </div>
+                {
+                    allsongs && allsongs.map((data) => (
+                        <div className="flex justify-between items-center my-6">
+                            <div className="flex items-center gap-4">
+                                <Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
+                                <h2 className="text-xl text-black">{data?.title}</h2>
+                            </div>
 
-                        <div className="mr-10">
-                            <input type="checkbox" className="p-4" checked={seletdSongs.includes(data._id)} onChange={() => handleCheckbox(data._id)}/>
+                            <div className="mr-10">
+                                <input type="checkbox" className="p-4" checked={seletdSongs.includes(data._id)} onChange={() => handleCheckbox(data._id)} />
+                            </div>
                         </div>
-        			</div>
-        		))
-        	}
-        </Dialog>
+                    ))
+                }
+            </Dialog>
         </>
     )
 }

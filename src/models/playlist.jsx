@@ -7,7 +7,9 @@ const playlistSchems = new mongoose.Schema({
     description: {type: String,required: true,trim: true},
     owner: {type: mongoose.Schema.Types.ObjectId,ref: userSchema},
     songs: [{type: mongoose.Schema.Types.ObjectId,ref: songSchema}],
-    isTemp: {type: Boolean,default: false}
+    isTemp: {type: Boolean,default: false},
+    artist: {type: String,trim: true},
+    album: {type: String,trim: true},
 },{timestamps: true});
 
 

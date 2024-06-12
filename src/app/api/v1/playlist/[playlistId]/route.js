@@ -20,11 +20,11 @@ export const GET = connectDB(auth(async function (req){
 
 export const POST = connectDB(auth(async function (req){
     try{
-        const {songs,title} = await req.json();
+        const {songs,title,album,artist} = await req.json();
        
         const playlistId = req.url.split('/')[6];
         
-        await playlistModel.findByIdAndUpdate(playlistId,{songs,title});
+        await playlistModel.findByIdAndUpdate(playlistId,{songs,title,album,artist});
 
         return NextResponse.json({success: true,message: 'update successfully'});
     }catch(err){

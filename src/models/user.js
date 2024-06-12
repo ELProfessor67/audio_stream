@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema({
     resetPasswordExpire: {type: Date,default: undefined},
     isDJ: {type: Boolean,default: false},
     djOwner: {type: mongoose.Schema.Types.ObjectId,ref: 'user',default: undefined},
-    djPermissions: [{type: String,enum: ['songs','playlists','schedules','live','dashboard','requests','ads']}],
+    djPermissions: [{type: String,enum: ['songs','playlists','schedules','live','dashboard','requests','ads','add_song']}],
     djStartTime: {type: String,default: undefined},
     djEndTime: {type: String,default: undefined},
     djDate: {type: String,default: undefined},

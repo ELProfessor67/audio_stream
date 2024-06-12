@@ -5,7 +5,7 @@ import playlistModel from "@/models/playlist";
 import { auth } from "@/middleswares/auth";
 
 export const POST = connectDB(auth(async function (req){
-    let {title,description,songs,isTemp} = await req.json();
+    let {title,description,songs,isTemp,album,artist} = await req.json();
     if(isTemp === undefined){
         isTemp = false
     }else{
@@ -14,7 +14,7 @@ export const POST = connectDB(auth(async function (req){
 
     if(!title || !description || !songs) return NextResponse.json({success: false,message: 'all fields are required'});
 
-    const playlist = await playlistModel.create({title,description,songs,owner: req.user._id, isTemp});
+    const playlist = await playlistModel.create({title,description,songs,owner: req.user._id, isTemp,album,artist});
 
     return NextResponse.json({success: true,message: 'playlist create successfully'});
 }));
@@ -40,7 +40,28 @@ export const GET = connectDB(auth(async function (req){
         });
     })
     
-    return NextResponse.json({success: true,playlists});
+    //add album and artist
+    let playListCopy = JSON.parse(JSON.stringify(playlists));
+    playListCopy.forEach((p,index) => {
+        playListCopy[index].songs = playListCopy[index].songs.map((song) => {
+            if(p.artist){
+                song.artist = p.artist;
+            }else
+            {
+                song.artist = "Unkown";
+            }
+
+            if(p.album){
+                song.album = p.album;
+            }else
+            {
+                song.album = "Unkown";
+            }
+            return song;
+        })
+    })
+
+    return NextResponse.json({success: true,playlists: playListCopy});
 }));
 
 

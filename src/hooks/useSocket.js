@@ -21,7 +21,7 @@ const sleep = ms => new Promise(r => window.setTimeout(r,ms))
 
 
 
-const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,setSeletedSong,volume,micVolume,filterPlaying, chatMessage,setChatMessage, setUnread, chatOpen, nextSong) => {
+const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,setSeletedSong,volume,micVolume,filterPlaying, chatMessage,setChatMessage, setUnread, chatOpen, nextSong,setHistory,handleSelectedSong) => {
 	const socketRef = useRef();
 	const {user} = useSelector(store => store.user);
 	const peersRef = useRef({});
@@ -230,6 +230,8 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 		            		}
 		            	}
 	            	}else{
+						
+						
 		            	if(currentTime < duration && songPlayRef.current){
 		            		requestAnimationFrame(updateProgess);
 		            	}else{
@@ -237,22 +239,26 @@ const useSocket = (setSongPlaying,songPlaying,selectPlayListSong,selectedSong,se
 		            			const sindex = selectPlayListSongRef.current?.songs?.indexOf(selectedSongRef.current);
 								if(sindex >= selectPlayListSongRef.current?.songs?.length-1){
 									if(repeatPlaylistRef.current){
-										const song = selectPlayListSongRef.current?.songs[0];
-										setSeletedSong(song);
-										setSongPlaying(true);
+										// const song = selectPlayListSongRef.current?.songs[0];
+										// setSeletedSong(song);
+										// setSongPlaying(true);
+										// setProgress(0);
+										// playSong(song.audio,volumeRef.current);
+										setSongPlaying(false);
 										setProgress(0);
-										playSong(song.audio,volumeRef.current);
 									}else{
 										setSongPlaying(false);
 										setProgress(0)
 									}
-
+									
 								}else{
 									const song = selectPlayListSongRef.current?.songs[sindex+1];
-									setSeletedSong(song);
-									setSongPlaying(true);
-									setProgress(0);
-									playSong(song.audio,volumeRef.current);
+									
+									handleSelectedSong(song,sindex);
+									// setSeletedSong(song);
+									// setSongPlaying(true);
+									// setProgress(0);
+									// playSong(song.audio,volumeRef.current);
 								}	
 		            		}
 		            	}

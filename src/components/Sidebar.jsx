@@ -149,6 +149,16 @@ export const SidebarBody = ({children}) => {
 
 export function SidebarItem({icon,text,active,alert,link='/',onClick,desc}){
     const {expanded} = useContext(SidebarContext);
+    const pathname = usePathname();
+
+    const handleOpen = (link) => {
+        if(pathname.includes("/go-live")){
+            window.open(link, '_blank','width=700,height=700');
+        }else{
+            window.open(link, '_blank');
+        }
+    }
+
     return(<>
         <li onClick={onClick}>
             {
@@ -181,7 +191,7 @@ export function SidebarItem({icon,text,active,alert,link='/',onClick,desc}){
                     </div>
                 }
             </button>
-                : <button onClick={() => window.open(link)} target='_blank' title={text} className={` 
+                : <button onClick={() => handleOpen(link)} target='_blank' title={text} className={` 
                 relative flex items-center py-2 px-3 my-1
                 font-medium rounded-md cursor-pointer
                 transition-colors

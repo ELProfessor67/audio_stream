@@ -441,7 +441,7 @@ export default function () {
 
 	const dispatch = useDispatch();
 
-	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong);
+	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory,handleSelectedSong);
 
 	// console.info('voiceAcitce',voiceAcitce);
 
@@ -612,7 +612,7 @@ export default function () {
 	}
 
 
-	const handleSelectedSong = (data, index) => {
+	function handleSelectedSong (data, index) {
 		setSeletedSong(data);
 		setOpen(false);
 		setSongPlaying(true);
@@ -744,6 +744,7 @@ export default function () {
 	useEffect(() => {
 		if (Object.keys(selectedSong).length != 0 && Object.keys(selectPlayListSong).length != 0) {
 			const sindex = selectPlayListSong?.songs?.indexOf(selectedSong);
+			console.log("I am fill",selectPlayListSong,sindex);
 			if (sindex === -1) {
 				setDbackward(false);
 				setDforward(false);
@@ -764,7 +765,7 @@ export default function () {
 			setDforward(false);
 			setDbackward(false)
 		}
-	}, [selectedSong])
+	}, [selectedSong,selectPlayListSong])
 
 
 

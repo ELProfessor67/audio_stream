@@ -658,12 +658,13 @@ export default function () {
 	}
 
 
-	const handleSongSubmit = async (e, addInQue) => {
+	const handleSongSubmit = async (e, addInQue,songTitle,size,type,audioEx,duration,audiofile) => {
 
 
-		e.preventDefault();
+		e?.preventDefault();
+		
 
-		if (!audiofile || !songAlbum || !songArtist) {
+		if (!audiofile) {
 			await dispatch(showError("Please fill all the fields"));
 			await dispatch(clearError());
 		}
@@ -672,7 +673,7 @@ export default function () {
 
 
 		try {
-			const { data } = await axios.post('/api/v1/song', { audioEx, coverEx: '', title: songTitle, description: "", artist: songArtist, size, type, audio: audiofile, duration, album: songAlbum, cover: '/upload/cover/default.jpg' }, {
+			const { data } = await axios.post('/api/v1/song', { audioEx, coverEx: '', title: songTitle, description: "", artist: "Unknown", size, type, audio: audiofile, duration, album: "Unknown", cover: '/upload/cover/default.jpg' }, {
 				onUploadProgress: (ProgressEvent) => {
 					const progress = Math.round((ProgressEvent.loaded * 100) / ProgressEvent.total);
 					if (progress > 7) {
@@ -690,9 +691,9 @@ export default function () {
 			}
 
 			setFileLoad(100);
-			setSongTitle('');
-			setSognArtist('');
-			e.target.reset();
+			// setSongTitle('');
+			// setSognArtist('');
+			e?.target.reset();
 			setAudio('');
 			await dispatch(showMessage(data.message));
 			await dispatch(clearMessage());
@@ -1120,11 +1121,13 @@ export default function () {
 				setType(file.type);
 				setState(base64String);
 				const extention = file.name.split('.').reverse()[0]
+				setSongTitle(file.name)
 				setEx(extention);
+				console.log(songTitle,"song")
 				const audio = new Audio(base64String);
 				audio.addEventListener('loadedmetadata', function () {
-					// console.log('duration',audio.duration);
 					setDuration(audio.duration);
+					handleSongSubmit(undefined,isaddInQue,file.name,file.size,file.type,extention,audio.duration,base64String);
 				})
 			}
 		}
@@ -1132,6 +1135,8 @@ export default function () {
 		reader.readAsDataURL(file);
 	}
 
+	
+	
 
 
 	return (
@@ -1565,13 +1570,11 @@ export default function () {
 								<div className='flex justify-between reletive items-center'>
 
 									{/* <button className="bg-none flex items-center outline-none border-none text-white" onClick={() => setsopen(true)}><IoSearch size={25} /><span className="ml-2 text-white text-xl">{user?.isDJ ? 'Search DJ Playlist' : 'Search Admin Playlist'}</span></button> */}
-
+									<input type='file' onChange={(e) => fileToBase64(e, setAudio, setAudioEx)} className='w-[95%] outline-none ml-1' id='audio' name='audio' accept="audio/*" hidden required />
 									{
 										isAllow('add_song') &&
 										<>
-											<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => { setSongOpen(true); setisaddInQue(true) }}>Add Song</button>
-
-
+											<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => { document.getElementById("audio").click(); setisaddInQue(true) }}>{fileload != 0 && isaddInQue  ? `${fileload}%` : "Add Song"  }</button>
 										</>
 									}
 									<h2 className='text-white my-2 text-center text-2xl'>Queue</h2>
@@ -1829,6 +1832,7 @@ export default function () {
 						<div className="w-full shadow-md rounded-md border border-gray-100 h-[40vh]" id="history">
 							<div className="w-full bg-indigo-600 px-2 py-4 flex justify-between items-center rounded-t-md">
 								<h3 className="text-xl text-white">Playlists</h3>
+								<input type='file' onChange={(e) => fileToBase64(e, setAudio, setAudioEx)} className='w-[95%] outline-none ml-1' id='audio1' name='audio' accept="audio/*" hidden required />
 
 								<div className='flex gap-3'>
 									<button className="bg-none flex items-center outline-none border-none text-white" onClick={() => setsopen(true)}><IoSearch size={25} /></button>
@@ -1836,7 +1840,7 @@ export default function () {
 									{
 										!user?.isDJ && (
 
-											<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => { setSongOpen(true); setisaddInQue(false) }}>Upload</button>
+											<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => { document.getElementById("audio1").click(); setisaddInQue(false) }}>{fileload != 0 && !isaddInQue  ? `${fileload}%` :   "Upload"}</button>
 										)
 									}
 
@@ -1984,7 +1988,7 @@ export default function () {
 
 
 				{/* song upload  */}
-				<Dialog open={songOpen} onClose={() => setSongOpen(false)}>
+				{/* <Dialog open={songOpen} onClose={() => setSongOpen(false)}>
 					<form className='p-3 px-6' onSubmit={(e) => handleSongSubmit(e, isaddInQue)}>
 
 						<div className='input-group flex flex-col gap-1 mb-6'>
@@ -1995,7 +1999,7 @@ export default function () {
 							</div>
 						</div>
 
-						{/* <div className='input-group flex flex-col gap-1 mb-6'>
+						<div className='input-group flex flex-col gap-1 mb-6'>
 							<label for="album" className='text-black text-lg'>Album</label>
 							<div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
 								<MdDescription size={20} className='text-gray-400' />
@@ -2009,7 +2013,7 @@ export default function () {
 								<FaUserAlt size={20} className='text-gray-400' />
 								<input type='text' value={songArtist} onChange={(e) => setSognArtist(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your artist' id='artist' name='artist' required />
 							</div>
-						</div> */}
+						</div>
 
 
 
@@ -2032,7 +2036,7 @@ export default function () {
 							<button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>{fileload == 0 ? 'Upload' : `${fileload}%`}</button>
 						</div>
 					</form>
-				</Dialog>
+				</Dialog> */}
 
 
 

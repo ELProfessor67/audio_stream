@@ -152,6 +152,10 @@ export function SidebarItem({icon,text,active,alert,link='/',onClick,desc}){
     const pathname = usePathname();
 
     const handleOpen = (link) => {
+        if(pathname.includes("/go-live") && link == "/dashboard/go-live"){
+            return
+        }
+        
         if(pathname.includes("/go-live")){
             window.open(link, '_blank','width=700,height=700');
         }else{

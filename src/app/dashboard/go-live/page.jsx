@@ -33,6 +33,8 @@ import { MdAlternateEmail, MdAudiotrack, MdKey } from 'react-icons/md'
 import { MdOutlineSubtitles, MdDescription, MdPhoto } from 'react-icons/md';
 import { FaUserAlt } from 'react-icons/fa';
 import RenamePlaylistComponents from '@/components/RenamePlaylistComponents';
+import VolumePopup from '@/components/VolumePopup';
+import VolumePopupsDeck from '@/components/VolumePopupsDeck';
 
 function addOneMinute(hours, minutes) {
 	// Split the time string into hours and minutes
@@ -375,7 +377,7 @@ const Timer = ({ timerStart }) => {
 }
 
 export default function () {
-	const [volume, setVolume] = useState(0.1);
+	const [volume, setVolume] = useState(0.25);
 	const [playlists, setPlaylists] = useState([]);
 	const [selectPlayListSong, setSelectPlayListSong] = useState([]);
 	const [open, setOpen] = useState(false);
@@ -397,7 +399,7 @@ export default function () {
 	const [effectsong, setEffectSong] = useState([]);
 	const [selectedFilter, setSelectedFilter] = useState({});
 	const [filterPlaying, setFilterPlaying] = useState(false);
-	const [filtervolume, setFilterVolume] = useState(0.1);
+	const [filtervolume, setFilterVolume] = useState(0.25);
 	const [fileload, setFileLoad] = useState(0);
 	const [filterload, setFilterload] = useState(0);
 	const [filterSearch, setFilterSearch] = useState([]);
@@ -846,6 +848,7 @@ export default function () {
 
 
 	const handleMicVolumeChange = (e) => {
+		console.warn('function call',e.target.value);
 		// console.log('handleMicVolumeChange',e.target.value)
 		setMicVolume(e.target.value);
 		changeMicValume(e.target.value);
@@ -1135,6 +1138,11 @@ export default function () {
 		reader.readAsDataURL(file);
 	}
 
+
+
+	const handleAddQue = (song) => {
+		setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs, song] });
+	}
 	
 	
 
@@ -1166,7 +1174,7 @@ export default function () {
 				<div className="w-full reletive px-2">
 					<div className="m-auto w-full grid grid-cols-3 gap-3 flex-wrap rounded-md bg-indigo-600">
 
-						<div className="w-full reletive bg-indigo-600 p-2 rounded-md">
+						<div className="w-full relative bg-indigo-600 p-2 rounded-md">
 							<h2 className="text-white text-lg mb-1">Microphone Volume</h2>
 							<input type="range" className="w-full cursor-pointer" min={0} max={1} value={micVolume} step="0.1" onChange={handleMicVolumeChange} />
 
@@ -1197,9 +1205,11 @@ export default function () {
 									<h3 className='text-md text-red-900'>high</h3>
 								</div>
 							</div>
+
+							<VolumePopup deckname={'Microphone'} volume={micVolume} handleMicVolumeChange={handleMicVolumeChange}/>
 						</div>
 
-						<div className="w-full reletive p-2">
+						<div className="w-full relative p-2">
 							<h2 className="text-white text-lg mb-1">Deck A Volume</h2>
 							<input type="range" className="w-full cursor-pointer" min={0} max={0.5} value={volume} step="0.05" onChange={handleVolumeChange} />
 
@@ -1231,9 +1241,13 @@ export default function () {
 									<h3 className='text-md text-red-900'>high</h3>
 								</div>
 							</div>
+
+							<VolumePopupsDeck deckname={'Deck A'} volume={volume} handleMicVolumeChange={handleVolumeChange}/>
+
+							
 						</div>
 
-						<div className="w-full reletive p-2">
+						<div className="w-full relative p-2">
 							<h2 className="text-white text-lg mb-1">Deck B Volume</h2>
 							<input type="range" className="w-full cursor-pointer" min={0} max={0.5} value={filtervolume} step="0.05" onChange={handleFilterVolumeChange} />
 
@@ -1264,6 +1278,8 @@ export default function () {
 									<h3 className='text-md text-red-900'>high</h3>
 								</div>
 							</div>
+
+							<VolumePopupsDeck deckname={'Deck B'} volume={filtervolume} handleMicVolumeChange={handleFilterVolumeChange}/>
 						</div>
 
 					</div>
@@ -1686,7 +1702,7 @@ export default function () {
 																<time className="text-black">{Math.floor(data?.duration / 60)}:{Math.floor(data?.duration % 60)}</time>
 															</div>
 
-															<button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => { handleSelectedSong(data); setDforward(false); setDbackward(false) }}><FaPlay size={20} /></button>
+															<button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => { handleAddQue(data) }}><FaPlay size={20} /></button>
 														</div>
 													</div>
 												))

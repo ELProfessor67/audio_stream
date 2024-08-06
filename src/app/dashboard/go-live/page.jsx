@@ -33,8 +33,9 @@ import { MdAlternateEmail, MdAudiotrack, MdKey } from 'react-icons/md'
 import { MdOutlineSubtitles, MdDescription, MdPhoto } from 'react-icons/md';
 import { FaUserAlt } from 'react-icons/fa';
 import RenamePlaylistComponents from '@/components/RenamePlaylistComponents';
-import VolumePopup from '@/components/VolumePopup';
-import VolumePopupsDeck from '@/components/VolumePopupsDeck';
+// import VolumePopup from '@/components/VolumePopup';
+// import VolumePopupsDeck from '@/components/VolumePopupsDeck';
+import AutoAdjustByBase from '@/components/AutoAdjustByBase';
 
 function addOneMinute(hours, minutes) {
 	// Split the time string into hours and minutes
@@ -437,7 +438,8 @@ export default function () {
 	const [duration, setDuration] = useState(0);
 	const [isaddInQue, setisaddInQue] = useState(false);
 	const [renameOpen, setRenameOpen] = useState(false);
-	const [showTitle, setShowTitle] = useState(false)
+	const [showTitle, setShowTitle] = useState(false);
+	const [userChangeVolume,setUserChangeVolume] = useState(false);
 	// console.log(dbackward,dforward)
 
 
@@ -548,6 +550,7 @@ export default function () {
 
 
 	const handleVolumeChange = (e) => {
+		setUserChangeVolume(true);
 		const value = e.target.value;
 		changeValume(value);
 		setVolume(value);
@@ -620,6 +623,7 @@ export default function () {
 		setSongPlaying(true);
 		setProgress(0);
 		playSong(data.audio, volume);
+		setUserChangeVolume(false);
 		// setQue(prev => [data,...prev]);
 		setHistory(data);
 		if (selectPlayListSong.songs.length - 1 <= index) {
@@ -1206,7 +1210,7 @@ export default function () {
 								</div>
 							</div>
 
-							<VolumePopup deckname={'Microphone'} volume={micVolume} handleMicVolumeChange={handleMicVolumeChange}/>
+							{/* <VolumePopup deckname={'Microphone'} volume={micVolume} handleMicVolumeChange={handleMicVolumeChange}/> */}
 						</div>
 
 						<div className="w-full relative p-2">
@@ -1242,8 +1246,8 @@ export default function () {
 								</div>
 							</div>
 
-							<VolumePopupsDeck deckname={'Deck A'} volume={volume} handleMicVolumeChange={handleVolumeChange}/>
-
+							{/* <VolumePopupsDeck deckname={'Deck A'} volume={volume} handleMicVolumeChange={handleVolumeChange}/> */}
+							<AutoAdjustByBase songPlaying={songPlaying} songBase={songBase} handleVolumeChange={changeValume} userChangeVolume={userChangeVolume}/>
 							
 						</div>
 
@@ -1279,7 +1283,7 @@ export default function () {
 								</div>
 							</div>
 
-							<VolumePopupsDeck deckname={'Deck B'} volume={filtervolume} handleMicVolumeChange={handleFilterVolumeChange}/>
+							{/* <VolumePopupsDeck deckname={'Deck B'} volume={filtervolume} handleMicVolumeChange={handleFilterVolumeChange}/> */}
 						</div>
 
 					</div>

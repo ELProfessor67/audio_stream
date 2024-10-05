@@ -86,13 +86,18 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 	
 			// Play the stream when it's ready
 			hlsRef.current.on(Hls.Events.MANIFEST_PARSED, () => {
-				// audioRef.current.play()
+				audioRef.current.play().then(() => {
+					setIsPlay(true);
+				}).catch(err => {
+					console.log('error',err)
+				})
 			});
 	
 			// Listen for stream errors and attempt recovery
 			hlsRef.current.on(Hls.Events.ERROR, (event, data) => {
 				console.log('HLS Error:', data);
 				if (data.fatal) {
+					
 					hlsRef.current.destroy();
 					setTimeout(() => {
 						setHls(src);

@@ -17,6 +17,7 @@ import {useDispatch,useSelector} from 'react-redux';
 import {GiMusicalScore} from 'react-icons/gi'
 import {toast} from 'react-toastify';
 import { current } from '@reduxjs/toolkit'
+import { HiOutlineAdjustmentsVertical } from "react-icons/hi2";
 
 
 
@@ -349,6 +350,15 @@ export default function Sidebar(){
             show: !user?.isDJ,
             desc: "Admin is able to add djs from here and to assign time and date to djs"
         },
+        {
+            icon: <HiOutlineAdjustmentsVertical size={30}/>,
+            text: "Manage Auto DJ",
+            alert: false,
+            active: pathname == '/dashboard/manage-auto-dj',
+            link: '/dashboard/manage-auto-dj',
+            show: true,
+            desc: "You can manage auto dj songs"
+        },
         // {
         //     icon: <LiaAdSolid size={30}/>,
         //     text: "Ads Jingles",
@@ -403,6 +413,7 @@ export default function Sidebar(){
             show: true,
             desc: "You can create own ending tone"
         },
+        
         
     ]
     return<>

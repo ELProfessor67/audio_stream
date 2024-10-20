@@ -8,7 +8,9 @@ const autoDJListSchema = new mongoose.Schema({
         {
             data: {type: mongoose.Schema.Types.ObjectId,ref: songSchema},
             cover: {type: String, default: undefined},
-            index: {type: Number,default: 0}
+            index: {type: Number,default: 0},
+            artist: {type: String, default: undefined},
+            album: {type: String, default: undefined}
 
         }
     ],

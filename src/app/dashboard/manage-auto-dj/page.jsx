@@ -68,7 +68,10 @@ export default function Page() {
             const items = data?.autoDJList.songs.map((song) => ({
                 data:song.data,
                 index: song.index,
-                cover: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.cover}`
+                cover: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.cover}`,
+                album: song.album,
+                artist: song.artist
+
             })) || []
             setAutoDjList(items);
         } catch (error) {
@@ -102,7 +105,9 @@ export default function Page() {
                 const newSong = {
                     data: song,
                     cover: song.cover,
-                    index: autoDJList.length
+                    index: autoDJList.length,
+                    artist: song.artist,
+                    album: song.album
                 }
 
                 const songs = [...autoDJList, newSong]
@@ -110,7 +115,9 @@ export default function Page() {
                 const items = songs.map((song, index) => ({
                     data: song.data._id,
                     cover: new URL(song.cover).pathname,
-                    index
+                    index,
+                    artist: song.artist,
+                    album: song.album
                 }));
                 updateSong(items);
             }
@@ -136,7 +143,9 @@ export default function Page() {
         items = items.map((song, index) => ({
             data: song.data._id,
             cover: new URL(song.cover).pathname,
-            index
+            index,
+            artist: song.artist,
+            album: song.album
         }))
         updateSong(items);
 
@@ -151,7 +160,9 @@ export default function Page() {
             items = items.map((song, index) => ({
                 data: song.data._id,
                 cover: new URL(song.cover).pathname,
-                index
+                index,
+                artist: song.artist,
+                album: song.album
             }))
 
             updateSong(items);
@@ -174,15 +185,15 @@ export default function Page() {
                                     <div {...provided.droppableProps} ref={provided.innerRef}>
                                         {
                                             autoDJList && autoDJList?.map((data, index) => (
-                                                <Draggable key={data.data._id.toString()} draggableId={data.data._id.toString()} index={index}>
+                                                <Draggable key={data?.data?._id.toString()} draggableId={data?.data?._id.toString()} index={index}>
                                                     {(provided) => (
                                                         <div className={`flex justify-between items-center my-6 rounded-md`} ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
                                                             <div className="flex items-center gap-4">
-                                                                <span className="text-black text-2xl">{data.index + 1}</span>
-                                                                <Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
+                                                                <span className="text-black text-2xl">{data?.index + 1}</span>
+                                                                <Image src={data?.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
                                                                 <div>
-                                                                    <h2 className="text-xl text-black">{data?.data.title?.slice(0, 40)}</h2>
-                                                                    <p className="para"> ~ {data?.data.artist} - {data.data?.album}</p>
+                                                                    <h2 className="text-xl text-black">{data?.data?.title?.slice(0, 40)}</h2>
+                                                                    <p className="para"> ~ {data?.artist} - {data?.album}</p>
 
                                                                 </div>
                                                             </div>

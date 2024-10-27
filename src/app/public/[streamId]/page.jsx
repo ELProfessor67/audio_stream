@@ -33,6 +33,7 @@ const Timer = ({ timerStart }) => {
 	const [second, setSecond] = useState(0);
 
 
+
 	const startTime = () => {
 		interValref.current = setInterval(() => {
 			setSecond(prev => prev + 1);
@@ -98,7 +99,6 @@ export default function page({ params }) {
 	const { roomActive, handleRequestSong, isLive, autodj, messageList, handleSendMessage, callAdmin, cutCall,nextSong } = useSocketUser(params.streamId, audioRef, name, isPlay, setIsPlay, message, setMessage, setCallStatus,location);
 	// const [more,setMore] = useState(false);
 	const [rOpen, setROPen] = useState(false);
-	console.log(roomActive)
 
 	const handlePlay = () => {
 		if (isPlay) {
@@ -200,6 +200,8 @@ export default function page({ params }) {
 		// handle calling
 	}
 
+
+
 	return (
 		<section className="flex justify-center items-center h-[100vh] w-full px-4">
 			<a className="hidden" ref={downloadLink}></a>
@@ -256,7 +258,7 @@ export default function page({ params }) {
 						<input type="range" className="w-[90%]" min={0} max={1} step={0.1} value={volume} onChange={(e) => setVolume(e.target.value)} />
 					</div>
 				</div>
-				<audio ref={audioRef} controls className="w-full bg-none hidden" onplay={() => setIsPlay(true)} onpause={() => setIsPlay(false)}></audio>
+				<audio ref={audioRef} controls className="w-full bg-none hidden" onPlay={() => setIsPlay(true)} onPause={() => setIsPlay(false)}></audio>
 			</div>
 			<Dialog open={rOpen} onClose={() => setROPen(false)} name={name} setName={setName}>
 				{

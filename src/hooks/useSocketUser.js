@@ -46,6 +46,7 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 	const [autodj,setAutoDj] = useState(false);
 	const [messageList,setMessageList] = useState([]);
 	const [nextSong, setNextSong]  = useState({});
+	const [currentSong,setCurrentSong] = useState();
 	const cuurentTimeRef = useRef();
 	const playRef = useRef();
 	const isLiveRef = useRef();
@@ -73,58 +74,17 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 		setMessageList(prev => [...prev,{...data}]);
 	}
 
-	function setHls(src) {
-		console.log('try to set hls');
-		if(hlsRef.current){
-			hlsRef.current.destroy();
-		}
-
-		if (Hls.isSupported()) {
-			hlsRef.current = new Hls();
-			hlsRef.current.loadSource(src);
-			hlsRef.current.attachMedia(audioRef.current);
-	
-			// Play the stream when it's ready
-			hlsRef.current.on(Hls.Events.MANIFEST_PARSED, () => {
-				audioRef.current.play().then(() => {
-					setIsPlay(true);
-				}).catch(err => {
-					console.log('error',err)
-				})
-			});
-	
-			// Listen for stream errors and attempt recovery
-			hlsRef.current.on(Hls.Events.ERROR, (event, data) => {
-				console.log('HLS Error:', data);
-				if (data.fatal) {
-					
-					hlsRef.current.destroy();
-					setTimeout(() => {
-						setHls(src);
-					}, 1000);
-				}
-
-				
-			});
-		} else if (audioRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-			
-			audioRef.current.src = src;
-			// audioRef.current.play();
-		}
-	}
-
-	
 
 
-	function handleAutoDjPlay(){
-		let startTime = cuurentTimeRef.current;
+	// function handleAutoDjPlay(){
+	// 	let startTime = cuurentTimeRef.current;
 
-		if(startTime){
-			const ellipTime = ((new Date().getTime()) - startTime)/1000;
-			console.log(ellipTime)
-			audioRef.current.currentTime = ellipTime;
-		}
-	}
+	// 	if(startTime){
+	// 		const ellipTime = ((new Date().getTime()) - startTime)/1000;
+	// 		console.log(ellipTime)
+	// 		audioRef.current.currentTime = ellipTime;
+	// 	}
+	// }
 
 	async function handleSongChange(data){
 		if(scheduleActiveRef.current == true || isLiveRef.current == true){
@@ -137,21 +97,13 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 		console.log('auto dj',data);
 
 		// audioRef.current.src = data?.currentSong?.url;
-		const src = `${process.env.NEXT_PUBLIC_HLS_SERVER_HOST}/${streamId}/index.m3u8`;
-		audioRef.current.src = `${process.env.NEXT_PUBLIC_HLS_SERVER_HOST}/${streamId}/index.m3u8`;
-
-		if(hlsSetAlreadyRef.current == false){
-			setHls(src);
-			hlsSetAlreadyRef.current = true;
-		}
 		
+		audioRef.current.src = `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}`;
 
 
 		
 		cuurentTimeRef.current = data?.currentSong?.currentTime;
 		setNextSong(data?.currentSong.nextSong);
-		
-		handleAutoDjPlay();
 		console.log('isPlay',playRef.current)
 		if(playRef.current){
 			console.log('pausing....')
@@ -161,8 +113,8 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 			console.log('playing....')
 		}
 
-		audioRef.current.removeEventListener('play',handleAutoDjPlay)
-		audioRef.current.addEventListener('play',handleAutoDjPlay)
+		// audioRef.current.removeEventListener('play',handleAutoDjPlay)
+		// audioRef.current.addEventListener('play',handleAutoDjPlay)
 		
 	}
 
@@ -265,7 +217,7 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 				setNextSong(data.nextSong)
 			}
 			if(data.currentSong){
-				setcurrentSong(data.currentSong)
+				setCurrentSong(data.currentSong)
 			}
 			ownerRef.current = data?.user;
 

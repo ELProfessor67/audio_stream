@@ -97,21 +97,21 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 		console.log('auto dj',data);
 
 		// audioRef.current.src = data?.currentSong?.url;
-		
-		audioRef.current.src = `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}`;
-
+		if(audioRef.current.src != `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}`){
+			audioRef.current.src = `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}`;
+		}
 
 		
 		cuurentTimeRef.current = data?.currentSong?.currentTime;
 		setNextSong(data?.currentSong.nextSong);
 		console.log('isPlay',playRef.current)
-		if(playRef.current){
-			console.log('pausing....')
-			await audioRef.current.pause();
-			await sleep(3000);
-			await audioRef.current.play();
-			console.log('playing....')
-		}
+		// if(playRef.current){
+		// 	console.log('pausing....')
+		// 	await audioRef.current.pause();
+		// 	await sleep(3000);
+		// 	await audioRef.current.play();
+		// 	console.log('playing....')
+		// }
 
 		// audioRef.current.removeEventListener('play',handleAutoDjPlay)
 		// audioRef.current.addEventListener('play',handleAutoDjPlay)
@@ -273,7 +273,7 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 			await connectedWithScheduleStream();
 			setRoomActive(true);
 			setScheduleActive(true);
-			audioRef.current.removeEventListener('play',handleAutoDjPlay);
+			
 		});
 
 		socketRef.current.on('schedule-unactive',() => {

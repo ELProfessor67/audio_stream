@@ -17,6 +17,8 @@ import { FaUser } from "react-icons/fa";
 import { FaLocationDot } from "react-icons/fa6";
 import { useRouter } from 'next/navigation';
 
+const sleep = ms => new Promise(r => window.setTimeout(r,ms))
+
 function toTitleCase(str) {
 	return str.replace(
 		/\w\S*/g,
@@ -103,11 +105,14 @@ export default function page({ params }) {
 	const handlePlay = () => {
 		if (isPlay) {
 			audioRef.current.pause();
+	
 			setIsPlay(false);
 		} else {
 			audioRef.current.play();
 			setIsPlay(true);
+			
 		}
+
 	}
 
 
@@ -201,6 +206,19 @@ export default function page({ params }) {
 	}
 
 
+	const handleEnded = async (isPlay) => {
+		console.log('handle handleEnded call');
+		if(true){
+			console.log('handle playing... call');
+			const url = audioRef.current.src
+			audioRef.current.src = url;
+			await sleep(3000)
+			audioRef.current.play();
+		}
+
+	}
+
+
 
 	return (
 		<section className="flex justify-center items-center h-[100vh] w-full px-4">
@@ -258,7 +276,7 @@ export default function page({ params }) {
 						<input type="range" className="w-[90%]" min={0} max={1} step={0.1} value={volume} onChange={(e) => setVolume(e.target.value)} />
 					</div>
 				</div>
-				<audio ref={audioRef} controls className="w-full bg-none hidden" onPlay={() => setIsPlay(true)} onPause={() => setIsPlay(false)}></audio>
+				<audio  ref={audioRef} controls className="w-full bg-none" onPlay={() => setIsPlay(true)} onPause={() => setIsPlay(false)} onEnded={() => handleEnded(isPlay)}></audio>
 			</div>
 			<Dialog open={rOpen} onClose={() => setROPen(false)} name={name} setName={setName}>
 				{

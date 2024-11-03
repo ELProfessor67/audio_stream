@@ -211,9 +211,13 @@ export default function page({ params }) {
 		if(true){
 			console.log('handle playing... call');
 			const url = audioRef.current.src
+			audioRef.current.src = '';
 			audioRef.current.src = url;
+			console.log('pausing...')
+			audioRef.current.pause();
 			await sleep(3000)
 			audioRef.current.play();
+			console.log('playing...')
 		}
 
 	}

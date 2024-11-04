@@ -10,8 +10,9 @@ import axios from 'axios';
 
 export const POST = connectDB(auth(async function (req){
     try{
-        const {title,description,artist,size,type,audio,cover,audioEx,coverEx,duration,album,isUploadfromlive,playlisttitle} = await req.json();
-
+        let {title,description,artist,size,type,audio,cover,audioEx,coverEx,duration,album,isUploadfromlive,playlisttitle} = await req.json();
+        
+        title = title?.replaceAll(' ','')?.replaceAll('mp3','');
         // upload file 
         let coverFileName;
         console.log('1')

@@ -12,7 +12,7 @@ export const POST = connectDB(auth(async function (req){
     try{
         let {title,description,artist,size,type,audio,cover,audioEx,coverEx,duration,album,isUploadfromlive,playlisttitle} = await req.json();
         
-        title = title?.replaceAll(' ','')?.replaceAll('mp3','');
+        let title2 = title?.replaceAll(' ','')?.replaceAll('mp3','');
         // upload file 
         let coverFileName;
         console.log('1')
@@ -21,7 +21,7 @@ export const POST = connectDB(auth(async function (req){
         }else{
             // const filterCoverData = cover.substr(cover.indexOf(',')+1);
             // const bufferCover = new Buffer(filterCoverData,'base64');
-            coverFileName = `${title}-${Date.now()}.${coverEx}`;
+            coverFileName = `${title2}-${Date.now()}.${coverEx}`;
             // writeFileSync(`./public/upload/cover/${coverFileName}`,bufferCover,'binary');
             try{
                 const post = await axios.post(`${process.env.NEXT_PUBLIC_SOCKET_URL}/upload`,{
@@ -37,7 +37,7 @@ export const POST = connectDB(auth(async function (req){
 
         // const filterAudioData = audio.substr(audio.indexOf(',')+1);
         // const bufferAudio = new Buffer(filterAudioData,'base64');
-        const audioFileName = `${title}-${Date.now()}.${audioEx}`;
+        const audioFileName = `${title2}-${Date.now()}.${audioEx}`;
         console.log(audioFileName)
         // writeFileSync(`./public/upload/songs/${audioFileName}`,bufferAudio,'binary');
         try{

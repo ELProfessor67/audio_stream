@@ -1,5 +1,5 @@
 "use client";
-import React, { useState,useEffect } from 'react'
+import React, { useState,useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import {MdAlternateEmail,MdKey} from 'react-icons/md'
 import Link from 'next/link'
@@ -7,6 +7,7 @@ import axios from 'axios'
 import {useSelector,useDispatch} from 'react-redux';
 import {redirect} from 'next/navigation';
 import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert'
+import { toast } from 'react-toastify';
 
 const page = () => {
     const [email,setEmail] = useState('');
@@ -33,6 +34,15 @@ const page = () => {
         setLoading(false);
 
     }
+
+
+    const handleForgot = useCallback(() => {
+        if(type == "Admin"){
+            toast.success("Forgot password link successfully send to your email.");
+        }else{
+            toast.success("Please request admin to forgot your password");
+        }
+    },[type])
 
     useEffect(() => {
         if(isAuth === true && user){
@@ -66,14 +76,15 @@ const page = () => {
                         </div>
                     </div>
 
-                    <div className='input-group flex flex-col gap-1 mb-6'>
+                    <div className='input-group flex flex-col gap-1 mb-2'>
                         <label for="password" className='text-black text-lg'>{type} Password</label>
                         <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                             <MdKey size={20} className='text-gray-400'/>
                             <input type='password' value={password} onChange={(e) => setPassword(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your password' id='password' name='password' required/>
                         </div>   
                     </div>
-
+                    
+                    <p className='text-blue-600 cursor-pointer' onClick={handleForgot}>forgot password?</p>
 
                     <div className='flex justify-center items-center'>
                         <button type='submit' className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-all'>{!loading ? 'Login' : 'Loading...'}</button>

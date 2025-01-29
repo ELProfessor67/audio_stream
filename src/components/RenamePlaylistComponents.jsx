@@ -6,8 +6,10 @@ import Image from 'next/image';
 import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert';
 import axios from 'axios';
 
-const RenamePlaylistComponents = ({createPlaylistOpen,setCreatePlaylistOpen, allsongs,getPlaylist,_id,title:ptitle}) => {
+const RenamePlaylistComponents = ({createPlaylistOpen,setCreatePlaylistOpen, allsongs,getPlaylist,_id,title:ptitle,album:palbum,artist:partist}) => {
     const [title,setTitle] = useState(ptitle);
+    const [album,setAlbum] = useState(palbum);
+    const [artist,setArtist] = useState(partist);
     const [description,setDescription] = useState('description');
     const [seletdSongs,setSelectedSongs] = useState([]);
     const [loading,setLoading] = useState(false);
@@ -24,7 +26,7 @@ const RenamePlaylistComponents = ({createPlaylistOpen,setCreatePlaylistOpen, all
         try{
             if(!title || !description) return
             // if(seletdSongs.length === 0) return window.alert('please select atleast one songs');
-            const {data} = await axios.post(`/api/v1/playlist/${_id}`,{title});
+            const {data} = await axios.post(`/api/v1/playlist/${_id}`,{title, album, artist});
             setTitle('');
             
             getPlaylist();
@@ -70,6 +72,20 @@ const RenamePlaylistComponents = ({createPlaylistOpen,setCreatePlaylistOpen, all
                                 <div className='flex items-center relative  py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                                     <MdOutlineSubtitles size={20} className='text-gray-400' />
                                     <input type='text' value={title} onChange={(e) => setTitle(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your title' id='title' name='title' required />
+                                </div>
+                            </div>
+                            <div className='input-group flex flex-col gap-1 mb-6'>
+                                <label for="title" className='text-black text-lg'>Album</label>
+                                <div className='flex items-center relative  py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                    <MdOutlineSubtitles size={20} className='text-gray-400' />
+                                    <input type='text' value={album} defaultValue={palbum} onChange={(e) => setAlbum(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your title' id='title' name='title' required />
+                                </div>
+                            </div>
+                            <div className='input-group flex flex-col gap-1 mb-6'>
+                                <label for="title" className='text-black text-lg'>Artist</label>
+                                <div className='flex items-center relative  py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                    <MdOutlineSubtitles size={20} className='text-gray-400' />
+                                    <input type='text' value={artist} defaultValue={partist} onChange={(e) => setArtist(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your title' id='title' name='title' required />
                                 </div>
                             </div>
 

@@ -187,7 +187,7 @@ const CustomContextMenu = ({ xPos, yPos, clickedData, handleDelete, setCreatePla
 									(
 										<>
 											<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={setEditPlaylistOpen}>Add New Song</li>
-											<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => setRenameOpen(true)}>Rename Folder</li>
+											<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => setRenameOpen(true)}>Edit Folder</li>
 										</>
 									)
 								}
@@ -202,6 +202,7 @@ const CustomContextMenu = ({ xPos, yPos, clickedData, handleDelete, setCreatePla
 };
 
 
+
 function RenderPlayList({ playlist, onSongDragStart, onSongDrop, handleContextMenu }) {
 	const [open, setOpen] = useState(false);
 	const handleDragStart = (e) => {
@@ -210,7 +211,7 @@ function RenderPlayList({ playlist, onSongDragStart, onSongDrop, handleContextMe
 	}
 	return (
 		<div onDragOver={(e) => e.preventDefault()} onDrop={(e) => onSongDrop(e, playlist._id)}>
-			<p onClick={() => setOpen(prev => !prev)} className='text-black/90 rounded-md hover:bg-gray-100 transition-all p-1 px-2 cursor-pointer flex items-center gap-2' onContextMenu={(e) => handleContextMenu(e, { type: "playlist", _id: playlist._id, title: playlist.title })} draggable onDragStart={handleDragStart}>
+			<p onClick={() => setOpen(prev => !prev)} className='text-black/90 rounded-md hover:bg-gray-100 transition-all p-1 px-2 cursor-pointer flex items-center gap-2' onContextMenu={(e) => handleContextMenu(e, { type: "playlist", _id: playlist._id, title: playlist.title, album: playlist.album,artist: playlist.artist  })} draggable onDragStart={handleDragStart}>
 				{/* <span className='text-yellow-500'>{open ? <FaFolderOpen /> : <FaFolder />}</span> */}
 				<img src={playlist.cover} width={20} height={20} className='rounded-md'/>
 				{playlist.title}
@@ -442,7 +443,7 @@ export default function () {
 	const [showTitle, setShowTitle] = useState(false);
 	const [userChangeVolume,setUserChangeVolume] = useState(false);
 	// console.log(dbackward,dforward)
-
+	
 
 	const dispatch = useDispatch();
 
@@ -1631,7 +1632,7 @@ export default function () {
 															{(provided) => (
 																<div className={`flex justify-between items-center my-6 rounded-md ${data._id.toString() === nextSong?._id?.toString() ? "bg-yellow-200" : ''}`} ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
 																	<div className="flex items-center gap-4">
-																		<span className="text-black text-2xl">{index + 1}</span>
+																		{/* <span className="text-black text-2xl">{index + 1}</span> */}
 																		<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
 																		<div>
 																			<h2 className="text-xl text-black">{data?.title?.slice(0, 40)}</h2>
@@ -2070,7 +2071,7 @@ export default function () {
 
 				<CreatePlaylistComponets createPlaylistOpen={createPlaylistOpen} setCreatePlaylistOpen={setCreatePlaylistOpen} allsongs={allsongs} getPlaylist={getPlaylist} />
 				<EditPlaylistComponets createPlaylistOpen={editPlaylistOpen} setCreatePlaylistOpen={setEditPlaylistOpen} _id={clickedData?._id} allsongs={allsongs} getPlaylist={getPlaylist} allplaylists={allplaylists} />
-				<RenamePlaylistComponents createPlaylistOpen={renameOpen} setCreatePlaylistOpen={setRenameOpen} _id={clickedData?._id} title={clickedData?.title} allsongs={allsongs} getPlaylist={getPlaylist} allplaylists={allplaylists} />
+				<RenamePlaylistComponents createPlaylistOpen={renameOpen} setCreatePlaylistOpen={setRenameOpen} _id={clickedData?._id} title={clickedData?.title} album={clickedData?.album} artist={clickedData?.artist} allsongs={allsongs} getPlaylist={getPlaylist} allplaylists={allplaylists} />
 
 
 			</section>

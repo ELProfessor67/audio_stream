@@ -4,6 +4,18 @@ import {useSelector} from 'react-redux';
 import Peer from 'simple-peer';
 import Hls from 'hls.js';
 
+
+const peerConfig = {
+	iceServers: [
+		{
+			urls: 'turn:24.199.119.194:3478',
+			username: 'test',   
+			credential: 'test123' 
+		}
+	],
+	iceTransportPolicy: 'relay'
+}
+
 const sleep = ms => new Promise(r => window.setTimeout(r,ms))
 
 const socketInit = () => {
@@ -162,9 +174,9 @@ const useSocket = (streamId,audioRef,name,isPlay,setIsPlay, message, setMessage,
 
 		if(isCall){
 			myStreamRef.current = createFakeStream();
-			peerRef.current = new Peer({initiator: true,stream: myStreamRef.current})
+			peerRef.current = new Peer({initiator: true,stream: myStreamRef.current, config: peerConfig})
 		}else{
-			peerRef.current = new Peer({initiator: true})
+			peerRef.current = new Peer({initiator: true, config: peerConfig})
 		}
 		
 		

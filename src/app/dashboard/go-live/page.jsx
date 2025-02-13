@@ -102,6 +102,7 @@ const TimeRemaining = ({ user, setActive, ownerLeft, start, setStart, setTimerSt
 	useEffect(() => {
 		const calculateRemainingTime = () => {
 			const range = checkInTimeRangeForDay(user?.djStartTime, user?.djEndTime, user)
+			console.log(range);
 			setActive(range);
 			if (!range) {
 				setRemainingTime(`${convertUTCToLocalTime(user?.djStartTime)} to ${convertUTCToLocalTime(user?.djEndTime)}`);

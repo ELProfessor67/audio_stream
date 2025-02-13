@@ -97,7 +97,8 @@ const UserProvider = ({children}) => {
                     let hours = +user?.djStartTime?.split(':')[0];
                     let minutes = +user?.djStartTime?.split(':')[1];
                     if(currentHour === hours && currentMinute === minutes){
-                        window.location.reload();
+                        // toast.info('Your time has started now.');
+                        // window.location.reload();
                     }
 
                 },5000)

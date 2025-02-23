@@ -63,34 +63,65 @@ function addOneMinute(hours, minutes) {
 	return [hours, minutes];
 }
 
+// function checkInTimeRangeForDay(startTime, endTime, user) {
+// 	let currentHour = new Date().getUTCHours();
+// 	let currentMinute = new Date().getUTCMinutes();
+// 	[currentHour, currentMinute] = addOneMinute(currentHour, currentMinute);
+
+
+// 	const rangeStartHour = +startTime?.split(':')[0];
+// 	const rangeStartMinute = +startTime?.split(':')[1];
+
+// 	const rangeEndHour = +endTime?.split(':')[0];
+// 	const rangeEndMinute = +endTime?.split(':')[1];
+
+// 	const timeInRange = (currentHour > rangeStartHour || (currentHour === rangeStartHour && currentMinute >= rangeStartMinute)) && (currentHour < rangeEndHour || (currentHour === rangeEndHour && currentMinute <= rangeEndMinute));
+
+// 	const checkDay = user?.djDays?.includes((new Date().getDay()).toString())
+// 	if (checkDay && timeInRange) {
+// 		return true;
+// 	} else {
+// 		return false;
+// 	}
+// 	// return timeInRange;
+// }
+
+
 function checkInTimeRangeForDay(startTime, endTime, user) {
-	let currentHour = new Date().getUTCHours();
-	let currentMinute = new Date().getUTCMinutes();
-	[currentHour, currentMinute] = addOneMinute(currentHour, currentMinute);
+	let now = new Date();
+	let currentHour = now.getUTCHours();
+	let currentMinute = now.getUTCMinutes();
+	let currentSecond = now.getUTCSeconds();
 
+	const [startHour, startMinute] = startTime.split(":").map(Number);
+	const [endHour, endMinute] = endTime.split(":").map(Number);
 
-	const rangeStartHour = +startTime?.split(':')[0];
-	const rangeStartMinute = +startTime?.split(':')[1];
+	const currentTimeInSeconds = currentHour * 3600 + currentMinute * 60 + currentSecond;
+	const startTimeInSeconds = startHour * 3600 + startMinute * 60;
+	const endTimeInSeconds = endHour * 3600 + endMinute * 60;
 
-	const rangeEndHour = +endTime?.split(':')[0];
-	const rangeEndMinute = +endTime?.split(':')[1];
+	// Check if the current day is in the allowed DJ days
+	const checkDay = user?.djDays?.includes(now.getDay().toString());
 
-	const timeInRange = (currentHour > rangeStartHour || (currentHour === rangeStartHour && currentMinute >= rangeStartMinute)) && (currentHour < rangeEndHour || (currentHour === rangeEndHour && currentMinute <= rangeEndMinute));
-
-	const checkDay = user?.djDays?.includes((new Date().getDay()).toString())
-	if (checkDay && timeInRange) {
-		return true;
-	} else {
-		return false;
+	if (!checkDay) {
+		return { inRange: false, secondsToStart: null };
 	}
-	// return timeInRange;
+
+	if (currentTimeInSeconds >= startTimeInSeconds && currentTimeInSeconds <= endTimeInSeconds) {
+		return { inRange: true, secondsToStart: 0 };
+	} else if (currentTimeInSeconds < startTimeInSeconds) {
+		let secondsToStart = startTimeInSeconds - currentTimeInSeconds;
+		return { inRange: false, secondsToStart };
+	} else {
+		return { inRange: false, secondsToStart: null }; // If time has passed
+	}
 }
 
 
 
 
 
-const TimeRemaining = ({ user, setActive, ownerLeft, start, setStart, setTimerStart }) => {
+const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setStart, setTimerStart }) => {
 	const [remainingTime, setRemainingTime] = useState("00:00");
 	const startRef = useRef()
 	const router = useRouter()
@@ -101,17 +132,25 @@ const TimeRemaining = ({ user, setActive, ownerLeft, start, setStart, setTimerSt
 
 	useEffect(() => {
 		const calculateRemainingTime = () => {
-			const range = checkInTimeRangeForDay(user?.djStartTime, user?.djEndTime, user)
-			console.log(range);
+			const { inRange: range, secondsToStart } = checkInTimeRangeForDay(user?.djStartTime, user?.djEndTime, user)
+			console.log(range, secondsToStart);
 			setActive(range);
 			if (!range) {
+				if (secondsToStart != null && secondsToStart <= 10) {
+					setLeftSecond(secondsToStart);
+				}else{
+					setLeftSecond(null);
+				}
 				setRemainingTime(`${convertUTCToLocalTime(user?.djStartTime)} to ${convertUTCToLocalTime(user?.djEndTime)}`);
+
 				return
 			}
 			if (!user || !user.djStartTime || !user.djEndTime) {
 				setRemainingTime("00:00");
 				return;
 			}
+
+			setLeftSecond(null);
 
 			const nowUTC = new Date();
 			// Get current UTC time
@@ -212,9 +251,9 @@ function RenderPlayList({ playlist, onSongDragStart, onSongDrop, handleContextMe
 	}
 	return (
 		<div onDragOver={(e) => e.preventDefault()} onDrop={(e) => onSongDrop(e, playlist._id)}>
-			<p onClick={() => setOpen(prev => !prev)} className='text-black/90 rounded-md hover:bg-gray-100 transition-all p-1 px-2 cursor-pointer flex items-center gap-2' onContextMenu={(e) => handleContextMenu(e, { type: "playlist", _id: playlist._id, title: playlist.title, album: playlist.album,artist: playlist.artist  })} draggable onDragStart={handleDragStart}>
+			<p onClick={() => setOpen(prev => !prev)} className='text-black/90 rounded-md hover:bg-gray-100 transition-all p-1 px-2 cursor-pointer flex items-center gap-2' onContextMenu={(e) => handleContextMenu(e, { type: "playlist", _id: playlist._id, title: playlist.title, album: playlist.album, artist: playlist.artist })} draggable onDragStart={handleDragStart}>
 				{/* <span className='text-yellow-500'>{open ? <FaFolderOpen /> : <FaFolder />}</span> */}
-				<img src={playlist.cover} width={20} height={20} className='rounded-md'/>
+				<img src={playlist.cover} width={20} height={20} className='rounded-md' />
 				{playlist.title}
 			</p>
 			{open &&
@@ -409,7 +448,7 @@ export default function () {
 	const [filterSearch, setFilterSearch] = useState([]);
 	const [filterQuery, setFilterQuery] = useState('');
 	const [fsopen, fsetsopen] = useState(false);
-	const [micVolume, setMicVolume] = useState(0.5);
+	const [micVolume, setMicVolume] = useState(2.5);
 	const [fdforward, setfDforward] = useState(false);
 	const [fdbackward, setfDbackward] = useState(false);
 	const [voiceAcitce, setVoiceActice] = useState(false);
@@ -442,13 +481,14 @@ export default function () {
 	const [isaddInQue, setisaddInQue] = useState(false);
 	const [renameOpen, setRenameOpen] = useState(false);
 	const [showTitle, setShowTitle] = useState(false);
-	const [userChangeVolume,setUserChangeVolume] = useState(false);
+	const [userChangeVolume, setUserChangeVolume] = useState(false);
+	const [leftSecond,setLeftSecond] = useState(null);
 	// console.log(dbackward,dforward)
-	
+
 
 	const dispatch = useDispatch();
 
-	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory,handleSelectedSong);
+	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong);
 
 	// console.info('voiceAcitce',voiceAcitce);
 
@@ -620,7 +660,7 @@ export default function () {
 	}
 
 
-	function handleSelectedSong (data, index) {
+	function handleSelectedSong(data, index) {
 		setSeletedSong(data);
 		setOpen(false);
 		setSongPlaying(true);
@@ -667,11 +707,11 @@ export default function () {
 	}
 
 
-	const handleSongSubmit = async (e, addInQue,songTitle,size,type,audioEx,duration,audiofile) => {
+	const handleSongSubmit = async (e, addInQue, songTitle, size, type, audioEx, duration, audiofile) => {
 
 
 		e?.preventDefault();
-		
+
 
 		if (!audiofile) {
 			await dispatch(showError("Please fill all the fields"));
@@ -754,7 +794,7 @@ export default function () {
 	useEffect(() => {
 		if (Object.keys(selectedSong).length != 0 && Object.keys(selectPlayListSong).length != 0) {
 			const sindex = selectPlayListSong?.songs?.indexOf(selectedSong);
-			console.log("I am fill",selectPlayListSong,sindex);
+			console.log("I am fill", selectPlayListSong, sindex);
 			if (sindex === -1) {
 				setDbackward(false);
 				setDforward(false);
@@ -775,7 +815,7 @@ export default function () {
 			setDforward(false);
 			setDbackward(false)
 		}
-	}, [selectedSong,selectPlayListSong])
+	}, [selectedSong, selectPlayListSong])
 
 
 
@@ -855,7 +895,7 @@ export default function () {
 
 
 	const handleMicVolumeChange = (e) => {
-		console.warn('function call',e.target.value);
+		console.warn('function call', e.target.value);
 		// console.log('handleMicVolumeChange',e.target.value)
 		setMicVolume(e.target.value);
 		changeMicValume(e.target.value);
@@ -1133,11 +1173,11 @@ export default function () {
 				const extention = file.name.split('.').reverse()[0]
 				setSongTitle(file.name)
 				setEx(extention);
-				console.log(songTitle,"song")
+				console.log(songTitle, "song")
 				const audio = new Audio(base64String);
 				audio.addEventListener('loadedmetadata', function () {
 					setDuration(audio.duration);
-					handleSongSubmit(undefined,isaddInQue,file.name,file.size,file.type,extention,audio.duration,base64String);
+					handleSongSubmit(undefined, isaddInQue, file.name, file.size, file.type, extention, audio.duration, base64String);
 				})
 			}
 		}
@@ -1150,8 +1190,8 @@ export default function () {
 	const handleAddQue = (song) => {
 		setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs, song] });
 	}
-	
-	
+
+
 
 
 	return (
@@ -1183,7 +1223,7 @@ export default function () {
 
 						<div className="w-full relative bg-indigo-600 p-2 rounded-md">
 							<h2 className="text-white text-lg mb-1">Microphone Volume</h2>
-							<input type="range" className="w-full cursor-pointer" min={0} max={1} value={micVolume} step="0.1" onChange={handleMicVolumeChange} />
+							<input type="range" className="w-full cursor-pointer" min={0} max={5} value={micVolume} step="0.1" onChange={handleMicVolumeChange} />
 
 							<div className="w-full flex items-center justify-between mt-1 px-1">
 								<span className="text-white">0</span>
@@ -1250,8 +1290,8 @@ export default function () {
 							</div>
 
 							{/* <VolumePopupsDeck deckname={'Deck A'} volume={volume} handleMicVolumeChange={handleVolumeChange}/> */}
-							<AutoAdjustByBase songPlaying={songPlaying} songBase={songBase} handleVolumeChange={changeValume} userChangeVolume={userChangeVolume}/>
-							
+							<AutoAdjustByBase songPlaying={songPlaying} songBase={songBase} handleVolumeChange={changeValume} userChangeVolume={userChangeVolume} voiceAcitce={voiceAcitce} />
+
 						</div>
 
 						<div className="w-full relative p-2">
@@ -1314,7 +1354,7 @@ export default function () {
 												}
 
 											</h2>
-											<TimeRemaining user={user} setTimerStart={setTimerStart} setActive={setActive} ownerLeft={ownerLeft} start={start} setStart={setStart} />
+											<TimeRemaining setLeftSecond={setLeftSecond} user={user} setTimerStart={setTimerStart} setActive={setActive} ownerLeft={ownerLeft} start={start} setStart={setStart} />
 										</>
 
 
@@ -1597,7 +1637,7 @@ export default function () {
 									{
 										isAllow('add_song') &&
 										<>
-											<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => { document.getElementById("audio").click(); setisaddInQue(true) }}>{fileload != 0 && isaddInQue  ? `${fileload}%` : "Add Song"  }</button>
+											<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => { document.getElementById("audio").click(); setisaddInQue(true) }}>{fileload != 0 && isaddInQue ? `${fileload}%` : "Add Song"}</button>
 										</>
 									}
 									<h2 className='text-white my-2 text-center text-2xl'>Queue</h2>
@@ -1863,7 +1903,7 @@ export default function () {
 									{
 										!user?.isDJ && (
 
-											<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => { document.getElementById("audio1").click(); setisaddInQue(false) }}>{fileload != 0 && !isaddInQue  ? `${fileload}%` :   "Upload"}</button>
+											<button className="py-2 px-4 text-white text-lg bg-[rgba(255,255,255,0.5)] rounded-md hover:bg-[rgba(255,255,255,0.3)]" onClick={() => { document.getElementById("audio1").click(); setisaddInQue(false) }}>{fileload != 0 && !isaddInQue ? `${fileload}%` : "Upload"}</button>
 										)
 									}
 
@@ -2086,6 +2126,14 @@ export default function () {
 					</div>
 				</div>
 			} */}
+
+			{
+				leftSecond != null && 
+				<div className='w-[90%] h-[90%] pointer-events-none absolute top-14 bg-transparent z-[100000] rounded-md flex flex-col items-center justify-center gap-6'>
+					<h1 className='text-8xl text-black font-medium'>{leftSecond}</h1>
+				</div>
+			}
+			
 
 			{contextMenuPosition && (
 				<CustomContextMenu xPos={contextMenuPosition.x} yPos={contextMenuPosition.y} setRenameOpen={setRenameOpen} clickedData={clickedData} handleDelete={handleDelete} setCreatePlaylistOpen={setCreatePlaylistOpen} setEditPlaylistOpen={setEditPlaylistOpen} />

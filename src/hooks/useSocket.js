@@ -11,13 +11,31 @@ import { data } from 'autoprefixer';
 const peerConfig = {
 	iceServers: [
 		{
-			urls: 'turn:24.199.119.194:3478',
-			username: 'test',   
-			credential: 'test123' 
-		}
-	],
-	iceTransportPolicy: 'relay'
+			urls: "stun:stun.relay.metered.ca:80",
+		},
+		{
+			urls: "turn:global.relay.metered.ca:80",
+			username: "827d3072e5b2f0e84207f45a",
+			credential: "wmxXXuDm8VSalqWu",
+		},
+		{
+			urls: "turn:global.relay.metered.ca:80?transport=tcp",
+			username: "827d3072e5b2f0e84207f45a",
+			credential: "wmxXXuDm8VSalqWu",
+		},
+		{
+			urls: "turn:global.relay.metered.ca:443",
+			username: "827d3072e5b2f0e84207f45a",
+			credential: "wmxXXuDm8VSalqWu",
+		},
+		{
+			urls: "turns:global.relay.metered.ca:443?transport=tcp",
+			username: "827d3072e5b2f0e84207f45a",
+			credential: "wmxXXuDm8VSalqWu",
+		},
+	]
 }
+
 
 
 const socketInit = () => {
@@ -807,24 +825,68 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	}
 
 
+	// function AudioProcess() {
+	// 	if (!micOnRef.current) {
+	// 		setVoiceComing(false);
+	// 		return
+	// 	}
+	// 	const array = new Uint8Array(analyserRef.current.frequencyBinCount);
+	// 	analyserRef.current.getByteFrequencyData(array);
+	// 	const arraySum = array.reduce((a, value) => a + value, 0);
+	// 	const average = arraySum / array.length;
+	// 	// console.info('voulme',Math.round(average));
+	// 	// colorPids(average);
+	// 	const voiceVolume = Math.round(average);
+	// 	if (voiceVolume > 20) {
+	// 		setVoiceComing(true);
+	// 	} else {
+	// 		setVoiceComing(false);
+	// 	}
+	// };
+
+
+	let volumeHistory = [];
+	const historyLength = 5;
+	let debounceTimeout = null;
+
 	function AudioProcess() {
 		if (!micOnRef.current) {
 			setVoiceComing(false);
-			return
+			return;
 		}
-		const array = new Uint8Array(analyserRef.current.frequencyBinCount);
-		analyserRef.current.getByteFrequencyData(array);
-		const arraySum = array.reduce((a, value) => a + value, 0);
-		const average = arraySum / array.length;
-		// console.info('voulme',Math.round(average));
-		// colorPids(average);
-		const voiceVolume = Math.round(average);
-		if (voiceVolume > 20) {
-			setVoiceComing(true);
-		} else {
-			setVoiceComing(false);
+
+		try {
+			const array = new Uint8Array(analyserRef.current.frequencyBinCount);
+			analyserRef.current.getByteFrequencyData(array);
+
+			const arraySum = array.reduce((a, value) => a + value, 0);
+			const average = arraySum / array.length;
+			const voiceVolume = Math.round(average);
+
+			// Smoothing
+			// volumeHistory.push(voiceVolume);
+			// if (volumeHistory.length > historyLength) {
+			// 	volumeHistory.shift();
+			// }
+			// const smoothedVolume = volumeHistory.reduce((a, b) => a + b, 0) / volumeHistory.length;
+
+			// Debouncing
+			if (debounceTimeout === null) {
+				debounceTimeout = setTimeout(() => {
+					if (voiceVolume > 20) {
+						setVoiceComing(true);
+					} else {
+						setVoiceComing(false);
+					}
+					debounceTimeout = null;
+				}, 100);
+			}
+		} catch (error) {
+			console.error('Error processing audio data:', error);
 		}
-	};
+	}
+
+
 
 
 

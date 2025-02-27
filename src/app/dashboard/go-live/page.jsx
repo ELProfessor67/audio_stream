@@ -121,7 +121,7 @@ function checkInTimeRangeForDay(startTime, endTime, user) {
 
 
 
-const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setStart, setTimerStart }) => {
+const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setStart, setTimerStart, handleStart }) => {
 	const [remainingTime, setRemainingTime] = useState("00:00");
 	const startRef = useRef()
 	const router = useRouter()
@@ -133,11 +133,13 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 	useEffect(() => {
 		const calculateRemainingTime = () => {
 			const { inRange: range, secondsToStart } = checkInTimeRangeForDay(user?.djStartTime, user?.djEndTime, user)
-			console.log(range, secondsToStart);
 			setActive(range);
 			if (!range) {
 				if (secondsToStart != null && secondsToStart <= 10) {
 					setLeftSecond(secondsToStart);
+					if(secondsToStart <= 1 && !start){
+						handleStart();
+					}
 				}else{
 					setLeftSecond(null);
 				}
@@ -1354,7 +1356,7 @@ export default function () {
 												}
 
 											</h2>
-											<TimeRemaining setLeftSecond={setLeftSecond} user={user} setTimerStart={setTimerStart} setActive={setActive} ownerLeft={ownerLeft} start={start} setStart={setStart} />
+											<TimeRemaining handleStart={handleStart} start={start} setLeftSecond={setLeftSecond} user={user} setTimerStart={setTimerStart} setActive={setActive} ownerLeft={ownerLeft} setStart={setStart} />
 										</>
 
 

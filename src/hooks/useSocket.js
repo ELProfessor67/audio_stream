@@ -33,7 +33,9 @@ const peerConfig = {
 			username: "827d3072e5b2f0e84207f45a",
 			credential: "wmxXXuDm8VSalqWu",
 		},
-	]
+	],
+	iceTransportPolicy: 'relay',
+	sdpSemantics: 'uinified-plan'
 }
 
 

@@ -6,7 +6,7 @@ export const auth = (func) => async (req) => {
     try {
         const token = req.cookies.get('token')?.value;
         const {_id} = await jwt.verify(token,process.env.JWT_SECRET);
-        const user = await userModel.findById(_id);
+        let user = await userModel.findById(_id);
         if (!user){
             throw new Error('user unauthorized');
         }
@@ -28,7 +28,9 @@ export const auth = (func) => async (req) => {
         //     user._id = user.djOwner
         // }
         if(user.isDJ && change){
-            user._id = user.djOwner
+            const copyUser = JSON.parse(JSON.stringify(user));
+            user = {...copyUser,originalId: user._id,_id: user.djOwner}
+            // user._id = user.djOwner
         }
         req.user = user;
         return func(req);

@@ -274,13 +274,13 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 			ownerRef.current = data?.user;
 
 			createPeerConnection();
-
+			
 			if (data?.user?.welcomeTone && !data.tonePlayed) {
 				console.log('tones played')
 				const song = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${data?.user?.welcomeTone}`);
 				song.addEventListener("canplaythrough", () => {
 					console.log("Audio loaded successfully");
-					audioRef.current.pause();
+					// audioRef.current.pause();
 					song.play().then(() => {
 						console.log("Audio started playing");
 					}).catch((error) => {
@@ -288,7 +288,7 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 					});
 				});
 				song.addEventListener("ended", () => {
-					audioRef.current.play();
+					// audioRef.current.play();
 					console.log("Audio has finished playing");
 				});
 				song.load();

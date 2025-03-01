@@ -450,7 +450,7 @@ export default function () {
 	const [filterSearch, setFilterSearch] = useState([]);
 	const [filterQuery, setFilterQuery] = useState('');
 	const [fsopen, fsetsopen] = useState(false);
-	const [micVolume, setMicVolume] = useState(2.5);
+	const [micVolume, setMicVolume] = useState(1);
 	const [fdforward, setfDforward] = useState(false);
 	const [fdbackward, setfDbackward] = useState(false);
 	const [voiceAcitce, setVoiceActice] = useState(false);

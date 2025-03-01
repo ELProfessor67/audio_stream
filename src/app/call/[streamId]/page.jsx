@@ -204,7 +204,7 @@ export default function page({ params }) {
 	},[isLive])
 
 	return (
-		<section className="flex justify-center items-center h-[100vh] w-full px-4">
+		<section className="flex justify-center items-center h-[100vh] w-full px-4 bg-[#1a1d22]">
 			<a className="hidden" ref={downloadLink}></a>
 			<div className="max-w-[38rem] p-4 shadow-md rounded-md border border-gray-100 hidden">
 				<div className="flex justify-between flex-col md:flex-row items-center relative gap-5 md:gap-5">
@@ -259,11 +259,11 @@ export default function page({ params }) {
 						<input type="range" className="w-[90%]" min={0} max={1} step={0.1} value={volume} onChange={(e) => setVolume(e.target.value)} />
 					</div>
 				</div>
-				<audio ref={audioRef} controls className="w-full bg-none hidden"></audio>
+				<audio ref={audioRef} controls className="w-full bg-none hidden" muted></audio>
 			</div>
 			
-			<div className="max-w-[38rem] p-4 shadow-md rounded-md border border-gray-100 h-[20rem] flex justify-center items-center">
-				<button className="bg-indigo-500 text-xs border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200 mr-2" disabled={!isLive} title="live chat" onClick={handleCall}>Click To Call</button>
+			<div className=" shadow-md rounded-md border  flex justify-center items-center border-[#1a1d22]">
+				<button className="bg-[#f00000] text-xs border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-[#f000008e] cursor-pointer disabled:text-gray-200 mr-2" disabled={!isLive} title="live chat" onClick={handleCall}>Click To Call</button>
 			</div>
 			
 			<Dialog open={rOpen} onClose={() => setROPen(false)} name={name} setName={setName}>
@@ -309,32 +309,32 @@ export default function page({ params }) {
 
 			<CallComponents open={callOpen} onClose={() => setCallOpen(false)} name={name} setName={setName}>
 				<div className='w-full h-full flex flex-col gap-5 justify-center items-center'>
-					<h2 className='text-3xl text-gray-800'>{user?.name && toTitleCase(user?.name)}</h2>
+					<h2 className='text-3xl text-white'>{user?.name && toTitleCase(user?.name)}</h2>
 					{
 						callStatus == 'processing' &&
 						<div className='flex items-center'>
-							<h3 className='text-lg text-gray-500'>Calling</h3>
+							<h3 className='text-lg text-white'>Calling</h3>
 							<div class="loading flex gap-1 items-center ml-1">
-								<div class="dot bg-gray-500 w-1 h-1 rounded-full"></div>
-								<div class="dot bg-gray-500 w-1 h-1 rounded-full"></div>
-								<div class="dot bg-gray-500 w-1 h-1 rounded-full"></div>
+								<div class="dot bg-white/80 w-1 h-1 rounded-full"></div>
+								<div class="dot bg-white/80 w-1 h-1 rounded-full"></div>
+								<div class="dot bg-white/80 w-1 h-1 rounded-full"></div>
 							</div>
 						</div>
 					}
 
 					{
 						callStatus == 'accepted' &&
-						<h3 className='text-lg text-gray-500'><Timer timerStart={true} /></h3>
+						<h3 className='text-lg text-white'><Timer timerStart={true} /></h3>
 
 					}
 					{
 						callStatus == 'rejected' &&
-						<h3 className='text-lg text-gray-500'>Call Rejected</h3>
+						<h3 className='text-lg text-white'>Call Rejected</h3>
 
 					}
 					{
 						callStatus == 'complete' &&
-						<h3 className='text-lg text-gray-500'>Call Complete</h3>
+						<h3 className='text-lg text-white'>Call Complete</h3>
 
 					}
 					{
@@ -350,22 +350,22 @@ export default function page({ params }) {
 			<CallComponents open={gedetailOpen} onClose={() => setGetDetailsOpne(false)}>
 					<div>
 						<div className='input-group flex flex-col gap-1 mb-6'>
-							<label for="password" className='text-black text-lg'>Name</label>
-							<div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+							<label for="password" className='text-white text-lg'>Name</label>
+							<div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-[#f00000] rounded-md'>
 								<FaUser size={20} className='text-gray-400'/>
-								<input type='text' value={name} onChange={(e) => setName(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your name' id='password' name='password' required/>
+								<input type='text' value={name} onChange={(e) => setName(e.target.value)} className='w-[95%] bg-transparent outline-none ml-1' placeholder='Enter your name' id='password' name='password' required/>
 							</div>   
 						</div>
 						<div className='input-group flex flex-col gap-1 mb-6'>
-							<label for="password" className='text-black text-lg'>Location</label>
-							<div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+							<label for="password" className='text-white text-lg'>Location</label>
+							<div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-[#f00000] rounded-md'>
 								<FaLocationDot size={20} className='text-gray-400'/>
-								<input type='text' value={location} onChange={(e) => setLocation(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your localtion' id='password' name='password' required/>
+								<input type='text' value={location} onChange={(e) => setLocation(e.target.value)} className='w-[95%] bg-transparent outline-none ml-1' placeholder='Enter your localtion' id='password' name='password' required/>
 							</div>   
 						</div>
 
 						<div className='flex justify-center items-center'>
-							<button type='submit' onClick={handleCall} className='py-2 px-4 rounded-md bg-indigo-500 text-white text-lg hover:bg-indigo-700 transition-al disabled:opacity-40' disabled={!name || !location}>Call Now</button>
+							<button type='submit' onClick={handleCall} className='py-2 px-4 rounded-md bg-[#f00000] text-white text-lg hover:bg-[#f00000] transition-al disabled:opacity-40' disabled={!name || !location}>Call Now</button>
 						</div>
 					</div>
 			</CallComponents>

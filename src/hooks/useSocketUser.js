@@ -18,10 +18,10 @@ const peerConfig = {
 		{ urls: "stun:stun4.l.google.com:19302" },
 		{ urls: "stun:stun4.l.google.com:5349" },
 		{
-            urls: "turn:24.199.119.194:3478",
-            username: "test",
-            credential: "test123",
-        }
+			urls: "turn:24.199.119.194:3478",
+			username: "test",
+			credential: "test123",
+		}
 	]
 }
 
@@ -214,7 +214,7 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 		});
 
 		peerRef.current.on('stream', (stream) => {
-			console.log(stream,"stream")
+			console.log(stream, "stream")
 			console.log(peerRef.current.connected)
 			audioRef.current.srcObject = stream;
 
@@ -245,18 +245,21 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 			ownerRef.current = data?.user;
 
 			createPeerConnection();
-			
+
 			if (data?.user?.welcomeTone && !data.tonePlayed) {
 				console.log('tones played')
 				const song = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${data?.user?.welcomeTone}`);
 				song.addEventListener("canplaythrough", () => {
 					console.log("Audio loaded successfully");
 					// audioRef.current.pause();
-					song.play().then(() => {
-						console.log("Audio started playing");
-					}).catch((error) => {
-						console.error("Error playing audio:", error);
-					});
+					if (isCall == false) {
+						song.play().then(() => {
+							console.log("Audio started playing");
+						}).catch((error) => {
+							console.error("Error playing audio:", error);
+						});
+					}
+
 				});
 				song.addEventListener("ended", () => {
 					// audioRef.current.play();
@@ -271,15 +274,17 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 			if (data?.welcomeTone) {
 				console.log('welcome tone started')
 				const song = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${data?.welcomeTone}`);
-				
+
 				song.addEventListener("canplaythrough", () => {
 					console.log("Audio loaded successfully");
-					audioRef.current.pause();
-					song.play().then(() => {
-						console.log("Audio started playing");
-					}).catch((error) => {
-						console.error("Error playing audio:", error);
-					});
+					if (isCall == false) {
+						audioRef.current.pause();
+						song.play().then(() => {
+							console.log("Audio started playing");
+						}).catch((error) => {
+							console.error("Error playing audio:", error);
+						});
+					}
 				});
 				song.addEventListener("ended", () => {
 					audioRef.current.play();
@@ -313,12 +318,14 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 				const song = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${ownerRef.current?.endingTone}`);
 				song.addEventListener("canplaythrough", () => {
 					console.log("Audio loaded successfully");
-					audioRef.current.pause();
-					song.play().then(() => {
-						console.log("Audio started playing");
-					}).catch((error) => {
-						console.error("Error playing audio:", error);
-					});
+					if (isCall == false) {
+						audioRef.current.pause();
+						song.play().then(() => {
+							console.log("Audio started playing");
+						}).catch((error) => {
+							console.error("Error playing audio:", error);
+						});
+					}
 				});
 				song.addEventListener("ended", async () => {
 					window.location.reload();

@@ -194,7 +194,7 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 
 		peerRef.current.on('signal', data => {
 			console.log('offer', data, owner.socketId);
-			socketRef.current.emit('offer', { offer: data, recieverId: ownerRef.current.socketId, roomId: streamId });
+			socketRef.current.emit('offer', { offer: data, recieverId: ownerRef.current.socketId, roomId: streamId, isCall });
 		});
 
 		peerRef.current.on('connect', () => {
@@ -214,7 +214,7 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 		});
 
 		peerRef.current.on('stream', (stream) => {
-			console.log(stream)
+			console.log(stream,"stream")
 			console.log(peerRef.current.connected)
 			audioRef.current.srcObject = stream;
 
@@ -363,7 +363,7 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 		socketRef.current.on('call-response', (data) => {
 			if (data.response) {
 				setCallStatus('accepted');
-
+				audioRef.current.play();
 				peerRef.current.replaceTrack(myStreamRef.current?.getTracks().find((track) => track.kind === 'audio'), myAudioStreamRef.current.getTracks().find((track) => track.kind === 'audio'), myStreamRef.current);
 
 			} else {

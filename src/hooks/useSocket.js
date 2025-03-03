@@ -108,6 +108,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	const scriptProcessorRef = useRef();
 	const mediaRecorderRef = useRef();
 	const combinedStreamRef = useRef();
+	const micStreamRef = useRef();
 	const [recordReady, setRecordingReady] = useState(false);
 
 
@@ -449,8 +450,8 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 	const handleOffer = (data) => {
-		console.log('offer', data.offer);
-		peersRef.current[data.senderId] = new Peer({ initiator: false, stream: localStreamRef.current, config: peerConfig });
+		const isCall = data.isCall;
+		peersRef.current[data.senderId] = new Peer({ initiator: false, stream: isCall == true ? micStreamRef.current : localStreamRef.current, config: peerConfig });
 
 		peersRef.current[data.senderId].on('signal', answer => {
 			console.log('answer', answer);
@@ -493,7 +494,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			audio.controls = true;
 			audio.play()
 			// document.getElementById("call-contaier").appendChild(audio);
-
+			
 			// callsElementRef.current.srcObject = stream;
 			addStreamInMain(data.senderId);
 		});
@@ -890,6 +891,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		socketRef.current.emit('owner-join', { user });
 		// localStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
 		const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+		micStreamRef.current = stream;
 		setMicOn(true);
 
 		const audioContext = new (window.AudioContext || window.webkitAudioContext)();

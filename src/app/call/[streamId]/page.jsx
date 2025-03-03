@@ -259,8 +259,8 @@ export default function page({ params }) {
 						<input type="range" className="w-[90%]" min={0} max={1} step={0.1} value={volume} onChange={(e) => setVolume(e.target.value)} />
 					</div>
 				</div>
-				<audio ref={audioRef} controls className="w-full bg-none hidden" muted></audio>
 			</div>
+			<audio ref={audioRef} controls className="w-full bg-none "></audio>
 			
 			<div className=" shadow-md rounded-md border  flex justify-center items-center border-[#1a1d22]">
 				<button className="bg-[#f00000] text-xs border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-[#f000008e] cursor-pointer disabled:text-gray-200 mr-2" disabled={!isLive} title="live chat" onClick={handleCall}>Click To Call</button>

@@ -5,27 +5,54 @@ import Peer from 'simple-peer';
 import Hls from 'hls.js';
 
 
+// const peerConfig = {
+// 	iceServers: [
+// 		{ urls: "stun:stun.l.google.com:19302" },
+// 		{ urls: "stun:stun.l.google.com:5349" },
+// 		{ urls: "stun:stun1.l.google.com:3478" },
+// 		{ urls: "stun:stun1.l.google.com:5349" },
+// 		{ urls: "stun:stun2.l.google.com:19302" },
+// 		{ urls: "stun:stun2.l.google.com:5349" },
+// 		{ urls: "stun:stun3.l.google.com:3478" },
+// 		{ urls: "stun:stun3.l.google.com:5349" },
+// 		{ urls: "stun:stun4.l.google.com:19302" },
+// 		{ urls: "stun:stun4.l.google.com:5349" },
+// 		{
+// 			urls: "turn:24.199.119.194:3478",
+// 			username: "test",
+// 			credential: "test123",
+// 		}
+// 	]
+// }
+
 const peerConfig = {
+	iceTransportPolicy: "relay",
 	iceServers: [
-		{ urls: "stun:stun.l.google.com:19302" },
-		{ urls: "stun:stun.l.google.com:5349" },
-		{ urls: "stun:stun1.l.google.com:3478" },
-		{ urls: "stun:stun1.l.google.com:5349" },
-		{ urls: "stun:stun2.l.google.com:19302" },
-		{ urls: "stun:stun2.l.google.com:5349" },
-		{ urls: "stun:stun3.l.google.com:3478" },
-		{ urls: "stun:stun3.l.google.com:5349" },
-		{ urls: "stun:stun4.l.google.com:19302" },
-		{ urls: "stun:stun4.l.google.com:5349" },
 		{
-			urls: "turn:24.199.119.194:3478",
-			username: "test",
-			credential: "test123",
-		}
+			urls: "stun:stun.relay.metered.ca:80",
+		},
+		{
+			urls: "turn:global.relay.metered.ca:80",
+			username: "827d3072e5b2f0e84207f45a",
+			credential: "wmxXXuDm8VSalqWu",
+		},
+		{
+			urls: "turn:global.relay.metered.ca:80?transport=tcp",
+			username: "827d3072e5b2f0e84207f45a",
+			credential: "wmxXXuDm8VSalqWu",
+		},
+		{
+			urls: "turn:global.relay.metered.ca:443",
+			username: "827d3072e5b2f0e84207f45a",
+			credential: "wmxXXuDm8VSalqWu",
+		},
+		{
+			urls: "turns:global.relay.metered.ca:443?transport=tcp",
+			username: "827d3072e5b2f0e84207f45a",
+			credential: "wmxXXuDm8VSalqWu",
+		},
 	]
 }
-
-
 
 const sleep = ms => new Promise(r => window.setTimeout(r, ms))
 
@@ -110,11 +137,11 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 	// }
 
 	async function handleSongChange(data) {
-		if (scheduleActiveRef.current == true || isLiveRef.current == true) {
+		if (scheduleActiveRef.current == true || isLiveRef.current == true || isCall == true) {
 			return
 		}
 
-		console.log("new song",audioRef.current.srcObject)
+		console.log("new song", audioRef.current.srcObject)
 
 		setRoomActive(true);
 		setAutoDj(true);
@@ -128,7 +155,7 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 			audioRef.current.src = `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}`;
 			audioRef.current.load();
 			audioRef.current.play();
-			
+
 		};
 
 		if (audioRef.current.src != `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}`) {
@@ -201,9 +228,8 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 	const createPeerConnection = () => {
 
 		if (isCall) {
-			// myStreamRef.current = createFakeStream();
-			// peerRef.current = new Peer({ initiator: true, stream: myStreamRef.current, config: peerConfig })
-			peerRef.current = new Peer({ initiator: true, config: peerConfig })
+			myStreamRef.current = createFakeStream();
+			peerRef.current = new Peer({ initiator: true, stream: myStreamRef.current, config: peerConfig })
 		} else {
 			peerRef.current = new Peer({ initiator: true, config: peerConfig })
 		}
@@ -415,12 +441,7 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 			if (data.response) {
 				setCallStatus('accepted');
 				audioRef.current.play();
-				// peerRef.current.replaceTrack(myStreamRef.current?.getTracks().find((track) => track.kind === 'audio'), myAudioStreamRef.current.getTracks().find((track) => track.kind === 'audio'), myStreamRef.current);
-
-				myAudioStreamRef.current.getTracks().forEach((track) => {
-					peerRef.current.addTrack(track,  myAudioStreamRef.current);
-				});
-		
+				peerRef.current.replaceTrack(myStreamRef.current?.getTracks().find((track) => track.kind === 'audio'), myAudioStreamRef.current.getTracks().find((track) => track.kind === 'audio'), myStreamRef.current);
 			} else {
 				setCallStatus('rejected');
 			}

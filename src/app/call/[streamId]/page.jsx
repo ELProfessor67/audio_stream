@@ -260,7 +260,7 @@ export default function page({ params }) {
 					</div>
 				</div>
 			</div>
-			<audio ref={audioRef} controls className="w-full bg-none hidden"></audio>
+			<audio ref={audioRef} controls className="w-full bg-none"></audio>
 			
 			<div className=" shadow-md rounded-md border  flex justify-center items-center border-[#1a1d22]">
 				<button className="bg-[#f00000] text-xs border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-[#f000008e] cursor-pointer disabled:text-gray-200 mr-2" disabled={!isLive} title="live chat" onClick={handleCall}>Click To Call</button>

@@ -201,8 +201,9 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 	const createPeerConnection = () => {
 
 		if (isCall) {
-			myStreamRef.current = createFakeStream();
-			peerRef.current = new Peer({ initiator: true, stream: myStreamRef.current, config: peerConfig })
+			// myStreamRef.current = createFakeStream();
+			// peerRef.current = new Peer({ initiator: true, stream: myStreamRef.current, config: peerConfig })
+			peerRef.current = new Peer({ initiator: true, config: peerConfig })
 		} else {
 			peerRef.current = new Peer({ initiator: true, config: peerConfig })
 		}
@@ -414,8 +415,12 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 			if (data.response) {
 				setCallStatus('accepted');
 				audioRef.current.play();
-				peerRef.current.replaceTrack(myStreamRef.current?.getTracks().find((track) => track.kind === 'audio'), myAudioStreamRef.current.getTracks().find((track) => track.kind === 'audio'), myStreamRef.current);
+				// peerRef.current.replaceTrack(myStreamRef.current?.getTracks().find((track) => track.kind === 'audio'), myAudioStreamRef.current.getTracks().find((track) => track.kind === 'audio'), myStreamRef.current);
 
+				myAudioStreamRef.current.getTracks().forEach((track) => {
+					peerRef.current.addTrack(track,  myAudioStreamRef.current);
+				});
+		
 			} else {
 				setCallStatus('rejected');
 			}

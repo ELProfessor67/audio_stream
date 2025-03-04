@@ -68,22 +68,42 @@ const socketInit = () => {
 }
 
 
+// const createSilentAudioTrack = () => {
+// 	const ctx = new AudioContext();
+// 	const oscillator = ctx.createOscillator();
+// 	const dst = oscillator.connect(ctx.createMediaStreamDestination());
+// 	oscillator.start();
+// 	return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false });
+// };
+
+// const createFakeStream = () => {
+// 	const fakeStream = new MediaStream();
+// 	const silentAudioTrack = createSilentAudioTrack();
+// 	fakeStream.addTrack(silentAudioTrack);
+
+
+// 	return fakeStream;
+// };
+
+
 const createSilentAudioTrack = () => {
-	const ctx = new AudioContext();
-	const oscillator = ctx.createOscillator();
-	const dst = oscillator.connect(ctx.createMediaStreamDestination());
-	oscillator.start();
-	return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false });
+    const ctx = new AudioContext();
+    const oscillator = ctx.createOscillator();
+    const dest = ctx.createMediaStreamDestination(); // Create MediaStreamDestinationNode
+
+    oscillator.connect(dest); // Connect oscillator to destination
+    oscillator.start();
+
+    return Object.assign(dest.stream.getAudioTracks()[0], { enabled: false });
 };
 
 const createFakeStream = () => {
-	const fakeStream = new MediaStream();
-	const silentAudioTrack = createSilentAudioTrack();
-	fakeStream.addTrack(silentAudioTrack);
-
-
-	return fakeStream;
+    const fakeStream = new MediaStream();
+    const silentAudioTrack = createSilentAudioTrack();
+    fakeStream.addTrack(silentAudioTrack);
+    return fakeStream;
 };
+
 
 const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMessage, setCallStatus, location, isCall = false) => {
 	const socketRef = useRef();

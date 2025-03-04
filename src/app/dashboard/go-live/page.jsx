@@ -121,7 +121,7 @@ function checkInTimeRangeForDay(startTime, endTime, user) {
 
 
 
-const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setStart, setTimerStart, handleStart }) => {
+const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setStart, setTimerStart, handleStart, startFirstTimeRef }) => {
 	const [remainingTime, setRemainingTime] = useState("00:00");
 	const startRef = useRef()
 	const router = useRouter()
@@ -137,9 +137,9 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 			if (!range) {
 				if (secondsToStart != null && secondsToStart <= 10) {
 					setLeftSecond(secondsToStart);
-					if(secondsToStart <= 1 && !start){
-						handleStart();
-					}
+					// if(secondsToStart <= 1 && !start){
+					// 	handleStart();
+					// }
 				}else{
 					setLeftSecond(null);
 				}
@@ -150,6 +150,11 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 			if (!user || !user.djStartTime || !user.djEndTime) {
 				setRemainingTime("00:00");
 				return;
+			}
+
+			if(startFirstTimeRef.current == false && !start){
+				startFirstTimeRef.current = true;
+				handleStart();
 			}
 
 			setLeftSecond(null);
@@ -450,7 +455,7 @@ export default function () {
 	const [filterSearch, setFilterSearch] = useState([]);
 	const [filterQuery, setFilterQuery] = useState('');
 	const [fsopen, fsetsopen] = useState(false);
-	const [micVolume, setMicVolume] = useState(1);
+	const [micVolume, setMicVolume] = useState(1.8);
 	const [fdforward, setfDforward] = useState(false);
 	const [fdbackward, setfDbackward] = useState(false);
 	const [voiceAcitce, setVoiceActice] = useState(false);
@@ -485,6 +490,8 @@ export default function () {
 	const [showTitle, setShowTitle] = useState(false);
 	const [userChangeVolume, setUserChangeVolume] = useState(false);
 	const [leftSecond,setLeftSecond] = useState(null);
+
+	const startFirstTimeRef = useRef(false);
 	// console.log(dbackward,dforward)
 
 
@@ -1292,7 +1299,7 @@ export default function () {
 							</div>
 
 							{/* <VolumePopupsDeck deckname={'Deck A'} volume={volume} handleMicVolumeChange={handleVolumeChange}/> */}
-							{/* <AutoAdjustByBase songPlaying={songPlaying} songBase={songBase} handleVolumeChange={changeValume} userChangeVolume={userChangeVolume} voiceAcitce={voiceAcitce} /> */}
+							<AutoAdjustByBase songPlaying={songPlaying} songBase={songBase} handleVolumeChange={changeValume} volume={volume} userChangeVolume={userChangeVolume} voiceAcitce={voiceAcitce} />
 
 						</div>
 
@@ -1356,7 +1363,7 @@ export default function () {
 												}
 
 											</h2>
-											<TimeRemaining handleStart={handleStart} start={start} setLeftSecond={setLeftSecond} user={user} setTimerStart={setTimerStart} setActive={setActive} ownerLeft={ownerLeft} setStart={setStart} />
+											<TimeRemaining handleStart={handleStart} start={start} startFirstTimeRef={startFirstTimeRef} setLeftSecond={setLeftSecond} user={user} setTimerStart={setTimerStart} setActive={setActive} ownerLeft={ownerLeft} setStart={setStart} />
 										</>
 
 

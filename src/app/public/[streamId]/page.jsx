@@ -280,7 +280,7 @@ export default function page({ params }) {
 						<input type="range" className="w-[90%]" min={0} max={1} step={0.1} value={volume} onChange={(e) => setVolume(e.target.value)} />
 					</div>
 				</div>
-				<audio  ref={audioRef} controls className="w-full bg-none" onPlay={() => setIsPlay(true)} onPause={() => setIsPlay(false)} onEnded={() => handleEnded(isPlay)}></audio>
+				<audio  ref={audioRef} controls className="w-full bg-none" onPlay={() => setIsPlay(true)} onPause={() => {setIsPlay(false); console.log("On Pause Called")}} onEnded={() => handleEnded(isPlay)}></audio>
 			</div>
 			<Dialog open={rOpen} onClose={() => setROPen(false)} name={name} setName={setName}>
 				{

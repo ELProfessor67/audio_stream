@@ -1,15 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 
-const AutoAdjustByBase = ({ songPlaying, songBase, handleVolumeChange,userChangeVolume, voiceAcitce }) => {
+const AutoAdjustByBase = ({ songPlaying, songBase, handleVolumeChange,userChangeVolume, voiceAcitce,volume:currentVolume }) => {
     const volume = useRef(0.25); // Start with a midpoint volume
 
     useEffect(() => {
-        // if(voiceAcitce && songPlaying){
-        //     console.log("voiceAcitce",voiceAcitce)
-        //     handleVolumeChange(0.1);
-        // } else 
-        
-        if (songPlaying && !userChangeVolume) {
+        if(voiceAcitce && songPlaying){
+            console.log("voiceAcitce",voiceAcitce)
+            handleVolumeChange(0.1);
+        } else if (songPlaying && !userChangeVolume) {
             let adjustedVolume = volume.current;
 
             // // Normalize volume based on the song base level
@@ -62,6 +60,8 @@ const AutoAdjustByBase = ({ songPlaying, songBase, handleVolumeChange,userChange
 
             // Call handleVolumeChange with the adjusted volume
             handleVolumeChange(adjustedVolume);
+        }else if(userChangeVolume && songPlaying){
+            handleVolumeChange(currentVolume);
         }
     }, [songPlaying, songBase, handleVolumeChange,userChangeVolume]);
 

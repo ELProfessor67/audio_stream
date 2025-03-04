@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import Peer from 'simple-peer';
 import axios from 'axios';
 import { data } from 'autoprefixer';
-
+import hark from 'hark';
 
 
 
@@ -108,6 +108,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	const scriptProcessorRef = useRef();
 	const mediaRecorderRef = useRef();
 	const combinedStreamRef = useRef();
+	const speechEventsRef = useRef();
 	const micStreamRef = useRef();
 	const [recordReady, setRecordingReady] = useState(false);
 
@@ -839,46 +840,46 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	// };
 
 
-	let volumeHistory = [];
-	const historyLength = 5;
-	let debounceTimeout = null;
+	// let volumeHistory = [];
+	// const historyLength = 5;
+	// let debounceTimeout = null;
 
-	function AudioProcess() {
-		if (!micOnRef.current) {
-			setVoiceComing(false);
-			return;
-		}
+	// function AudioProcess() {
+	// 	if (!micOnRef.current) {
+	// 		setVoiceComing(false);
+	// 		return;
+	// 	}
 
-		try {
-			const array = new Uint8Array(analyserRef.current.frequencyBinCount);
-			analyserRef.current.getByteFrequencyData(array);
+	// 	try {
+	// 		const array = new Uint8Array(analyserRef.current.frequencyBinCount);
+	// 		analyserRef.current.getByteFrequencyData(array);
 
-			const arraySum = array.reduce((a, value) => a + value, 0);
-			const average = arraySum / array.length;
-			const voiceVolume = Math.round(average);
+	// 		const arraySum = array.reduce((a, value) => a + value, 0);
+	// 		const average = arraySum / array.length;
+	// 		const voiceVolume = Math.round(average);
 
-			// Smoothing
-			// volumeHistory.push(voiceVolume);
-			// if (volumeHistory.length > historyLength) {
-			// 	volumeHistory.shift();
-			// }
-			// const smoothedVolume = volumeHistory.reduce((a, b) => a + b, 0) / volumeHistory.length;
+	// 		// Smoothing
+	// 		// volumeHistory.push(voiceVolume);
+	// 		// if (volumeHistory.length > historyLength) {
+	// 		// 	volumeHistory.shift();
+	// 		// }
+	// 		// const smoothedVolume = volumeHistory.reduce((a, b) => a + b, 0) / volumeHistory.length;
 
-			// Debouncing
-			if (debounceTimeout === null) {
-				debounceTimeout = setTimeout(() => {
-					if (voiceVolume > 20) {
-						setVoiceComing(true);
-					} else {
-						setVoiceComing(false);
-					}
-					debounceTimeout = null;
-				}, 100);
-			}
-		} catch (error) {
-			console.error('Error processing audio data:', error);
-		}
-	}
+	// 		// Debouncing
+	// 		if (debounceTimeout === null) {
+	// 			debounceTimeout = setTimeout(() => {
+	// 				if (voiceVolume > 20) {
+	// 					setVoiceComing(true);
+	// 				} else {
+	// 					setVoiceComing(false);
+	// 				}
+	// 				debounceTimeout = null;
+	// 			}, 100);
+	// 		}
+	// 	} catch (error) {
+	// 		console.error('Error processing audio data:', error);
+	// 	}
+	// }
 
 
 
@@ -891,6 +892,22 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		socketRef.current.emit('owner-join', { user });
 		// localStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
 		const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+
+		//when user speack
+		speechEventsRef.current = hark(stream, { threshold: -50 });
+
+		speechEventsRef.current.on('speaking', () => {
+            console.log("🎤 User is speaking...");
+			setVoiceComing(true);
+        });
+
+        speechEventsRef.current.on('stopped_speaking', () => {
+            console.log("🤫 User stopped speaking...");
+			setVoiceComing(false);
+        });
+
+
 		micStreamRef.current = stream;
 		setMicOn(true);
 
@@ -920,17 +937,17 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 		//deteting the audio
-		const analyser = audioContext.createAnalyser();
-		const scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
-		analyser.smoothingTimeConstant = 0.8;
-		analyser.fftSize = 1024;
-		analyserRef.current = analyser;
-		scriptProcessorRef.current = scriptProcessor;
+		// const analyser = audioContext.createAnalyser();
+		// const scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
+		// analyser.smoothingTimeConstant = 0.8;
+		// analyser.fftSize = 1024;
+		// analyserRef.current = analyser;
+		// scriptProcessorRef.current = scriptProcessor;
 
-		mic.connect(analyser);
-		analyser.connect(scriptProcessor);
-		scriptProcessor.connect(audioContext.destination);
-		scriptProcessorRef.current.addEventListener('audioprocess', AudioProcess);
+		// mic.connect(analyser);
+		// analyser.connect(scriptProcessor);
+		// scriptProcessor.connect(audioContext.destination);
+		// scriptProcessorRef.current.addEventListener('audioprocess', AudioProcess);
 	}
 
 	const ownerLeft = async () => {

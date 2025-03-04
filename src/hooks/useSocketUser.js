@@ -114,20 +114,37 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 			return
 		}
 
+		console.log("new song",audioRef.current.srcObject)
+
 		setRoomActive(true);
 		setAutoDj(true);
 
 		console.log('auto dj', data);
 
 		// audioRef.current.src = data?.currentSong?.url;
+		if (audioRef.current.srcObject) {
+			audioRef.current.srcObject = null;
+
+			audioRef.current.src = `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}`;
+			audioRef.current.load();
+			audioRef.current.play();
+			
+		};
+
 		if (audioRef.current.src != `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}`) {
 			audioRef.current.src = `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}`;
+			audioRef.current.load();
+
+			if (playRef.current == true) {
+				audioRef.current.play();
+			}
 		}
 
 
 		cuurentTimeRef.current = data?.currentSong?.currentTime;
 		setNextSong(data?.currentSong.nextSong);
-		console.log('isPlay', playRef.current)
+		console.log('isPlay', playRef.current);
+
 		// if(playRef.current){
 		// 	console.log('pausing....')
 		// 	await audioRef.current.pause();
@@ -218,6 +235,11 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 			console.log(peerRef.current.connected)
 			audioRef.current.srcObject = stream;
 
+			if (playRef.current == true) {
+				audioRef.current.pause();
+				audioRef.current.play();
+			}
+
 			setRoomActive(true);
 			setIsLive(true);
 			// audioElement.srcObject = stream;
@@ -246,27 +268,27 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 
 			createPeerConnection();
 
-			if (data?.user?.welcomeTone && !data.tonePlayed) {
-				console.log('tones played')
-				const song = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${data?.user?.welcomeTone}`);
-				song.addEventListener("canplaythrough", () => {
-					console.log("Audio loaded successfully");
-					// audioRef.current.pause();
-					if (isCall == false) {
-						song.play().then(() => {
-							console.log("Audio started playing");
-						}).catch((error) => {
-							console.error("Error playing audio:", error);
-						});
-					}
+			// if (data?.user?.welcomeTone && !data.tonePlayed) {
+			// 	console.log('tones played')
+			// 	const song = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${data?.user?.welcomeTone}`);
+			// 	song.addEventListener("canplaythrough", () => {
+			// 		console.log("Audio loaded successfully");
+			// 		// audioRef.current.pause();
+			// 		if (isCall == false) {
+			// 			song.play().then(() => {
+			// 				console.log("Audio started playing");
+			// 			}).catch((error) => {
+			// 				console.error("Error playing audio:", error);
+			// 			});
+			// 		}
 
-				});
-				song.addEventListener("ended", () => {
-					// audioRef.current.play();
-					console.log("Audio has finished playing");
-				});
-				song.load();
-			}
+			// 	});
+			// 	song.addEventListener("ended", () => {
+			// 		// audioRef.current.play();
+			// 		console.log("Audio has finished playing");
+			// 	});
+			// 	song.load();
+			// }
 		});
 
 
@@ -278,7 +300,9 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 				song.addEventListener("canplaythrough", () => {
 					console.log("Audio loaded successfully");
 					if (isCall == false) {
-						audioRef.current.pause();
+						if (!isLiveRef.current) {
+							audioRef.current.pause();
+						}
 						song.play().then(() => {
 							console.log("Audio started playing");
 						}).catch((error) => {
@@ -329,12 +353,20 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 				});
 				song.addEventListener("ended", async () => {
 					window.location.reload();
-					sleep(1000);
-					console.log("Audio has finished playing");
+					// sleep(1000);
+					// console.log("Audio has finished playing");
+					// setRoomActive(false);
+					// setIsLive(false);
+					// audioRef.current.play();
+					// socketRef.current.emit('auto-dj', { roomId: streamId });
 				});
 				song.load();
 			} else {
 				window.location.reload();
+				// setRoomActive(false);
+				// setIsLive(false);
+				// audioRef.current.play();
+				// socketRef.current.emit('auto-dj', { roomId: streamId });
 			}
 
 
@@ -358,8 +390,19 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 			socketRef.current.emit('auto-dj', { roomId: streamId });
 		});
 
-		socketRef.current.on('room-active-now', () => {
-			window.location.reload();
+		socketRef.current.on('room-active-now', ({ user, nextSong, currentSong }) => {
+			// window.location.reload();
+
+			console.log("room active now")
+			setOwner(user);
+			if (nextSong) {
+				setNextSong(nextSong)
+			}
+			if (currentSong) {
+				setCurrentSong(currentSong)
+			}
+			ownerRef.current = user;
+			createPeerConnection();
 		});
 
 

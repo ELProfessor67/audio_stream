@@ -8,54 +8,56 @@ import hark from 'hark';
 
 
 
-// const peerConfig = {
-// 	iceServers: [
-// 		{ urls: "stun:stun.l.google.com:19302" },
-// 		{ urls: "stun:stun.l.google.com:5349" },
-// 		{ urls: "stun:stun1.l.google.com:3478" },
-// 		{ urls: "stun:stun1.l.google.com:5349" },
-// 		{ urls: "stun:stun2.l.google.com:19302" },
-// 		{ urls: "stun:stun2.l.google.com:5349" },
-// 		{ urls: "stun:stun3.l.google.com:3478" },
-// 		{ urls: "stun:stun3.l.google.com:5349" },
-// 		{ urls: "stun:stun4.l.google.com:19302" },
-// 		{ urls: "stun:stun4.l.google.com:5349" },
-// 		{
-//             urls: "turn:24.199.119.194:3478",
-//             username: "test",
-//             credential: "test123",
-//         }
-// 	]
-// }
-
 const peerConfig = {
-	iceTransportPolicy: "relay",
 	iceServers: [
+		{ urls: "stun:stun.l.google.com:19302" },
+		{ urls: "stun:stun.l.google.com:5349" },
+		{ urls: "stun:stun1.l.google.com:3478" },
+		{ urls: "stun:stun1.l.google.com:5349" },
+		{ urls: "stun:stun2.l.google.com:19302" },
+		{ urls: "stun:stun2.l.google.com:5349" },
+		{ urls: "stun:stun3.l.google.com:3478" },
+		{ urls: "stun:stun3.l.google.com:5349" },
+		{ urls: "stun:stun4.l.google.com:19302" },
+		{ urls: "stun:stun4.l.google.com:5349" },
 		{
-			urls: "stun:stun.relay.metered.ca:80",
-		},
-		{
-			urls: "turn:global.relay.metered.ca:80",
-			username: "827d3072e5b2f0e84207f45a",
-			credential: "wmxXXuDm8VSalqWu",
-		},
-		{
-			urls: "turn:global.relay.metered.ca:80?transport=tcp",
-			username: "827d3072e5b2f0e84207f45a",
-			credential: "wmxXXuDm8VSalqWu",
-		},
-		{
-			urls: "turn:global.relay.metered.ca:443",
-			username: "827d3072e5b2f0e84207f45a",
-			credential: "wmxXXuDm8VSalqWu",
-		},
-		{
-			urls: "turns:global.relay.metered.ca:443?transport=tcp",
-			username: "827d3072e5b2f0e84207f45a",
-			credential: "wmxXXuDm8VSalqWu",
-		},
+            urls: "turn:24.199.119.194:3478",
+            username: "test",
+            credential: "test123",
+        }
 	]
 }
+
+
+
+
+// const peerConfig = {
+// 	iceServers: [
+// 		{
+// 			urls: "stun:stun.relay.metered.ca:80",
+// 		},
+// 		{
+// 			urls: "turn:global.relay.metered.ca:80",
+// 			username: "827d3072e5b2f0e84207f45a",
+// 			credential: "wmxXXuDm8VSalqWu",
+// 		},
+// 		{
+// 			urls: "turn:global.relay.metered.ca:80?transport=tcp",
+// 			username: "827d3072e5b2f0e84207f45a",
+// 			credential: "wmxXXuDm8VSalqWu",
+// 		},
+// 		{
+// 			urls: "turn:global.relay.metered.ca:443",
+// 			username: "827d3072e5b2f0e84207f45a",
+// 			credential: "wmxXXuDm8VSalqWu",
+// 		},
+// 		{
+// 			urls: "turns:global.relay.metered.ca:443?transport=tcp",
+// 			username: "827d3072e5b2f0e84207f45a",
+// 			credential: "wmxXXuDm8VSalqWu",
+// 		},
+// 	]
+// }
 
 
 
@@ -480,8 +482,8 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 	const handleOffer = (data) => {
 		const isCall = data.isCall;
-		peersRef.current[data.senderId] = new Peer({ initiator: false, stream: isCall == true ? micStreamRef.current : localStreamRef.current, config: peerConfig });
-
+		peersRef.current[data.senderId] = new Peer({ initiator: false, stream: isCall == true ? micStreamRef.current : localStreamRef.current,config: peerConfig });
+		
 		peersRef.current[data.senderId].on('signal', answer => {
 			console.log('answer', answer);
 
@@ -523,7 +525,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			audio.controls = true;
 			audio.play()
 			// document.getElementById("call-contaier").appendChild(audio);
-			
+
 			// callsElementRef.current.srcObject = stream;
 			addStreamInMain(data.senderId);
 		});
@@ -531,6 +533,10 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		peersRef.current[data.senderId].signal(data?.offer);
 
 	}
+
+
+	
+
 
 	function progressCallback(progress) {
 		setRemaining(Math.floor(progress.remainTime));
@@ -926,14 +932,14 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		speechEventsRef.current = hark(stream, { threshold: -50 });
 
 		speechEventsRef.current.on('speaking', () => {
-            console.log("🎤 User is speaking...");
+			console.log("🎤 User is speaking...");
 			setVoiceComing(true);
-        });
+		});
 
-        speechEventsRef.current.on('stopped_speaking', () => {
-            console.log("🤫 User stopped speaking...");
+		speechEventsRef.current.on('stopped_speaking', () => {
+			console.log("🤫 User stopped speaking...");
 			setVoiceComing(false);
-        });
+		});
 
 
 		micStreamRef.current = stream;

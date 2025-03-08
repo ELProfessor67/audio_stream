@@ -21,10 +21,30 @@ const peerConfig = {
 		{ urls: "stun:stun4.l.google.com:19302" },
 		{ urls: "stun:stun4.l.google.com:5349" },
 		{
-            urls: "turn:24.199.119.194:3478",
-            username: "test",
-            credential: "test123",
-        }
+			urls: "turn:24.199.119.194:3478",
+			username: "test",
+			credential: "test123",
+		},
+		{
+			urls: "turn:global.relay.metered.ca:80",
+			username: "827d3072e5b2f0e84207f45a",
+			credential: "wmxXXuDm8VSalqWu",
+		},
+		{
+			urls: "turn:global.relay.metered.ca:80?transport=tcp",
+			username: "827d3072e5b2f0e84207f45a",
+			credential: "wmxXXuDm8VSalqWu",
+		},
+		{
+			urls: "turn:global.relay.metered.ca:443",
+			username: "827d3072e5b2f0e84207f45a",
+			credential: "wmxXXuDm8VSalqWu",
+		},
+		{
+			urls: "turns:global.relay.metered.ca:443?transport=tcp",
+			username: "827d3072e5b2f0e84207f45a",
+			credential: "wmxXXuDm8VSalqWu",
+		},
 	]
 }
 
@@ -471,7 +491,19 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 			Object.keys(peersRef.current).forEach((peerId) => {
-				peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'), combinedStream.getTracks()[0], localStreamRef.current);
+				//replace track
+				const audioSender = peersRef.current[peerId].getSenders().find(sender => sender.track && sender.track.kind === "audio");
+				if (audioSender && combinedStream.getTracks().length > 0) {
+					const newAudioTrack = combinedStream.getTracks()[0];
+
+					// Replace the existing track with the new audi track
+					audioSender.replaceTrack(newAudioTrack);
+					console.log("✅ Audio track replaced successfully!");
+				} else {
+					console.warn("⚠️ No audio sender found or new stream has no audio track.");
+				}
+
+				// peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'), combinedStream.getTracks()[0], localStreamRef.current);
 			});
 		} catch (error) {
 
@@ -480,62 +512,155 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	}
 
 
-	const handleOffer = (data) => {
-		const isCall = data.isCall;
-		peersRef.current[data.senderId] = new Peer({ initiator: false, stream: isCall == true ? micStreamRef.current : localStreamRef.current,config: peerConfig });
-		
-		peersRef.current[data.senderId].on('signal', answer => {
-			console.log('answer', answer);
+	// const handleOffer = (data) => {
+	// 	console.log("offer recieved",data)
+	// 	const isCall = data.isCall;
+	// 	peersRef.current[data.senderId] = new Peer({ initiator: false, stream: isCall == true ? micStreamRef.current : localStreamRef.current,config: peerConfig });
 
+	// 	peersRef.current[data.senderId].on('signal', answer => {
+	// 		console.log('answer', answer);
+
+	// 		socketRef.current.emit('answer', { answer, recieverId: data.senderId });
+	// 	});
+
+	// 	peersRef.current[data.senderId].on('connect', () => {
+	// 		console.log(data.senderId, songStreamRef.current, micOn);
+	// 		console.log('new user come', data.senderId);
+	// 		handleNewUser(data.senderId);
+
+
+	// 		console.log('Connection established');
+	// 	});
+
+	// 	peersRef.current[data.senderId].on('data', data => {
+	// 		console.log('Received data:', data);
+	// 	});
+
+	// 	peersRef.current[data.senderId].on('close', () => {
+	// 		console.log('Connection closed');
+	// 	});
+
+	// 	peersRef.current[data.senderId].on('error', err => {
+	// 		console.error('Peer error:', err);
+	// 	});
+
+
+	// 	// test
+	// 	peersRef.current[data.senderId].on('stream', (stream) => {
+	// 		console.info('stream coming');
+	// 		console.log(stream);
+	// 		console.log(peersRef.current[data.senderId].connected);
+
+	// 		callerStreamsRef.current[data.senderId] = stream;
+	// 		// callsElementRef.current.srcObject = stream;
+	// 		const audio = new Audio();
+	// 		audio.srcObject = stream;
+	// 		audio.controls = true;
+	// 		audio.play()
+	// 		// document.getElementById("call-contaier").appendChild(audio);
+
+	// 		// callsElementRef.current.srcObject = stream;
+	// 		addStreamInMain(data.senderId);
+	// 	});
+
+	// 	peersRef.current[data.senderId].signal(data?.offer);
+
+	// }
+
+
+	const handleOffer = async (data) => {
+		if (!peersRef.current[data.senderId]) {
+			peersRef.current[data.senderId] = new RTCPeerConnection(peerConfig);
+
+			//on ice candidate
+			peersRef.current[data.senderId].onicecandidate = (event) => {
+				if (event.candidate) {
+					const answer = {
+						type: "candidate",
+						content: event.candidate
+					}
+					socketRef.current.emit('answer', { answer, recieverId: data.senderId });
+				}
+			};
+
+			//ontrack
+			peersRef.current[data.senderId].ontrack = (event) => {
+				const stream = event.streams[0];
+				console.info('stream coming', stream);
+
+				callerStreamsRef.current[data.senderId] = stream;
+				const audio = new Audio();
+				audio.srcObject = stream;
+				audio.controls = true;
+				audio.play();
+				addStreamInMain(data.senderId);
+			}
+
+
+			//on connection state changed
+			peersRef.current[data.senderId].onconnectionstatechange = () => {
+				console.log("Connection State Changed:", peersRef.current[data.senderId].connectionState);
+			}
+
+			peersRef.current[data.senderId].onnegotiationneeded = async () => {
+				console.log("🛑 Negotiation needed!");
+
+				try {
+					const offer = await peersRef.current[data.senderId].createOffer();
+					await peersRef.current[data.senderId].setLocalDescription(offer);
+					const answer = {
+						type: "offer",
+						content: offer
+					}
+					socketRef.current.emit('answer', { answer, recieverId: data.senderId });
+					console.log("✅ Sent new offer due to negotiation.");
+				} catch (error) {
+					console.error("Error during renegotiation:", error);
+				}
+			};
+
+			//when is call true
+			const isCall = data.isCall;
+			if (isCall) {
+				micStreamRef.current.getTracks().forEach(track => {
+					peersRef.current[data.senderId].addTrack(track, micStreamRef.current);
+				});
+			} else {
+				localStreamRef.current.getTracks().forEach(track => {
+					peersRef.current[data.senderId].addTrack(track, localStreamRef.current);
+				});
+			}
+		}
+
+
+		const signal = data.offer;
+
+		if (signal.type == "answer") {
+			peersRef.current[data.senderId].setRemoteDescription(new RTCSessionDescription(signal.content))
+		}
+
+		if (signal.type == "candidate") {
+			peersRef.current[data.senderId].addIceCandidate(new RTCIceCandidate(signal.content));
+		}
+
+		if (signal.type == "offer") {
+			peersRef.current[data.senderId].setRemoteDescription(new RTCSessionDescription(signal.content))
+
+			const answerContent = await peersRef.current[data.senderId].createAnswer();
+			await peersRef.current[data.senderId].setLocalDescription(answerContent);
+
+			const answer = {
+				type: "answer",
+				content: answerContent
+			}
 			socketRef.current.emit('answer', { answer, recieverId: data.senderId });
-		});
-
-		peersRef.current[data.senderId].on('connect', () => {
-			console.log(data.senderId, songStreamRef.current, micOn);
-			console.log('new user come', data.senderId);
-			handleNewUser(data.senderId);
+		}
 
 
-			console.log('Connection established');
-		});
-
-		peersRef.current[data.senderId].on('data', data => {
-			console.log('Received data:', data);
-		});
-
-		peersRef.current[data.senderId].on('close', () => {
-			console.log('Connection closed');
-		});
-
-		peersRef.current[data.senderId].on('error', err => {
-			console.error('Peer error:', err);
-		});
-
-
-		// test
-		peersRef.current[data.senderId].on('stream', (stream) => {
-			console.info('stream coming');
-			console.log(stream);
-			console.log(peersRef.current[data.senderId].connected);
-
-			callerStreamsRef.current[data.senderId] = stream;
-			// callsElementRef.current.srcObject = stream;
-			const audio = new Audio();
-			audio.srcObject = stream;
-			audio.controls = true;
-			audio.play()
-			// document.getElementById("call-contaier").appendChild(audio);
-
-			// callsElementRef.current.srcObject = stream;
-			addStreamInMain(data.senderId);
-		});
-
-		peersRef.current[data.senderId].signal(data?.offer);
 
 	}
 
 
-	
 
 
 	function progressCallback(progress) {
@@ -625,7 +750,19 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			// end 
 
 			Object.keys(peersRef.current).forEach((peerId) => {
-				peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'), combinedStream.getTracks()[0], localStreamRef.current);
+
+				const audioSender = peersRef.current[peerId].getSenders().find(sender => sender.track && sender.track.kind === "audio");
+				if (audioSender && combinedStream.getTracks().length > 0) {
+					const newAudioTrack = combinedStream.getTracks()[0];
+
+					// Replace the existing track with the new audi track
+					audioSender.replaceTrack(newAudioTrack);
+					console.log("✅ Audio track replaced successfully!");
+				} else {
+					console.warn("⚠️ No audio sender found or new stream has no audio track.");
+				}
+
+				// peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'), combinedStream.getTracks()[0], localStreamRef.current);
 			});
 
 			nextSongRef.current.user = user;
@@ -739,7 +876,19 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 			Object.keys(peersRef.current).forEach((peerId) => {
-				peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'), combinedStream.getTracks()[0], localStreamRef.current);
+
+				const audioSender = peersRef.current[peerId].getSenders().find(sender => sender.track && sender.track.kind === "audio");
+				if (audioSender && combinedStream.getTracks().length > 0) {
+					const newAudioTrack = combinedStream.getTracks()[0];
+
+					// Replace the existing track with the new audi track
+					audioSender.replaceTrack(newAudioTrack);
+					console.log("✅ Audio track replaced successfully!");
+				} else {
+					console.warn("⚠️ No audio sender found or new stream has no audio track.");
+				}
+
+				// peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'), combinedStream.getTracks()[0], localStreamRef.current);
 			});
 
 		} catch (err) {

@@ -21,9 +21,30 @@ const peerConfig = {
 			urls: "turn:24.199.119.194:3478",
 			username: "test",
 			credential: "test123",
-		}
+		},
+		{
+			urls: "turn:global.relay.metered.ca:80",
+			username: "827d3072e5b2f0e84207f45a",
+			credential: "wmxXXuDm8VSalqWu",
+		},
+		{
+			urls: "turn:global.relay.metered.ca:80?transport=tcp",
+			username: "827d3072e5b2f0e84207f45a",
+			credential: "wmxXXuDm8VSalqWu",
+		},
+		{
+			urls: "turn:global.relay.metered.ca:443",
+			username: "827d3072e5b2f0e84207f45a",
+			credential: "wmxXXuDm8VSalqWu",
+		},
+		{
+			urls: "turns:global.relay.metered.ca:443?transport=tcp",
+			username: "827d3072e5b2f0e84207f45a",
+			credential: "wmxXXuDm8VSalqWu",
+		},
 	]
 }
+
 
 
 // const peerConfig = {
@@ -87,21 +108,21 @@ const socketInit = () => {
 
 
 const createSilentAudioTrack = () => {
-    const ctx = new AudioContext();
-    const oscillator = ctx.createOscillator();
-    const dest = ctx.createMediaStreamDestination(); // Create MediaStreamDestinationNode
+	const ctx = new AudioContext();
+	const oscillator = ctx.createOscillator();
+	const dest = ctx.createMediaStreamDestination(); // Create MediaStreamDestinationNode
 
-    oscillator.connect(dest); // Connect oscillator to destination
-    oscillator.start();
+	oscillator.connect(dest); // Connect oscillator to destination
+	oscillator.start();
 
-    return Object.assign(dest.stream.getAudioTracks()[0], { enabled: false });
+	return Object.assign(dest.stream.getAudioTracks()[0], { enabled: false });
 };
 
 const createFakeStream = () => {
-    const fakeStream = new MediaStream();
-    const silentAudioTrack = createSilentAudioTrack();
-    fakeStream.addTrack(silentAudioTrack);
-    return fakeStream;
+	const fakeStream = new MediaStream();
+	const silentAudioTrack = createSilentAudioTrack();
+	fakeStream.addTrack(silentAudioTrack);
+	return fakeStream;
 };
 
 
@@ -245,45 +266,85 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 		socketRef.current.emit('user-join', { roomId: streamId });
 	}
 
+	// const createPeerConnection = async () => {
+
+	// 	if (isCall) {
+	// 		myStreamRef.current = createFakeStream();
+	// 		peerRef.current = new Peer({ initiator: true, stream: myStreamRef.current, config: peerConfig })
+	// 		// myAudioStreamRef.current = await navigator.mediaDevices.getUserMedia({audio: true})
+	// 		// peerRef.current = new Peer({ initiator: true, config: peerConfig,stream: myAudioStreamRef.current })
+	// 	} else {
+	// 		peerRef.current = new Peer({ initiator: true, config: peerConfig })
+	// 	}
+
+
+
+	// 	peerRef.current.on('signal', data => {
+	// 		console.log('offer', data, owner.socketId);
+	// 		socketRef.current.emit('offer', { offer: data, recieverId: ownerRef.current.socketId, roomId: streamId, isCall });
+	// 	});
+
+	// 	peerRef.current.on('connect', () => {
+	// 		console.log('Connection established');
+	// 	});
+
+	// 	peerRef.current.on('data', data => {
+	// 		console.log('Received data:', data);
+	// 	});
+
+	// 	peerRef.current.on('close', () => {
+	// 		console.log('Connection closed');
+	// 	});
+
+	// 	peerRef.current.on('error', err => {
+	// 		console.error('Peer error:', err);
+	// 	});
+
+	// 	peerRef.current.on('stream', (stream) => {
+	// 		console.log(stream, "stream")
+	// 		console.log(peerRef.current.connected)
+	// 		audioRef.current.srcObject = stream;
+
+	// 		if (playRef.current == true) {
+	// 			audioRef.current.pause();
+	// 			audioRef.current.play();
+	// 		}
+
+	// 		setRoomActive(true);
+	// 		setIsLive(true);
+	// 		// audioElement.srcObject = stream;
+	// 		// audioElement.play()
+	// 	});
+
+	// 	socketRef.current.on('answer', (data) => {
+	// 		console.log('answer', data.answer)
+	// 		peerRef.current.signal(data.answer);
+	// 	})
+	// }
+
+
+
 	const createPeerConnection = async () => {
+		peerRef.current = new RTCPeerConnection(peerConfig);
 
-		if (isCall) {
-			myStreamRef.current = createFakeStream();
-			peerRef.current = new Peer({ initiator: true, stream: myStreamRef.current, config: peerConfig })
-			// myAudioStreamRef.current = await navigator.mediaDevices.getUserMedia({audio: true})
-			// peerRef.current = new Peer({ initiator: true, config: peerConfig,stream: myAudioStreamRef.current })
-		} else {
-			peerRef.current = new Peer({ initiator: true, config: peerConfig })
-		}
+		//on ice candidate
+		peerRef.current.onicecandidate = (event) => {
+			if (event.candidate) {
+				const data = {
+					type: "candidate",
+					content: event.candidate
+				}
+				socketRef.current.emit('offer', { offer: data, recieverId: ownerRef.current.socketId, roomId: streamId, isCall });
+			}
+		};
 
 
+		//ontrack
+		peerRef.current.ontrack = (event) => {
+			const stream = event.streams[0];
+			console.log(stream, "stream");
 
-		peerRef.current.on('signal', data => {
-			console.log('offer', data, owner.socketId);
-			socketRef.current.emit('offer', { offer: data, recieverId: ownerRef.current.socketId, roomId: streamId, isCall });
-		});
-
-		peerRef.current.on('connect', () => {
-			console.log('Connection established');
-		});
-
-		peerRef.current.on('data', data => {
-			console.log('Received data:', data);
-		});
-
-		peerRef.current.on('close', () => {
-			console.log('Connection closed');
-		});
-
-		peerRef.current.on('error', err => {
-			console.error('Peer error:', err);
-		});
-
-		peerRef.current.on('stream', (stream) => {
-			console.log(stream, "stream")
-			console.log(peerRef.current.connected)
 			audioRef.current.srcObject = stream;
-
 			if (playRef.current == true) {
 				audioRef.current.pause();
 				audioRef.current.play();
@@ -291,20 +352,85 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 
 			setRoomActive(true);
 			setIsLive(true);
-			// audioElement.srcObject = stream;
-			// audioElement.play()
+		}
+
+		//on connection state changed
+		peerRef.current.onconnectionstatechange = () => {
+			console.log("Connection State Changed:", peerRef.current.connectionState);
+		}
+
+		//on negotiation needed
+		peerRef.current.onnegotiationneeded = async () => {
+			console.log("🛑 Negotiation needed!");
+
+			try {
+				const offer = await peerRef.current.createOffer();
+				await peerRef.current.setLocalDescription(offer);
+
+
+				const data = {
+					type: "offer",
+					content: offer
+				}
+				socketRef.current.emit('offer', { offer: data, recieverId: ownerRef.current.socketId, roomId: streamId, isCall });
+				console.log("✅ Sent new offer due to negotiation.");
+			} catch (error) {
+				console.error("Error during renegotiation:", error);
+			}
+		};
+
+		//when is call true
+		if (isCall) {
+			myStreamRef.current = createFakeStream();
+			myStreamRef.current.getTracks().forEach(track => {
+				peerRef.current.addTrack(track, myStreamRef.current);
+			});
+		}
+
+		socketRef.current.on('answer', async (data) => {
+			const signal = data.answer;
+
+			if (signal.type == "answer") {
+				peerRef.current.setRemoteDescription(new RTCSessionDescription(signal.content))
+			}
+
+			if (signal.type == "candidate") {
+				peerRef.current.addIceCandidate(new RTCIceCandidate(signal.content));
+			}
+
+			if (signal.type == "offer") {
+				peerRef.current.setRemoteDescription(new RTCSessionDescription(signal.content))
+				
+				const answer = await peerRef.current.createAnswer();
+    			await peerRef.current.setLocalDescription(answer);
+
+				const data = {
+					type: "answer",
+					content: answer
+				}
+				socketRef.current.emit('offer', { offer: data, recieverId: ownerRef.current.socketId, roomId: streamId, isCall });
+
+			}
 		});
 
-		socketRef.current.on('answer', (data) => {
-			console.log('answer', data.answer)
-			peerRef.current.signal(data.answer);
-		})
+
+		//send offer
+		const offer = await peerRef.current.createOffer();
+		await peerRef.current.setLocalDescription(offer);
+		const data = {
+			type: "offer",
+			content: offer
+		}
+		socketRef.current.emit('offer', { offer: data, recieverId: ownerRef.current.socketId, roomId: streamId, isCall });
 	}
 
 
 
-	
-	
+
+
+
+
+
 
 	useEffect(() => {
 		socketRef.current = socketInit();
@@ -466,9 +592,22 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 
 		socketRef.current.on('call-response', (data) => {
 			if (data.response) {
+
 				setCallStatus('accepted');
 				audioRef.current.play();
-				peerRef.current.replaceTrack(myStreamRef.current?.getTracks().find((track) => track.kind === 'audio'), myAudioStreamRef.current.getTracks().find((track) => track.kind === 'audio'), myStreamRef.current);
+
+				//replace tracks
+				const audioSender = peerRef.current.getSenders().find(sender => sender.track && sender.track.kind === "audio");
+				if (audioSender && myAudioStreamRef.current.getAudioTracks().length > 0) {
+					const newAudioTrack = myAudioStreamRef.current.getAudioTracks()[0];
+					// Replace the existing track with the new audi track
+					audioSender.replaceTrack(newAudioTrack);
+					console.log("✅ Audio track replaced successfully!");
+				} else {
+					console.warn("⚠️ No audio sender found or new stream has no audio track.");
+				}
+
+				// peerRef.current.replaceTrack(myStreamRef.current?.getTracks().find((track) => track.kind === 'audio'), myAudioStreamRef.current.getTracks().find((track) => track.kind === 'audio'), myStreamRef.current);
 			} else {
 				setCallStatus('rejected');
 			}
@@ -494,6 +633,7 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 			socketRef.current.off('song-change');
 			socketRef.current.off('receive-message');
 			socketRef.current.off('next-song');
+			socketRef.current.off('play-welcome-tone');
 		}
 
 	}, []);

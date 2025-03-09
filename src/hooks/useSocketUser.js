@@ -619,6 +619,7 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 			myAudioStreamRef.current?.getTracks().forEach(track => track.stop());
 			// peerRef.current.removeStream(myStreamRef.current);
 			setCallStatus('complete');
+			audioRef.current.pause();
 		});
 
 

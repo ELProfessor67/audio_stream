@@ -492,15 +492,18 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 			Object.keys(peersRef.current).forEach((peerId) => {
 				//replace track
-				const audioSender = peersRef.current[peerId].getSenders().find(sender => sender.track && sender.track.kind === "audio");
-				if (audioSender && combinedStream.getTracks().length > 0) {
-					const newAudioTrack = combinedStream.getTracks()[0];
+				if (peersRef.current[peerId].isCall == false) {
 
-					// Replace the existing track with the new audi track
-					audioSender.replaceTrack(newAudioTrack);
-					console.log("✅ Audio track replaced successfully!");
-				} else {
-					console.warn("⚠️ No audio sender found or new stream has no audio track.");
+					const audioSender = peersRef.current[peerId].getSenders().find(sender => sender.track && sender.track.kind === "audio");
+					if (audioSender && combinedStream.getTracks().length > 0) {
+						const newAudioTrack = combinedStream.getTracks()[0];
+
+						// Replace the existing track with the new audi track
+						audioSender.replaceTrack(newAudioTrack);
+						console.log("✅ Audio track replaced successfully!");
+					} else {
+						console.warn("⚠️ No audio sender found or new stream has no audio track.");
+					}
 				}
 
 				// peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'), combinedStream.getTracks()[0], localStreamRef.current);
@@ -599,7 +602,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 			//on connection state changed
 			peersRef.current[data.senderId].onconnectionstatechange = () => {
-				console.log("Connection State Changed:", peersRef.current[data.senderId].connectionState);
+				console.log("Connection State Changed:", peersRef.current[data.senderId]?.connectionState);
 			}
 
 			peersRef.current[data.senderId].onnegotiationneeded = async () => {
@@ -622,10 +625,12 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			//when is call true
 			const isCall = data.isCall;
 			if (isCall) {
+				peersRef.current[data.senderId].isCall = true;
 				micStreamRef.current.getTracks().forEach(track => {
 					peersRef.current[data.senderId].addTrack(track, micStreamRef.current);
 				});
 			} else {
+				peersRef.current[data.senderId].isCall = false;
 				localStreamRef.current.getTracks().forEach(track => {
 					peersRef.current[data.senderId].addTrack(track, localStreamRef.current);
 				});
@@ -751,17 +756,18 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 			Object.keys(peersRef.current).forEach((peerId) => {
 
-				const audioSender = peersRef.current[peerId].getSenders().find(sender => sender.track && sender.track.kind === "audio");
-				if (audioSender && combinedStream.getTracks().length > 0) {
-					const newAudioTrack = combinedStream.getTracks()[0];
+				if (peersRef.current[peerId].isCall == false) {
+					const audioSender = peersRef.current[peerId].getSenders().find(sender => sender.track && sender.track.kind === "audio");
+					if (audioSender && combinedStream.getTracks().length > 0) {
+						const newAudioTrack = combinedStream.getTracks()[0];
 
-					// Replace the existing track with the new audi track
-					audioSender.replaceTrack(newAudioTrack);
-					console.log("✅ Audio track replaced successfully!");
-				} else {
-					console.warn("⚠️ No audio sender found or new stream has no audio track.");
+						// Replace the existing track with the new audi track
+						audioSender.replaceTrack(newAudioTrack);
+						console.log("✅ Audio track replaced successfully!");
+					} else {
+						console.warn("⚠️ No audio sender found or new stream has no audio track.");
+					}
 				}
-
 				// peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'), combinedStream.getTracks()[0], localStreamRef.current);
 			});
 
@@ -877,17 +883,18 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 			Object.keys(peersRef.current).forEach((peerId) => {
 
-				const audioSender = peersRef.current[peerId].getSenders().find(sender => sender.track && sender.track.kind === "audio");
-				if (audioSender && combinedStream.getTracks().length > 0) {
-					const newAudioTrack = combinedStream.getTracks()[0];
+				if (peersRef.current[peerId].isCall == false) {
+					const audioSender = peersRef.current[peerId].getSenders().find(sender => sender.track && sender.track.kind === "audio");
+					if (audioSender && combinedStream.getTracks().length > 0) {
+						const newAudioTrack = combinedStream.getTracks()[0];
 
-					// Replace the existing track with the new audi track
-					audioSender.replaceTrack(newAudioTrack);
-					console.log("✅ Audio track replaced successfully!");
-				} else {
-					console.warn("⚠️ No audio sender found or new stream has no audio track.");
+						// Replace the existing track with the new audi track
+						audioSender.replaceTrack(newAudioTrack);
+						console.log("✅ Audio track replaced successfully!");
+					} else {
+						console.warn("⚠️ No audio sender found or new stream has no audio track.");
+					}
 				}
-
 				// peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'), combinedStream.getTracks()[0], localStreamRef.current);
 			});
 

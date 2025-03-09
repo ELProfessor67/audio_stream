@@ -485,9 +485,9 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 			// recording 
-			recordMediaRef.current.removeTrack(combinedStreamRef.current)
-			combinedStreamRef.current = combinedStream.getTracks()[0];
-			recordMediaRef.current.addTrack(combinedStreamRef.current);
+			recordMediaRef.current.removeTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'))
+			combinedStreamRef.current = combinedStream;
+			recordMediaRef.current.addTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'));
 
 
 			Object.keys(peersRef.current).forEach((peerId) => {
@@ -631,8 +631,8 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 				});
 			} else {
 				peersRef.current[data.senderId].isCall = false;
-				localStreamRef.current.getTracks().forEach(track => {
-					peersRef.current[data.senderId].addTrack(track, localStreamRef.current);
+				combinedStreamRef.current.getTracks().forEach(track => {
+					peersRef.current[data.senderId].addTrack(track, combinedStreamRef.current);
 				});
 			}
 		}
@@ -748,9 +748,10 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 			// recording 
 
-			recordMediaRef.current.removeTrack(combinedStreamRef.current)
-			combinedStreamRef.current = combinedStream.getTracks()[0];
-			recordMediaRef.current.addTrack(combinedStreamRef.current);
+			recordMediaRef.current.removeTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'))
+			// combinedStreamRef.current = combinedStream.getTracks()[0];
+			combinedStreamRef.current = combinedStream;
+			recordMediaRef.current.addTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'));
 
 			// end 
 
@@ -871,9 +872,10 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 			// recording 
 
-			recordMediaRef.current.removeTrack(combinedStreamRef.current)
-			combinedStreamRef.current = combinedStream.getTracks()[0];
-			recordMediaRef.current.addTrack(combinedStreamRef.current);
+			recordMediaRef.current.removeTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'))
+			// combinedStreamRef.current = combinedStream.getTracks()[0];
+			combinedStreamRef.current = combinedStream;
+			recordMediaRef.current.addTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'));
 
 			// end
 
@@ -1117,8 +1119,9 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 		// recording 
-		combinedStreamRef.current = localStreamRef.current.getTracks().find((track) => track.kind === 'audio')
-		recordMediaRef.current.addTrack(combinedStreamRef.current);
+		// combinedStreamRef.current = localStreamRef.current.getTracks().find((track) => track.kind === 'audio')
+		combinedStreamRef.current = localStreamRef.current
+		recordMediaRef.current.addTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'));
 
 		// end
 

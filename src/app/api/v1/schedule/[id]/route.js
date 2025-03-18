@@ -38,33 +38,19 @@ export const PUT = connectDB(auth(async function (req){
     try{
         const id = req.url.split('/')[6];
         if(!id) return NextResponse.json({success: false,message: 'is is required'});
-        let {date,time,songs,ads} = await req.json();
-        if(ads !== 0){
-            const allSongs = await songModel.find({owner: req.user._id});
-            const allads = allSongs.filter(song => song.isAds);
-            if(allads.length !== 0){
-                const newSongs = [];
-                for(let i = 0; i < songs.length; i++){
-                    newSongs.push(songs[i]);
-                    if((i+1)%ads === 0 && i+1 !== songs.length){
-                        const randomIndex = Math.floor(Math.random() * allads.length);
-                        newSongs.push(allads[randomIndex]._id.toString());
-                    }
-                }
+        let {day,songs,enabled} = await req.json();
 
-                songs = newSongs;
-            }
-        }
 
-        console.log(date,time,songs,ads)
 
-        if(!date || !time) return NextResponse.json({success: false,message: 'all fields are required'});
 
-        const schedule = await scheduleModel.findByIdAndUpdate(id,{date,time,songs,songsPerAds:ads});
 
-        // update cron jobs pending
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_SOCKET_URL}/refresh`);
-        console.log('res',res?.data);
+
+        const data = {};
+        console.log(enabled)
+        if(enabled != undefined) data.enabled = enabled;
+        if(day) data.day = day;
+        if(songs) data.songs = songs;
+        const schedule = await scheduleModel.findByIdAndUpdate(id,data);
         return NextResponse.json({success: true,message: 'update success'});
     }catch(err){
         return NextResponse.json({success: false,message: err.message},{status: 501});

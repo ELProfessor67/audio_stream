@@ -332,15 +332,15 @@ export default function Sidebar(){
         // },
        
         
-        // {
-        //     icon: <BsCalendarDate size={30}/>,
-        //     text: "Songs Schedules",
-        //     alert: false,
-        //     active: pathname == '/dashboard/shedules',
-        //     link: '/dashboard/shedules',
-        //     show: isAllow("schedules"),
-        //     desc: "You are able to schedule your shows and your songs at your decided time"
-        // },
+        {
+            icon: <BsCalendarDate size={30}/>,
+            text: "Songs Schedules",
+            alert: false,
+            active: pathname == '/dashboard/shedules',
+            link: '/dashboard/shedules',
+            show: isAllow("schedules"),
+            desc: "You are able to schedule your shows and your songs at your decided time"
+        },
         {
             icon: <PiUsersThreeDuotone size={30}/>,
             text: "Create DJs",

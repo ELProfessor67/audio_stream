@@ -181,7 +181,7 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 		if (scheduleActiveRef.current == true || isLiveRef.current == true || isCall == true) {
 			return
 		}
-
+		const isSchedulePlaying = data.isSchedulePlaying
 		console.log("new song", audioRef.current.srcObject)
 
 		setRoomActive(true);
@@ -190,7 +190,7 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 		console.log('auto dj', data);
 
 		// audioRef.current.src = data?.currentSong?.url;
-		if (audioRef.current.srcObject) {
+		if (audioRef.current.srcObject && !isSchedulePlaying) {
 			audioRef.current.srcObject = null;
 
 			audioRef.current.src = `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}`;
@@ -199,8 +199,17 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 
 		};
 
-		if (audioRef.current.src != `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}`) {
+		if (audioRef.current.src != `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}` && !isSchedulePlaying) {
 			audioRef.current.src = `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}`;
+			audioRef.current.load();
+
+			if (playRef.current == true) {
+				audioRef.current.play();
+			}
+		}
+
+		if (audioRef.current.src != `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}_schulded` && isSchedulePlaying) {
+			audioRef.current.src = `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}_schulded`;
 			audioRef.current.load();
 
 			if (playRef.current == true) {
@@ -473,6 +482,22 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 
 
 		socketRef.current.on('play-welcome-tone', (data) => {
+			const isSheduled = data.isSheduled;
+
+			if(isSheduled){
+				console.log("Is Scheduled");
+				if (audioRef.current.srcObject) {
+					audioRef.current.srcObject = null;
+					audioRef.current.src = `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}_schulded`;
+					audioRef.current.load();
+				};
+		
+				if (audioRef.current.src != `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}_schulded`) {
+					audioRef.current.src = `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}_schulded`;
+					audioRef.current.load();
+				}
+			}
+
 			if (data?.welcomeTone) {
 				console.log('welcome tone started')
 				const song = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${data?.welcomeTone}`);
@@ -497,6 +522,32 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 			}
 		});
 
+
+		socketRef.current.on('play-ending-tone', (data) => {
+			if (data?.endingTone) {
+				console.log('welcome tone started')
+				const song = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${data?.endingTone}`);
+
+				song.addEventListener("canplaythrough", () => {
+					console.log("Audio loaded successfully");
+					if (isCall == false) {
+						if (!isLiveRef.current) {
+							audioRef.current.pause();
+						}
+						song.play().then(() => {
+							console.log("Audio started playing");
+						}).catch((error) => {
+							console.error("Error playing audio:", error);
+						});
+					}
+				});
+
+				song.addEventListener("ended", () => {
+					window.location.reload();
+				});
+			}
+		});
+
 		socketRef.current.on('room-unactive', async (data) => {
 			if (data?.butScheduleActive) {
 				console.log('schedule-active but');
@@ -517,37 +568,36 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 		});
 
 		socketRef.current.on('owner-left', async () => {
-
-			if (ownerRef.current.endingTone) {
-				const song = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${ownerRef.current?.endingTone}`);
-				song.addEventListener("canplaythrough", () => {
-					console.log("Audio loaded successfully");
-					if (isCall == false) {
-						audioRef.current.pause();
-						song.play().then(() => {
-							console.log("Audio started playing");
-						}).catch((error) => {
-							console.error("Error playing audio:", error);
-						});
-					}
-				});
-				song.addEventListener("ended", async () => {
-					window.location.reload();
-					// sleep(1000);
-					// console.log("Audio has finished playing");
-					// setRoomActive(false);
-					// setIsLive(false);
-					// audioRef.current.play();
-					// socketRef.current.emit('auto-dj', { roomId: streamId });
-				});
-				song.load();
-			} else {
-				window.location.reload();
-				// setRoomActive(false);
-				// setIsLive(false);
-				// audioRef.current.play();
-				// socketRef.current.emit('auto-dj', { roomId: streamId });
-			}
+			// if (ownerRef.current.endingTone) {
+			// 	const song = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${ownerRef.current?.endingTone}`);
+			// 	song.addEventListener("canplaythrough", () => {
+			// 		console.log("Audio loaded successfully");
+			// 		if (isCall == false) {
+			// 			audioRef.current.pause();
+			// 			song.play().then(() => {
+			// 				console.log("Audio started playing");
+			// 			}).catch((error) => {
+			// 				console.error("Error playing audio:", error);
+			// 			});
+			// 		}
+			// 	});
+			// 	song.addEventListener("ended", async () => {
+			// 		window.location.reload();
+			// 		// sleep(1000);
+			// 		// console.log("Audio has finished playing");
+			// 		// setRoomActive(false);
+			// 		// setIsLive(false);
+			// 		// audioRef.current.play();
+			// 		// socketRef.current.emit('auto-dj', { roomId: streamId });
+			// 	});
+			// 	song.load();
+			// } else {
+			// 	window.location.reload();
+			// 	// setRoomActive(false);
+			// 	// setIsLive(false);
+			// 	// audioRef.current.play();
+			// 	// socketRef.current.emit('auto-dj', { roomId: streamId });
+			// }
 
 
 		});
@@ -635,6 +685,7 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 			socketRef.current.off('receive-message');
 			socketRef.current.off('next-song');
 			socketRef.current.off('play-welcome-tone');
+			socketRef.current.off('play-ending-tone');
 		}
 
 	}, []);

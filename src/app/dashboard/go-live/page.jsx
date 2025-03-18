@@ -152,10 +152,10 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 				return;
 			}
 
-			if(startFirstTimeRef.current == false && !start){
-				startFirstTimeRef.current = true;
-				handleStart();
-			}
+			// if(startFirstTimeRef.current == false && !start){
+			// 	startFirstTimeRef.current = true;
+			// 	handleStart();
+			// }
 
 			setLeftSecond(null);
 

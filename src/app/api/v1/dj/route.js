@@ -5,7 +5,7 @@ import { auth } from "@/middleswares/auth";
 
 
 export const POST = connectDB(auth(async function (req){
-        const {name,email,password,permissions,starttime,endtime,djDate,djTimeInDays,djDays,rawTime} = await req.json();
+        const {name,email,password,permissions,starttime,endtime,djDate,djTimeInDays,djDays,rawTime,timezone,phone} = await req.json();
 
         // console.log(name,email,password,permissions)
 
@@ -24,14 +24,15 @@ export const POST = connectDB(auth(async function (req){
             country: owner.country,
             station_name: owner.station_name,
             website_url: owner.website_url,
-            timezone: owner.timezone,
+            timezone: timezone || owner.timezone,
             isDJ: true,
             djOwner: owner._id,
             djPermissions: permissions,
             isSubscriber: owner.isSubscriber,
             djStartTime: starttime,
             djEndTime: endtime,
-            djDate,djTimeInDays,djDays,rawTime
+            djDate,djTimeInDays,djDays,rawTime,
+            phone
         }
         const user = await userModel.create(userData);
 

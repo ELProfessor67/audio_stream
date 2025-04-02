@@ -9,10 +9,13 @@ import axios from 'axios';
 import Dialog from '@/components/Dialog';
 import { showMessage, showError, clearMessage, clearError } from '@/utils/showAlert';
 import { useDispatch } from 'react-redux';
-import { BsCalendarDate, BsClock, BsMailbox } from 'react-icons/bs';
+import { BsCalendarDate, BsClock, BsMailbox, BsPhone } from 'react-icons/bs';
 import { FaAccessibleIcon, FaLock } from 'react-icons/fa6';
 import { MultiSelect } from "react-multi-select-component";
 import { toast } from 'react-toastify';
+import timezones from 'timezones-list';
+import Select from "react-select";
+
 
 const options = [
     { label: "Sunday", value: 0 },
@@ -28,18 +31,18 @@ const options = [
 function convertToUTC(timeString) {
     // Split timeString into hours and minutes
     const [hours, minutes] = timeString.split(':').map(Number);
-    
+
     // Create a new Date object with today's date and the input time in local time
     const localDate = new Date();
     localDate.setHours(hours);
     localDate.setMinutes(minutes);
 
     const localOffsetMinutes = localDate.getTimezoneOffset();
-    
+
     // Convert local time to UTC
     const utcTimestamp = localDate.getTime() + (localOffsetMinutes * 60000); // Convert minutes to milliseconds
     const utcDate = new Date(utcTimestamp);
-    
+
     // Format UTC time as 'HH:mm' string
     const utcHours = utcDate.getHours().toString().padStart(2, '0');
     const utcMinutes = utcDate.getMinutes().toString().padStart(2, '0');
@@ -60,8 +63,10 @@ const page = ({ params }) => {
     const [timeInDays, setTimeInDays] = useState(false);
     const [password, setPassword] = useState('');
     const [selectedDays, setSelectedDays] = useState([]);
+    const [timezone, setTimezone] = useState("America/New_York");
+    const [phone, setPhone] = useState("");
 
-    const permissions = ['songs', 'playlists', 'schedules', 'live', 'dashboard', 'requests', 'ads','add_song'];
+    const permissions = ['songs', 'playlists', 'schedules', 'live', 'dashboard', 'requests', 'ads', 'add_song'];
     const dispatch = useDispatch();
 
     const handleCheckbox = (permission) => {
@@ -83,7 +88,7 @@ const page = ({ params }) => {
         try {
             let djDays = [];
             selectedDays.forEach((data) => djDays.push(data.value));
-            const { data } = await axios.put(`/api/v1/dj/${params.id}`, {password, name, email, permissions: selectPermission, starttime: convertToUTC(starttime), endtime: convertToUTC(endtime), djDate, djTimeInDays: timeInDays, djDays,rawTime: `${starttime}|${endtime}` });
+            const { data } = await axios.put(`/api/v1/dj/${params.id}`, { password, name, email, permissions: selectPermission, starttime: convertToUTC(starttime), endtime: convertToUTC(endtime), djDate, djTimeInDays: timeInDays, djDays, rawTime: `${starttime}|${endtime}`,timezone,phone });
             await dispatch(showMessage(data.message));
             await dispatch(clearMessage());
             console.log(data)
@@ -99,7 +104,7 @@ const page = ({ params }) => {
         (async function () {
             try {
                 const { data } = await axios.get(`/api/v1/dj/${params.id}`);
-                const [start,end] = data.team?.rawTime.split('|');
+                const [start, end] = data.team?.rawTime.split('|');
                 setName(data?.team.name);
                 setEmail(data?.team?.email);
                 setSelectedPermission(data?.team.djPermissions);
@@ -107,6 +112,8 @@ const page = ({ params }) => {
                 setEndtime(end);
                 setdjDate(data?.team.djDate);
                 setTimeInDays(data?.team?.djTimeInDays);
+                setPhone(data?.team?.phone);
+                setTimezone(data?.team?.timezone);
                 setSelectedDays([]);
                 const days = data?.team?.djDays;
                 days?.forEach(ele => setSelectedDays(prev => [...prev, options[ele]]));
@@ -144,6 +151,15 @@ const page = ({ params }) => {
                                 <input type='email' value={email} onChange={(e) => setEmail(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter dj email' id='email' name='email' required />
                             </div>
                         </div>
+
+                        <div className='input-group flex flex-col gap-1 mb-6'>
+                            <label for="phone" className='text-black text-lg'>Phone</label>
+                            <div className='flex items-center relative  py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                <BsPhone size={20} className='text-gray-400' />
+                                <input type='phone' value={phone} onChange={(e) => setPhone(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter dj phone number' id='phone' name='phone' required />
+                            </div>
+                        </div>
+
 
                         <div className='input-group flex flex-col gap-1 mb-6'>
                             <label for="password" className='text-black text-lg'>Change Password</label>
@@ -231,6 +247,21 @@ const page = ({ params }) => {
 
                                         </>
                                 }
+
+                                <div className='input-group flex flex-col gap-1 mb-6'>
+                                    <label for="starttime" className='text-black text-lg'>DJ Timezone</label>
+
+                                    <Select
+                                        options={timezones}
+                                        getOptionLabel={(e) => `${e.label}`}
+                                        getOptionValue={(e) => e.tzCode}
+                                        onChange={(value) => setTimezone(value.tzCode)}
+                                        placeholder="Select Timezone..."
+                                        isSearchable={true}
+                                        className='w-full border-none py-3'
+
+                                    />
+                                </div>
                                 <div className='input-group flex flex-col gap-1 mb-6'>
                                     <label for="starttime" className='text-black text-lg'>Live Start Time</label>
                                     <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>

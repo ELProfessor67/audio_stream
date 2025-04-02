@@ -51,6 +51,8 @@ export default function page() {
 					<thead className="text-sx text-white uppercase bg-indigo-500">
 						<tr>
 							<th scope='col' className="px-6 py-3">Name</th>
+							<th scope='col' className="px-6 py-3">Timezone</th>
+							<th scope='col' className="px-6 py-3">phone</th>
 							<th scope='col' className="px-6 py-3">Email</th>
 							<th scope='col' className="px-6 py-3">Permissions</th>
 							<th scope='col' className="px-6 py-3">Time</th>
@@ -178,7 +180,7 @@ const calculateNextSession = (djDays, startTime) => {
 	return ''
 };
 
-const TableRow = ({ name, email, djPermissions, _id, djStartTime, djEndTime, deleteTeam, djDate, djTimeInDays, djDays, rawTime }) => {
+const TableRow = ({ name, email, djPermissions, _id, djStartTime, djEndTime, deleteTeam, djDate, djTimeInDays, djDays, rawTime,timezone,phone }) => {
 	const [currentStatus, setCurrectStatus] = useState('No Calculated');
 	const timeRef = useRef();
 
@@ -214,6 +216,8 @@ const TableRow = ({ name, email, djPermissions, _id, djStartTime, djEndTime, del
 	return (
 		<tr className="bg-gray-50 font-midium border-b text-sm">
 			<td className="px-6 py-4 whitespace-nowarp">{name}</td>
+			<td className="px-6 py-4 whitespace-nowarp">{timezone}</td>
+			<td className="px-6 py-4 whitespace-nowarp">{phone}</td>
 			<td className="px-6 py-4 whitespace-nowarp">{email}</td>
 			<td className="px-6 py-4 whitespace-nowarp">
 				{djPermissions?.map((p, i) => `${i != 0 ? ' ,' : ' '} ${p}`)}

@@ -484,19 +484,7 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 		socketRef.current.on('play-welcome-tone', (data) => {
 			const isSheduled = data.isSheduled;
 
-			if(isSheduled){
-				console.log("Is Scheduled");
-				if (audioRef.current.srcObject) {
-					audioRef.current.srcObject = null;
-					audioRef.current.src = `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}_schulded`;
-					audioRef.current.load();
-				};
-		
-				if (audioRef.current.src != `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}_schulded`) {
-					audioRef.current.src = `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}_schulded`;
-					audioRef.current.load();
-				}
-			}
+			
 
 			if (data?.welcomeTone) {
 				console.log('welcome tone started')
@@ -516,6 +504,19 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 					}
 				});
 				song.addEventListener("ended", () => {
+					if(isSheduled){
+						console.log("Is Scheduled");
+						if (audioRef.current.srcObject) {
+							audioRef.current.srcObject = null;
+							audioRef.current.src = `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}_schulded`;
+							audioRef.current.load();
+						};
+				
+						if (audioRef.current.src != `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}_schulded`) {
+							audioRef.current.src = `${process.env.NEXT_PUBLIC_ICE_CAST_SERVER}/${streamId}_schulded`;
+							audioRef.current.load();
+						}
+					}
 					audioRef.current.play();
 					console.log("Audio has finished playing");
 				});

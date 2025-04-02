@@ -9,6 +9,7 @@ import hark from 'hark';
 
 
 const peerConfig = {
+	iceTransportPolicy : "relay",
 	iceServers: [
 		{ urls: "stun:stun.l.google.com:19302" },
 		{ urls: "stun:stun.l.google.com:5349" },
@@ -45,6 +46,12 @@ const peerConfig = {
 			username: "827d3072e5b2f0e84207f45a",
 			credential: "wmxXXuDm8VSalqWu",
 		},
+		{
+			urls: "turns:relay1.expressturn.com:3478",
+			username: "efZL51SQ640A85CEFE",
+			credential: "QWATvGdKMEWFRCgg",
+		},
+
 	]
 }
 

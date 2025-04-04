@@ -6,7 +6,9 @@ const AutoAdjustByBase = ({ songPlaying, songBase, handleVolumeChange,userChange
     useEffect(() => {
         if(voiceAcitce && songPlaying){
             console.log("voiceAcitce",voiceAcitce)
-            handleVolumeChange(0.1);
+            if(currentVolume > 0){
+                handleVolumeChange(0.1);
+            }
         } else if (songPlaying && !userChangeVolume) {
             let adjustedVolume = volume.current;
 

@@ -225,7 +225,7 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 
 
 		cuurentTimeRef.current = data?.currentSong?.currentTime;
-		setNextSong(data?.currentSong.nextSong);
+		setNextSong(data?.currentSong?.nextSong || "Favor");
 		console.log('isPlay', playRef.current);
 
 		// if(playRef.current){

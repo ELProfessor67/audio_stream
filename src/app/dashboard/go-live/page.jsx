@@ -661,6 +661,8 @@ export default function () {
 
 			console.log('handle start')
 		} else {
+			const confirmOff = window.confirm("Are you sure you want to end the live stream?");
+			if(!confirmOff) return;
 			setTimerStart(false);
 			setStart(false);
 			ownerLeft();

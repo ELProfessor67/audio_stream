@@ -9,7 +9,7 @@ import hark from 'hark';
 
 
 const peerConfig = {
-	iceTransportPolicy : "relay",
+	iceTransportPolicy: "relay",
 	iceServers: [
 		{ urls: "stun:stun.l.google.com:19302" },
 		{ urls: "stun:stun.l.google.com:5349" },
@@ -176,6 +176,8 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	const callerDetailsRef = useRef({});
 	const callsElementRef = useRef(null);
 	const nextSongRef = useRef({});
+
+
 
 
 	useEffect(() => {
@@ -997,21 +999,21 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	}, [socketRef.current]);
 
 
-	// useEffect(() => {
-	// 	function confirmReload(event) {
-	//         var confirmationMessage = "Are you sure you want to stop streaming?";
+	useEffect(() => {
+		function confirmReload(event) {
+			var confirmationMessage = "Are you sure you want to stop streaming?";
 
-	//         // For modern browsers
-	//         event.returnValue = confirmationMessage;
-	//         return confirmationMessage;
-	//     }
+			// For modern browsers
+			event.returnValue = confirmationMessage;
+			return confirmationMessage;
+		}
 
-	// 	window.addEventListener('beforeunload', confirmReload);
+		window.addEventListener('beforeunload', confirmReload);
 
-	// 	return () => {
-	// 		window.removeEventListener('beforeunload', confirmReload);
-	// 	}
-	// },[])
+		return () => {
+			window.removeEventListener('beforeunload', confirmReload);
+		}
+	}, [])
 
 	const handleShare = async () => {
 		const url = `${window.location.origin}/public/${user?._id}`;
@@ -1091,6 +1093,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		socketRef.current.emit('owner-join', { user });
 		// localStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
 		const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+		
 
 
 		//when user speack

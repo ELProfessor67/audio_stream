@@ -33,7 +33,8 @@ const userSchema = new mongoose.Schema({
     welcomeTone: {type: String,default: undefined},
     endingTone: {type: String,default: undefined},
     rawTime: {type: String,default: ''},
-    phone: {type: String,default: undefined}
+    phone: {type: String,default: undefined},
+    OTP: {type: String,default: undefined}
 },{timestamps: true});
 
 

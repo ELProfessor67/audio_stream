@@ -8,6 +8,7 @@ import {useSelector,useDispatch} from 'react-redux';
 import {redirect} from 'next/navigation';
 import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert'
 import { toast } from 'react-toastify';
+import { useRouter } from 'next/navigation';
 
 const page = () => {
     const [email,setEmail] = useState('');
@@ -16,13 +17,15 @@ const page = () => {
     const {isAuth,user} = useSelector(store => store.user);
     const dispatch = useDispatch();
     const [type, setType] = useState('Admin');
+    const router = useRouter();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true)
         try {
             const {data} = await axios.post('/api/v1/login',{email,password});
-            dispatch({type: 'loadUserSuc',payload: data});
+            router.push("/verify")
+            // dispatch({type: 'loadUserSuc',payload: data});
             await dispatch(showMessage(data.message));
             await dispatch(clearMessage());
             console.log(data.message);
@@ -38,7 +41,7 @@ const page = () => {
 
     const handleForgot = useCallback(() => {
         if(type == "Admin"){
-            toast.success("Forgot password link successfully send to your email.");
+            toast.success("A");
         }else{
             toast.success("Please request admin to forgot your password");
         }

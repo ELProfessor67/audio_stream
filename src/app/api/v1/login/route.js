@@ -27,7 +27,7 @@ export const POST = connectDB(async function (req) {
         //send otp
         resend.emails.send({
             from: 'onboarding@resend.dev',
-            to: "wi223488@gmail.com",
+            to: user.email,
             subject: 'Verify OTP',
             html: `<p>You OTP is <strong>${OTP}</strong></p>`
         });

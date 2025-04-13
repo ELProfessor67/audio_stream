@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import userModel from "@/models/user";
 import { generateOTP } from "@/utils/generateOTP";
 import { Resend } from "resend";
+import sendEmail from "@/utils/sendEmail";
 const resend = new Resend('re_6dwherEo_t9t4G217pFAK1hFfJajiWB5i');
 
 export const POST = connectDB(async function (req) {
@@ -25,14 +26,7 @@ export const POST = connectDB(async function (req) {
         user.save();
 
         //send otp
-        resend.emails.send({
-            from: 'onboarding@resend.dev',
-            to: user.email,
-            subject: 'Verify OTP',
-            html: `<p>You OTP is <strong>${OTP}</strong></p>`
-        });
-
-
+        sendEmail(user.email,"Verify OTP",`You OTP is <strong>${OTP}`,`<p>You OTP is <strong>${OTP}</strong></p>`)
         console.log(OTP)
         const res = NextResponse.json({ success: true, message: 'OTP send to your email', user }, { status: 200 });
 

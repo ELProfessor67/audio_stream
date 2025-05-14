@@ -87,8 +87,9 @@ function addOneMinute(hours, minutes) {
 // }
 
 
-function checkInTimeRangeForDay(startTime, endTime, user) {
+function checkInTimeRangeForDay(startTime, endTime, user,seconds=0) {
 	let now = new Date();
+	now.setSeconds(now.getSeconds() - seconds);
 	let currentHour = now.getUTCHours();
 	let currentMinute = now.getUTCMinutes();
 	let currentSecond = now.getUTCSeconds();
@@ -121,9 +122,12 @@ function checkInTimeRangeForDay(startTime, endTime, user) {
 
 
 
-const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setStart, setTimerStart, handleStart, startFirstTimeRef }) => {
+const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setStart, setTimerStart, handleStart, startFirstTimeRef, endingToneDuration, handlePlayWelcome, handlePlayEnd }) => {
 	const [remainingTime, setRemainingTime] = useState("00:00");
 	const startRef = useRef()
+	const isActiveRef = useRef(false);
+	const [isEndindToneCalled,setIsEndindToneCalled] = useState(false);
+	const [isWelcomeToneCalled,setIsWelcomeToneCalled] = useState(false);
 	const router = useRouter()
 
 	useEffect(() => {
@@ -132,9 +136,24 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 
 	useEffect(() => {
 		const calculateRemainingTime = () => {
-			const { inRange: range, secondsToStart } = checkInTimeRangeForDay(user?.djStartTime, user?.djEndTime, user)
+			let minusSeconds = 0;
+			if(isActiveRef.current){
+				minusSeconds = endingToneDuration;
+			}
+			console.log(minusSeconds, "hello")
+			let { inRange: range, secondsToStart } = checkInTimeRangeForDay(user?.djStartTime, user?.djEndTime, user,minusSeconds)
+
+			if(range && !isActiveRef.current){
+				isActiveRef.current = true;
+			}
+
 			setActive(range);
 			if (!range) {
+				if(secondsToStart != null && secondsToStart <= 2 && !isWelcomeToneCalled){
+					handlePlayWelcome();
+					setIsWelcomeToneCalled(true);
+				}
+
 				if (secondsToStart != null && secondsToStart <= 10) {
 					setLeftSecond(secondsToStart);
 					// if(secondsToStart <= 1 && !start){
@@ -173,9 +192,16 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 
 			// Calculate remaining time in milliseconds
 			let timeDiff = endTimeUTC.getTime() - nowUTCTimestamp;
+			timeDiff = timeDiff + (endingToneDuration * 1000);
 
 			// If current time is after end time, set remaining time to 0
 			timeDiff = Math.max(0, timeDiff);
+
+			console.log(timeDiff/1000, endingToneDuration, isEndindToneCalled)
+			if(timeDiff/1000 <= endingToneDuration && !isEndindToneCalled){
+				handlePlayEnd();
+				setIsEndindToneCalled(true);
+			}
 
 			const hours = Math.floor(timeDiff / (1000 * 60 * 60));
 			const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
@@ -185,11 +211,13 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 			const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
 			if (formattedTime == "00:00:00") {
-				toast.info(`Your times is up ${startRef.current}`);
+				console.log("session ended")
+				toast.info(`Your times is up`);
+				isActiveRef.current = false;
 				if (startRef.current) {
 					setTimerStart(false)
 					ownerLeft();
-					setStart();
+					setStart(false);
 				}
 			}
 			setRemainingTime(formattedTime);
@@ -490,6 +518,9 @@ export default function () {
 	const [showTitle, setShowTitle] = useState(false);
 	const [userChangeVolume, setUserChangeVolume] = useState(false);
 	const [leftSecond,setLeftSecond] = useState(null);
+	const [isWelcomeTonePlaying,setIsWelcomeTonePlaying] = useState(false);
+	const [isEndTonePlaying,setIsEndTonePlaying] = useState(false);
+	const [endingToneDuration,setEndingToneDuration] = useState(0);
 
 	const startFirstTimeRef = useRef(false);
 	// console.log(dbackward,dforward)
@@ -1202,6 +1233,51 @@ export default function () {
 		setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs, song] });
 	}
 
+	const isPlayedRef = useRef(false);
+	const handlePlayWelcome = async () => {
+		if(isPlayedRef.current) return;
+		isPlayedRef.current = true;
+		console.log("welcome tone")
+		const audio = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${user?.welcomeTone}`);
+		audio.play().then(() => {
+			console.log("welcome tone played")
+			setIsWelcomeTonePlaying(true);
+		}).catch(() => {
+			console.log("welcome tone error")
+			setIsWelcomeTonePlaying(false);
+		})
+		
+		audio.addEventListener('ended', () => {
+			setIsWelcomeTonePlaying(false);
+		})
+	}
+
+
+	useEffect(() => {
+		const endingTone = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${user?.endingTone}`);
+		endingTone.addEventListener('loadedmetadata', () => {
+			setEndingToneDuration(endingTone.duration);
+		})
+	}, [user])
+
+	const isEndedRef = useRef(false);
+	const handlePlayEnd = async () => {
+		if(isEndedRef.current) return;
+		isEndedRef.current = true;
+		console.log("ending tone")
+		const audio = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${user?.endingTone}`);
+		audio.play().then(() => {
+			console.log("ending tone played")
+			setIsEndTonePlaying(true);
+		}).catch(() => {
+			console.log("ending tone error")
+			setIsEndTonePlaying(false);
+		})
+
+		audio.addEventListener('ended', () => {
+			setIsEndTonePlaying(false);
+		})
+	}
 
 
 
@@ -1225,8 +1301,19 @@ export default function () {
 				</div>
 
 
+				{
+					isWelcomeTonePlaying &&
+					<div className='absolute top-10 left-1/2 -translate-x-1/2 pointer-events-none'>
+						<h2 className='text-white text-lg bg-black/50 px-2 py-1 rounded-md'>Welcome Tone is playing...</h2>
+					</div>
+				}
 
-
+				{
+					isEndTonePlaying &&
+					<div className='absolute top-10 left-1/2 -translate-x-1/2 pointer-events-none'>
+						<h2 className='text-white text-lg bg-black/50 px-2 py-1 rounded-md'>End Tone is playing...</h2>
+					</div>
+				}
 
 
 				<div className="w-full reletive px-2">
@@ -1365,7 +1452,7 @@ export default function () {
 												}
 
 											</h2>
-											<TimeRemaining handleStart={handleStart} start={start} startFirstTimeRef={startFirstTimeRef} setLeftSecond={setLeftSecond} user={user} setTimerStart={setTimerStart} setActive={setActive} ownerLeft={ownerLeft} setStart={setStart} />
+											<TimeRemaining handleStart={handleStart} start={start} startFirstTimeRef={startFirstTimeRef} setLeftSecond={setLeftSecond} user={user} setTimerStart={setTimerStart} setActive={setActive} ownerLeft={ownerLeft} setStart={setStart} endingToneDuration={endingToneDuration} handlePlayWelcome={handlePlayWelcome} handlePlayEnd={handlePlayEnd}/>
 										</>
 
 

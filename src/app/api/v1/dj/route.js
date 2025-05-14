@@ -8,7 +8,6 @@ export const POST = connectDB(auth(async function (req){
         const {name,email,password,permissions,starttime,endtime,djDate,djTimeInDays,djDays,rawTime,timezone,phone} = await req.json();
 
         // console.log(name,email,password,permissions)
-
         if (!name || !email || !password || !permissions || permissions?.length == 0) return NextResponse.json({success: false,message: 'all fields are requiree'},{status: 401})
 
         const emailExist = await userModel.findOne({email});

@@ -259,6 +259,7 @@ const page = ({ params }) => {
                                         placeholder="Select Timezone..."
                                         isSearchable={true}
                                         className='w-full border-none py-3'
+                                        value={timezones.find(e => e.tzCode == timezone)}
 
                                     />
                                 </div>

@@ -123,6 +123,9 @@ function checkInTimeRangeForDay(startTime, endTime, user,seconds=0) {
 
 
 const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setStart, setTimerStart, handleStart, startFirstTimeRef, endingToneDuration, handlePlayWelcome, handlePlayEnd }) => {
+	useEffect(() => {
+		console.log("endingToneDurationRef.current",endingToneDuration)
+	}, [endingToneDuration])
 	const [remainingTime, setRemainingTime] = useState("00:00");
 	const startRef = useRef()
 	const isActiveRef = useRef(false);
@@ -138,23 +141,20 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 		const calculateRemainingTime = () => {
 			let minusSeconds = 0;
 			if(isActiveRef.current){
+				console.log("hello000000000000",endingToneDuration)
 				minusSeconds = endingToneDuration;
 			}
-			console.log(minusSeconds, "hello")
+			console.log(minusSeconds, "hello",isActiveRef.current,endingToneDuration)
 			let { inRange: range, secondsToStart } = checkInTimeRangeForDay(user?.djStartTime, user?.djEndTime, user,minusSeconds)
 
-			if(range && !isActiveRef.current){
-				isActiveRef.current = true;
-			}
-
-			setActive(range);
+			
 			if (!range) {
 				if(secondsToStart != null && secondsToStart <= 2 && !isWelcomeToneCalled){
 					handlePlayWelcome();
 					setIsWelcomeToneCalled(true);
 				}
 
-				if (secondsToStart != null && secondsToStart <= 10) {
+				if (!isActiveRef.current && secondsToStart != null && secondsToStart <= 10) {
 					setLeftSecond(secondsToStart);
 					// if(secondsToStart <= 1 && !start){
 					// 	handleStart();
@@ -166,6 +166,13 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 
 				return
 			}
+
+			if(range && !isActiveRef.current){
+				isActiveRef.current = true;
+			}
+
+			setActive(isActiveRef.current);
+
 			if (!user || !user.djStartTime || !user.djEndTime) {
 				setRemainingTime("00:00");
 				return;
@@ -521,6 +528,8 @@ export default function () {
 	const [isWelcomeTonePlaying,setIsWelcomeTonePlaying] = useState(false);
 	const [isEndTonePlaying,setIsEndTonePlaying] = useState(false);
 	const [endingToneDuration,setEndingToneDuration] = useState(0);
+	const [intractUser,setIntractUser] = useState(false);
+	const endingToneDurationRef = useRef(0);
 
 	const startFirstTimeRef = useRef(false);
 	// console.log(dbackward,dforward)
@@ -1254,11 +1263,18 @@ export default function () {
 
 
 	useEffect(() => {
-		const endingTone = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${user?.endingTone}`);
-		endingTone.addEventListener('loadedmetadata', () => {
-			setEndingToneDuration(endingTone.duration);
-		})
+		if(user){
+			console.log("user00000000000",user?.endingTone)
+			const endingTone = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${user?.endingTone}`);
+			endingTone.addEventListener('loadedmetadata', () => {
+				console.log("ending tone loadedmetadata",endingTone.duration)
+				setEndingToneDuration(endingTone.duration);
+				endingToneDurationRef.current = endingTone.duration;
+			})
+		}
 	}, [user])
+
+	console.log(endingToneDuration, "endingToneDuration")
 
 	const isEndedRef = useRef(false);
 	const handlePlayEnd = async () => {
@@ -1283,6 +1299,13 @@ export default function () {
 
 	return (
 		<>
+			{
+				!intractUser &&
+				<div className="w-full h-full bg-black/50 fixed top-0 left-0 z-50 flex items-center justify-center flex-col gap-5">
+					<h2 className="text-white text-2xl">Please Inteact with UI to start the live</h2>
+					<button className="bg-indigo-500 border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200n relative" onClick={() => setIntractUser(true)}>Start Live</button>
+				</div>
+			}
 			<section className="w-full py-5 px-4 reletive">
 				<a className="hidden" ref={downloadLink}></a>
 				<div className='relative w-full'>

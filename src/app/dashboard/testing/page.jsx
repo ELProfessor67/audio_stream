@@ -33,58 +33,10 @@ import { MdAlternateEmail, MdAudiotrack, MdKey } from 'react-icons/md'
 import { MdOutlineSubtitles, MdDescription, MdPhoto } from 'react-icons/md';
 import { FaUserAlt } from 'react-icons/fa';
 import RenamePlaylistComponents from '@/components/RenamePlaylistComponents';
-// import VolumePopup from '@/components/VolumePopup';
-// import VolumePopupsDeck from '@/components/VolumePopupsDeck';
 import AutoAdjustByBase from '@/components/AutoAdjustByBase';
 
-function addOneMinute(hours, minutes) {
-	// Split the time string into hours and minutes
-	// let [hours, minutes] = time.split(':').map(Number);
-
-	// Increment the minutes
-	minutes++;
-
-	// If minutes exceed 59, adjust hours and minutes
-	if (minutes > 59) {
-		hours++;
-		minutes = 0;
-	}
-
-	// If hours exceed 23, reset to 00
-	if (hours > 23) {
-		hours = 0;
-	}
-
-	// Format hours and minutes to have leading zeros if necessary
-	hours = +hours;
-	minutes = +minutes;
-
-	// Return the result
-	return [hours, minutes];
-}
-
-// function checkInTimeRangeForDay(startTime, endTime, user) {
-// 	let currentHour = new Date().getUTCHours();
-// 	let currentMinute = new Date().getUTCMinutes();
-// 	[currentHour, currentMinute] = addOneMinute(currentHour, currentMinute);
 
 
-// 	const rangeStartHour = +startTime?.split(':')[0];
-// 	const rangeStartMinute = +startTime?.split(':')[1];
-
-// 	const rangeEndHour = +endTime?.split(':')[0];
-// 	const rangeEndMinute = +endTime?.split(':')[1];
-
-// 	const timeInRange = (currentHour > rangeStartHour || (currentHour === rangeStartHour && currentMinute >= rangeStartMinute)) && (currentHour < rangeEndHour || (currentHour === rangeEndHour && currentMinute <= rangeEndMinute));
-
-// 	const checkDay = user?.djDays?.includes((new Date().getDay()).toString())
-// 	if (checkDay && timeInRange) {
-// 		return true;
-// 	} else {
-// 		return false;
-// 	}
-// 	// return timeInRange;
-// }
 
 
 function checkInTimeRangeForDay(startTime, endTime, user,seconds=0) {
@@ -156,9 +108,6 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 
 				if (!isActiveRef.current && secondsToStart != null && secondsToStart <= 10) {
 					setLeftSecond(secondsToStart);
-					// if(secondsToStart <= 1 && !start){
-					// 	handleStart();
-					// }
 				}else{
 					setLeftSecond(null);
 				}
@@ -177,11 +126,6 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 				setRemainingTime("00:00");
 				return;
 			}
-
-			// if(startFirstTimeRef.current == false && !start){
-			// 	startFirstTimeRef.current = true;
-			// 	handleStart();
-			// }
 
 			setLeftSecond(null);
 
@@ -697,15 +641,12 @@ export default function () {
 		if (!start) {
 			setTimerStart(true);
 			setStart(true);
-			ownerJoin();
-
 			console.log('handle start')
 		} else {
 			const confirmOff = window.confirm("Are you sure you want to end the live stream?");
 			if(!confirmOff) return;
 			setTimerStart(false);
 			setStart(false);
-			ownerLeft();
 			console.log('off')
 		}
 	}
@@ -1299,13 +1240,6 @@ export default function () {
 
 	return (
 		<>
-			{
-				!intractUser &&
-				<div className="w-full h-full bg-black/50 fixed top-0 left-0 z-50 flex items-center justify-center flex-col gap-5">
-					<h2 className="text-white text-2xl">Ready when you are — click to begin.</h2>
-					<button className="bg-indigo-500 border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200n relative" onClick={() => setIntractUser(true)}>Begin</button>
-				</div>
-			}
 			<section className="w-full py-5 px-4 reletive">
 				<a className="hidden" ref={downloadLink}></a>
 				<div className='relative w-full'>
@@ -1314,12 +1248,6 @@ export default function () {
 							<h3 className="text-3xl text-gray-600 scrolling-text-container" style={{ maxWidth: "50rem" }}><p className="scrolling-text">{message}</p></h3>
 						</div>
 						<button onClick={() => setMEdit(true)} className="bg-none outline-none border-none text-green-400 hover:text-green-500"><MdModeEdit size={20} /></button>
-					</div>
-
-					<div className='absolute right-0 top-0'>
-						<button className='bg-indigo-500 border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200n relative' onClick={() => { setChatOpen(true); setUnread(0) }}>Live Chat
-							{unread != 0 && <span className='absolute top-[-.5rem] right-[-.5rem] w-6 h-6 grid place-items-center text-sm rounded-full bg-red-600 text-white'>{unread > 9 ? '9+' : unread}</span>}
-						</button>
 					</div>
 				</div>
 
@@ -1462,26 +1390,6 @@ export default function () {
 									<Timer timerStart={timerStart} />
 								</div>
 
-
-								{
-									user?.isDJ &&
-									<div>
-
-										<>
-
-											<h2 className="text-white text-lg text-center">
-												{
-													!active ? "Schedule Time" : "Remaining Time"
-												}
-
-											</h2>
-											<TimeRemaining handleStart={handleStart} start={start} startFirstTimeRef={startFirstTimeRef} setLeftSecond={setLeftSecond} user={user} setTimerStart={setTimerStart} setActive={setActive} ownerLeft={ownerLeft} setStart={setStart} endingToneDuration={endingToneDuration} handlePlayWelcome={handlePlayWelcome} handlePlayEnd={handlePlayEnd}/>
-										</>
-
-
-									</div>
-								}
-
 							</div>
 							<div className="py-2 rounded-b-md flex justify-around items-center shadow-md">
 								<h3 className="text-black text-xl text-center">{listners}
@@ -1489,7 +1397,7 @@ export default function () {
 									Listeners
 								</h3>
 								<div className="flex flex-col items-center gap-3 relative cursor-pointer" onMouseEnter={() => setShowTitle(true)} onMouseLeave={() => setShowTitle(false)}>
-									<button onClick={handleStart} className={`bg-none hover-button outline-none border-none disabled:opacity-20 ${start ? 'text-green-400' : 'text-red-600'}`} disabled={user?.isDJ && !active}><LuPower size={40} /></button>
+									<button onClick={handleStart} className={`bg-none hover-button outline-none border-none disabled:opacity-20 ${start ? 'text-green-400' : 'text-red-600'}`}><LuPower size={40} /></button>
 
 									{
 										showTitle &&

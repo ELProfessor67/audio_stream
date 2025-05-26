@@ -32,11 +32,28 @@ const page = () => {
     const [selectedPlaylist, setSelectedPlatlist] = useState([]);
     const [selectedSong, setSelectedSong] = useState([]);
     const [songOpen, setSongOpen] = useState(false);
-   
+    const [size, setSize] = useState('');
+	const [type, setType] = useState('');
+	const [audioEx, setAudioEx] = useState('');
+	const [audiofile, setAudio] = useState('');
+	const [duration, setDuration] = useState(0);
+	const [songTitle, setSongTitle] = useState('');
+
     const [loading, setLoading] = useState(false);
     const dispatch = useDispatch();
     const { user } = useSelector(store => store.user);
 
+    const handleSongSubmit = async ( songTitle, size, type, audioEx, duration, audiofile) => {
+		try {
+			const { data } = await axios.post('/api/v1/song', { audioEx, coverEx: '', title: songTitle, description: "", artist: "Unknown", size, type, audio: audiofile, duration, album: "Unknown", cover: '/upload/cover/default.jpg' });
+            return data.song._id;
+		} catch (error) {
+			await dispatch(showError(error.response.data.message));
+			await dispatch(clearError());
+		}
+		setFileLoad(0);
+		setSongOpen(false)
+	}
 
     const handleCheckbox = (id) => {
         setSelectedSong(prev => {
@@ -58,12 +75,17 @@ const page = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            if (selectedSong.length === 0) {
+            let selectedSong1 = selectedSong
+            if(audiofile){
+                const id = await handleSongSubmit(songTitle,size,type,audioEx,duration,audiofile);
+                selectedSong1 = [...selectedSong1,id]
+            }
+            if (selectedSong1.length === 0) {
                 return alert('plase select at least 1 song');
             }
-            const { data } = await axios.post('/api/v1/schedule', { day: selectedDay, songs: selectedSong });
+            const { data } = await axios.post('/api/v1/schedule', { day: selectedDay, songs: selectedSong1 });
             setSelectedDay('0')
-       
+
             setSelectedSong([]);
             await dispatch(showMessage(data.message));
             await dispatch(clearMessage());
@@ -101,35 +123,43 @@ const page = () => {
         toast.success("save successfully");
     }
 
+
+    const fileToBase64 = (e) => {
+		const [file] = e.target.files;
+
+		const reader = new FileReader();
+
+		reader.onload = function () {
+			if (reader.readyState == 2) {
+				const base64String = reader.result;
+				setSize(file.size);
+				setType(file.type);
+				setAudio(base64String);
+				const extention = file.name.split('.').reverse()[0]
+				setSongTitle(file.name)
+				setAudioEx(extention);
+				const audio = new Audio(base64String);
+				audio.addEventListener('loadedmetadata', function () {
+					setDuration(audio.duration);
+				})
+			}
+		}
+
+		reader.readAsDataURL(file);
+	}
+
     return (
         <section className='w-full py-5 px-4'>
             <div className='flex justify-start items-center h-full flex-col'>
                 <h1 className='main-heading mb-10'>Create Song Schedule</h1>
                 <div className='w-[40rem] max-w-[40rem] border border-x-gray-100 shadow-md p-3 rounded-md mb-6'>
                     <form className='p-3 px-6' onSubmit={handleSubmit}>
-
-                        {/* <div className='input-group flex flex-col gap-1 mb-6'>
-                        <label for="date" className='text-black text-lg'>Date</label>
-                        <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                            <MdDateRange size={20} className='text-gray-400'/>
-                            <input type='date' value={date} onChange={(e) => setDate(e.target.value)} className='w-[95%] outline-none ml-1' id='date' name='date' required/>
-                        </div>   
-                    </div>
-
-                    <div className='input-group flex flex-col gap-1 mb-6'>
-                        <label for="time" className='text-black text-lg'>Time</label>
-                        <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                            <IoMdTime size={20} className='text-gray-400'/>
-                            <input type='time' value={time} onChange={(e) => setTime(e.target.value)} className='w-[95%] outline-none ml-1' id='time' name='time' required/>
-                        </div>   
-                    </div> */}
-
                         <div className='input-group flex flex-col gap-1 mb-6'>
                             <label for="time" className='text-black text-lg'>Select Date</label>
                             <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                                 <IoMdTime size={20} className='text-gray-400' />
                                 <select className='w-full outline-none border-none' value={selectedDay} onChange={(e) => setSelectedDay(e.target.value)}>
-                                    { 
+                                    {
                                         user?.djDays?.map(day => (
                                             <option value={day}>{days[day]}</option>
                                         ))
@@ -149,13 +179,12 @@ const page = () => {
                             </div>
                         </div>
 
-                        {/* <div className='input-group flex flex-col gap-1 mb-6'>
-                            <label for="ads" className='text-black text-lg'>ads per songs</label>
+                        <div className='input-group flex flex-col gap-1 mb-6'>
+                            <label for="description" className='text-black text-lg'>Upload Song (Optional)</label>
                             <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                                <MdPlaylistAdd size={20} className='text-gray-400' />
-                                <input type='number' value={ads} onChange={(e) => setAds(e.target.value)} className='w-[95%] outline-none ml-1' id='ads' name='ads' required />
+                                <input type='file' onChange={(e) => fileToBase64(e, setAudio, setAudioEx)} className='w-[95%] outline-none ml-1' id='audio' name='audio' accept="audio/*" />
                             </div>
-                        </div> */}
+                        </div>
 
 
                         <div className='flex justify-center items-center'>

@@ -18,6 +18,7 @@ import {GiMusicalScore} from 'react-icons/gi'
 import {toast} from 'react-toastify';
 import { current } from '@reduxjs/toolkit'
 import { HiOutlineAdjustmentsVertical } from "react-icons/hi2";
+import { CgEditFade } from 'react-icons/cg'
 
 
 
@@ -386,6 +387,15 @@ export default function Sidebar(){
         //     show: true,
         //     desc: "You can create a playlist before going to live which will be shown to during streaming"
         // },
+        {
+            icon: <CgEditFade size={30}/>,
+            text: "Testing",
+            alert: false,
+            active: pathname == '/dashboard/testing',
+            link: '/dashboard/testing',
+            show: isAllow("live"),
+            desc: "You are able to test streaming"
+        },
         {
             icon: <CiStreamOn size={30}/>,
             text: "Start Streaming",

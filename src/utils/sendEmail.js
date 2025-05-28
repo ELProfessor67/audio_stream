@@ -23,8 +23,12 @@ const sendEmail = async (to, subject, text,html='') => {
   if(text){
     option.text = text;
   }
-
-  await transporter.sendMail(option);
+  try {
+    
+    await transporter.sendMail(option);
+  } catch (error) {
+    console.log(error.message,"error otp send")
+  }
 };
 
 export default sendEmail;

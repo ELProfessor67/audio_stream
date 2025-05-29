@@ -3,13 +3,17 @@ import connectDB from "@/db/connectDB";
 import { NextResponse } from "next/server";
 import songModel from "@/models/song";
 import scheduleModel from "@/models/schedule";
+import userModel from "@/models/user";
 import { auth } from "@/middleswares/auth";
 import axios from 'axios';
 
 export const POST = connectDB(auth(async function (req){
-    let {day,songs} = await req.json();
+    let {day,songs,role} = await req.json();
 
-    console.log(day,songs)
+    console.log(day,songs,role)
+    if(role){
+        const user = await userModel.findByIdAndUpdate(req.user._id,{role});
+    }
 
     if(!day) return NextResponse.json({success: false,message: 'all fields are required'});
 

@@ -33,27 +33,40 @@ const page = () => {
     const [selectedSong, setSelectedSong] = useState([]);
     const [songOpen, setSongOpen] = useState(false);
     const [size, setSize] = useState('');
-	const [type, setType] = useState('');
-	const [audioEx, setAudioEx] = useState('');
-	const [audiofile, setAudio] = useState('');
-	const [duration, setDuration] = useState(0);
-	const [songTitle, setSongTitle] = useState('');
+    const [type, setType] = useState('');
+    const [audioEx, setAudioEx] = useState('');
+    const [audiofile, setAudio] = useState('');
+    const [duration, setDuration] = useState(0);
+    const [songTitle, setSongTitle] = useState('');
+    const [isShowRole, setShowRole] = useState(false);
+    const [role, setRole] = useState(undefined);
 
     const [loading, setLoading] = useState(false);
     const dispatch = useDispatch();
     const { user } = useSelector(store => store.user);
 
-    const handleSongSubmit = async ( songTitle, size, type, audioEx, duration, audiofile) => {
-		try {
-			const { data } = await axios.post('/api/v1/song', { audioEx, coverEx: '', title: songTitle, description: "", artist: "Unknown", size, type, audio: audiofile, duration, album: "Unknown", cover: '/upload/cover/default.jpg' });
+    useEffect(() => {
+        if (user && user.role) {
+            setRole(user.role);
+        }
+
+        if (user && !user.role) {
+            setShowRole(true);
+        }
+
+    }, [user])
+
+    const handleSongSubmit = async (songTitle, size, type, audioEx, duration, audiofile) => {
+        try {
+            const { data } = await axios.post('/api/v1/song', { audioEx, coverEx: '', title: songTitle, description: "", artist: "Unknown", size, type, audio: audiofile, duration, album: "Unknown", cover: '/upload/cover/default.jpg' });
             return data.song._id;
-		} catch (error) {
-			await dispatch(showError(error.response.data.message));
-			await dispatch(clearError());
-		}
-		setFileLoad(0);
-		setSongOpen(false)
-	}
+        } catch (error) {
+            await dispatch(showError(error.response.data.message));
+            await dispatch(clearError());
+        }
+        setFileLoad(0);
+        setSongOpen(false)
+    }
 
     const handleCheckbox = (id) => {
         setSelectedSong(prev => {
@@ -76,14 +89,14 @@ const page = () => {
         setLoading(true);
         try {
             let selectedSong1 = selectedSong
-            if(audiofile){
-                const id = await handleSongSubmit(songTitle,size,type,audioEx,duration,audiofile);
-                selectedSong1 = [...selectedSong1,id]
+            if (audiofile) {
+                const id = await handleSongSubmit(songTitle, size, type, audioEx, duration, audiofile);
+                selectedSong1 = [...selectedSong1, id]
             }
             if (selectedSong1.length === 0) {
                 return alert('plase select at least 1 song');
             }
-            const { data } = await axios.post('/api/v1/schedule', { day: selectedDay, songs: selectedSong1 });
+            const { data } = await axios.post('/api/v1/schedule', { day: selectedDay, songs: selectedSong1,role: user?.role ? undefined : role });
             setSelectedDay('0')
 
             setSelectedSong([]);
@@ -125,28 +138,28 @@ const page = () => {
 
 
     const fileToBase64 = (e) => {
-		const [file] = e.target.files;
+        const [file] = e.target.files;
 
-		const reader = new FileReader();
+        const reader = new FileReader();
 
-		reader.onload = function () {
-			if (reader.readyState == 2) {
-				const base64String = reader.result;
-				setSize(file.size);
-				setType(file.type);
-				setAudio(base64String);
-				const extention = file.name.split('.').reverse()[0]
-				setSongTitle(file.name)
-				setAudioEx(extention);
-				const audio = new Audio(base64String);
-				audio.addEventListener('loadedmetadata', function () {
-					setDuration(audio.duration);
-				})
-			}
-		}
+        reader.onload = function () {
+            if (reader.readyState == 2) {
+                const base64String = reader.result;
+                setSize(file.size);
+                setType(file.type);
+                setAudio(base64String);
+                const extention = file.name.split('.').reverse()[0]
+                setSongTitle(file.name)
+                setAudioEx(extention);
+                const audio = new Audio(base64String);
+                audio.addEventListener('loadedmetadata', function () {
+                    setDuration(audio.duration);
+                })
+            }
+        }
 
-		reader.readAsDataURL(file);
-	}
+        reader.readAsDataURL(file);
+    }
 
     return (
         <section className='w-full py-5 px-4'>
@@ -154,6 +167,20 @@ const page = () => {
                 <h1 className='main-heading mb-10'>Create Song Schedule</h1>
                 <div className='w-[40rem] max-w-[40rem] border border-x-gray-100 shadow-md p-3 rounded-md mb-6'>
                     <form className='p-3 px-6' onSubmit={handleSubmit}>
+                        {
+                            isShowRole &&
+                            <div className='input-group flex flex-col gap-1 mb-6'>
+                                <label for="description" className='text-black text-lg'>Select Role</label>
+                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                    <select value={role} className='w-full outline-none' onChange={(e) => setRole(e.target.value)}>
+                                        <option value={undefined}>Select Role</option>
+                                        <option value={"dj"}>DJ</option>
+                                        <option value={"pastor"}>pastor</option>
+                                    </select>
+                                </div>
+                            </div>
+                        }
+
                         <div className='input-group flex flex-col gap-1 mb-6'>
                             <label for="time" className='text-black text-lg'>Select Date</label>
                             <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
@@ -169,15 +196,19 @@ const page = () => {
                             </div>
                         </div>
 
-                        <div className='input-group flex flex-col gap-1 mb-6'>
-                            <label for="description" className='text-black text-lg'>Select Songs</label>
-                            <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                                <MdPlaylistAdd size={20} className='text-gray-400' />
-                                <button type="button" className="w-full h-full text-gray-400 text-left bg-none border-none outline-none px-1" onClick={() => setOpen(true)}>
-                                    {selectedSong.length === 0 ? "Select Song" : `${selectedSong.length} song seleted`}
-                                </button>
+
+                        {
+                            role == "dj" &&
+                            <div className='input-group flex flex-col gap-1 mb-6'>
+                                <label for="description" className='text-black text-lg'>Select Songs</label>
+                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                    <MdPlaylistAdd size={20} className='text-gray-400' />
+                                    <button type="button" className="w-full h-full text-gray-400 text-left bg-none border-none outline-none px-1" onClick={() => setOpen(true)}>
+                                        {selectedSong.length === 0 ? "Select Song" : `${selectedSong.length} song seleted`}
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        }
 
                         <div className='input-group flex flex-col gap-1 mb-6'>
                             <label for="description" className='text-black text-lg'>Upload Song (Optional)</label>
@@ -185,6 +216,10 @@ const page = () => {
                                 <input type='file' onChange={(e) => fileToBase64(e, setAudio, setAudioEx)} className='w-[95%] outline-none ml-1' id='audio' name='audio' accept="audio/*" />
                             </div>
                         </div>
+
+
+
+
 
 
                         <div className='flex justify-center items-center'>

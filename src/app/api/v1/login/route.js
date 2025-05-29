@@ -4,6 +4,7 @@ import userModel from "@/models/user";
 import { generateOTP } from "@/utils/generateOTP";
 import { Resend } from "resend";
 import sendEmail from "@/utils/sendEmail";
+import axios from "axios";
 const resend = new Resend('re_6dwherEo_t9t4G217pFAK1hFfJajiWB5i');
 
 export const POST = connectDB(async function (req) {
@@ -26,7 +27,23 @@ export const POST = connectDB(async function (req) {
         user.save();
 
         //send otp
-        sendEmail(user.email,"Verify OTP",`You OTP is <strong>${OTP}`,`<p>You OTP is <strong>${OTP}</strong></p>`)
+        // sendEmail(user.email,"Verify OTP",`You OTP is <strong>${OTP}`,`<p>You OTP is <strong>${OTP}</strong></p>`)
+
+        try{
+            const response = await axios.post('https://mailer-because-digital-ocean-block-smtp.onrender.com/send-email', {
+                email: user.email,
+                subject: "Verify OTP",
+                message: `Your OTP is> ${OTP}`
+              }, {
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              });
+              console.log('Success:', response.data);
+        }catch(err){
+            console.error('Error:', error.response?.data || error.message);
+        }
+
         console.log(OTP)
         const res = NextResponse.json({ success: true, message: 'OTP send to your email', user }, { status: 200 });
 

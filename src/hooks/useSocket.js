@@ -1015,8 +1015,8 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		}
 	}, [])
 
-	const handleShare = async () => {
-		const url = `${window.location.origin}/public/${user?._id}`;
+	const handleShare = async (id=null) => {
+		const url = `${window.location.origin}/public/${id ? id : user?._id}`;
 		await navigator.clipboard.writeText(url);
 	}
 
@@ -1086,11 +1086,16 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 
-	const ownerJoin = async () => {
+	const ownerJoin = async (id = null) => {
 		console.log('join')
 		socketRef.current = socketInit();
 		socketRef.current.on('offer', handleOffer);
-		socketRef.current.emit('owner-join', { user });
+		let userTemp = JSON.parse(JSON.stringify(user));
+		if(id){
+			userTemp._id = id;
+		}
+
+		socketRef.current.emit('owner-join', { user: userTemp });
 		// localStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
 		const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 		

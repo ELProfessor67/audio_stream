@@ -476,7 +476,6 @@ export default function () {
 	const endingToneDurationRef = useRef(0);
 
 	const startFirstTimeRef = useRef(false);
-	// console.log(dbackward,dforward)
 
 
 	const dispatch = useDispatch();
@@ -641,12 +640,14 @@ export default function () {
 		if (!start) {
 			setTimerStart(true);
 			setStart(true);
+			ownerJoin(user?.originalId || user?._id);
 			console.log('handle start')
 		} else {
 			const confirmOff = window.confirm("Are you sure you want to end the live stream?");
 			if(!confirmOff) return;
 			setTimerStart(false);
 			setStart(false);
+			ownerLeft();
 			console.log('off')
 		}
 	}
@@ -1450,7 +1451,7 @@ export default function () {
 
 									<div className="flex justify-center mt-5">
 										<div className="flex flex-col items-center gap-3">
-											<button className="bg-none outline-none border-none text-black" onClick={handleShare}>
+											<button className="bg-none outline-none border-none text-black" onClick={() => handleShare(user?.originalId || user?._id)}>
 												<IoMdShare size={40} />
 											</button>
 											<span className="text-black text-lg">Copy Link</span>

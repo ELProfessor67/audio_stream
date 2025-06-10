@@ -1,5 +1,5 @@
 "use client";
-import { useSocketUser } from '@/hooks'
+import useSocketUser from '@/hooks/useSocketUser'
 import { useRef } from 'react'
 import { FiMoreVertical } from 'react-icons/fi'
 import { FaPlay, FaPause } from 'react-icons/fa';
@@ -243,7 +243,7 @@ export default function page({ params }) {
 					<Image className="w-[8rem] h-[8rem] rounded-md" src="/upload/cover/ads.jpeg" width={200} height={200} />
 					<div className="p-4 flex flex-col gap-2 h-full items-center md:items-start">
 						<div>
-							<span className="px-5 py-1 rounded-3xl bg-indigo-500 text-white">{isLive ? 'LIVE' : 'AUTO DJ'}</span>
+							<span className="px-5 py-1 rounded-3xl bg-indigo-500 text-white">{isLive ? 'LIVE' : 'NOT LIVE'}</span>
 						</div>
 						<h3 className="text-xl para">{user?.name}</h3>
 						<h4 className="text-sm opacity-40">You'Listen {user?.name} Radio Channel</h4>
@@ -254,7 +254,7 @@ export default function page({ params }) {
 							{
 								isLive ? 
 								<h4>{nextSong?.user?.name}</h4>
-								: <h4>Auto DJ</h4>
+								: <h4>Not Live</h4>
 							}
 							</>
 						}
@@ -280,7 +280,7 @@ export default function page({ params }) {
 						<input type="range" className="w-[90%]" min={0} max={1} step={0.1} value={volume} onChange={(e) => setVolume(e.target.value)} />
 					</div>
 				</div>
-				<audio  ref={audioRef} controls className="w-full bg-none" onPlay={() => setIsPlay(true)} onPause={() => {setIsPlay(false); console.log("On Pause Called")}} onEnded={() => handleEnded(isPlay)}></audio>
+				<audio  ref={audioRef} className="w-full bg-none" onPlay={() => setIsPlay(true)} onPause={() => {setIsPlay(false); console.log("On Pause Called")}} onEnded={() => handleEnded(isPlay)}></audio>
 			</div>
 			<Dialog open={rOpen} onClose={() => setROPen(false)} name={name} setName={setName}>
 				{

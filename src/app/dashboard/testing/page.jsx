@@ -9,7 +9,7 @@ import axios from 'axios';
 import { FaArrowUpRightFromSquare, FaRegMessage } from 'react-icons/fa6';
 import Link from 'next/link';
 import Dialog from '@/components/Dialog';
-import { useSocket } from '@/hooks';
+import useSocket from '@/hooks/useSocket';
 import { MdModeEdit } from 'react-icons/md'
 import { useDispatch, useSelector } from 'react-redux';
 import { showMessage, showError, clearMessage, clearError } from '@/utils/showAlert'

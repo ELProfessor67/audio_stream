@@ -57,7 +57,7 @@ export const POST = connectDB(async function (req) {
 
         return res;
     } catch (err) {
-        return NextResponse.json({ success: false, message: 'Internal Seerver Error', user }, { status: 501 });
+        return NextResponse.json({ success: false, message: 'Internal Seerver Error' }, { status: 501 });
     }
 });
 

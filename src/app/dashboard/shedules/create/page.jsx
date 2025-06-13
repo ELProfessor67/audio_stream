@@ -211,7 +211,7 @@ const page = () => {
                         }
 
                         <div className='input-group flex flex-col gap-1 mb-6'>
-                            <label for="description" className='text-black text-lg'>Upload Song (Optional)</label>
+                            <label for="description" className='text-black text-lg'>Add your Content (Optional)</label>
                             <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                                 <input type='file' onChange={(e) => fileToBase64(e, setAudio, setAudioEx)} className='w-[95%] outline-none ml-1' id='audio' name='audio' accept="audio/*" />
                             </div>

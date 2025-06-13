@@ -88,8 +88,8 @@ function addOneMinute(hours, minutes) {
 
 
 function checkInTimeRangeForDay(startTime, endTime, user,seconds=0) {
+	console.log(seconds,"duration ending tone....")
 	let now = new Date();
-	now.setSeconds(now.getSeconds() - seconds);
 	let currentHour = now.getUTCHours();
 	let currentMinute = now.getUTCMinutes();
 	let currentSecond = now.getUTCSeconds();
@@ -99,7 +99,7 @@ function checkInTimeRangeForDay(startTime, endTime, user,seconds=0) {
 
 	const currentTimeInSeconds = currentHour * 3600 + currentMinute * 60 + currentSecond;
 	const startTimeInSeconds = startHour * 3600 + startMinute * 60;
-	const endTimeInSeconds = endHour * 3600 + endMinute * 60;
+	let endTimeInSeconds = endHour * 3600 + endMinute * 60;
 
 	// Check if the current day is in the allowed DJ days
 	const checkDay = user?.djDays?.includes(now.getDay().toString());
@@ -123,15 +123,19 @@ function checkInTimeRangeForDay(startTime, endTime, user,seconds=0) {
 
 
 const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setStart, setTimerStart, handleStart, startFirstTimeRef, endingToneDuration, handlePlayWelcome, handlePlayEnd }) => {
-	useEffect(() => {
-		console.log("endingToneDurationRef.current",endingToneDuration)
-	}, [endingToneDuration])
+	
 	const [remainingTime, setRemainingTime] = useState("00:00");
 	const startRef = useRef()
 	const isActiveRef = useRef(false);
 	const [isEndindToneCalled,setIsEndindToneCalled] = useState(false);
 	const [isWelcomeToneCalled,setIsWelcomeToneCalled] = useState(false);
 	const router = useRouter()
+	const durationRef = useRef(0)
+
+	useEffect(() => {
+		console.log("endingToneDurationRef.current",endingToneDuration)
+		durationRef.current = endingToneDuration;
+	}, [endingToneDuration])
 
 	useEffect(() => {
 		startRef.current = start
@@ -140,12 +144,11 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 	useEffect(() => {
 		const calculateRemainingTime = () => {
 			let minusSeconds = 0;
-			if(isActiveRef.current){
-				console.log("hello000000000000",endingToneDuration)
-				minusSeconds = endingToneDuration;
-			}
+			// if(isActiveRef.current){
+			// 	minusSeconds = endingToneDuration;
+			// }
 			console.log(minusSeconds, "hello",isActiveRef.current,endingToneDuration)
-			let { inRange: range, secondsToStart } = checkInTimeRangeForDay(user?.djStartTime, user?.djEndTime, user,minusSeconds)
+			let { inRange: range, secondsToStart } = checkInTimeRangeForDay(user?.djStartTime, user?.djEndTime, user)
 
 			
 			if (!range) {
@@ -199,13 +202,12 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 
 			// Calculate remaining time in milliseconds
 			let timeDiff = endTimeUTC.getTime() - nowUTCTimestamp;
-			timeDiff = timeDiff + (endingToneDuration * 1000);
+			// timeDiff = timeDiff + (endingToneDuration * 1000);
 
 			// If current time is after end time, set remaining time to 0
 			timeDiff = Math.max(0, timeDiff);
-
-			console.log(timeDiff/1000, endingToneDuration, isEndindToneCalled)
-			if(timeDiff/1000 <= endingToneDuration && !isEndindToneCalled){
+			console.log("(timeDiff) - (durationRef.current*1000)",(timeDiff) - (durationRef.current*1000),(timeDiff) - (durationRef.current*1000) <= 0)
+			if(((timeDiff) - (durationRef.current*1000) <= 0) && !isEndindToneCalled){
 				handlePlayEnd();
 				setIsEndindToneCalled(true);
 			}
@@ -1303,7 +1305,7 @@ export default function () {
 				!intractUser &&
 				<div className="w-full h-full bg-black/50 fixed top-0 left-0 z-50 flex items-center justify-center flex-col gap-5">
 					<h2 className="text-white text-2xl">Ready when you are — click to begin.</h2>
-					<button className="bg-indigo-500 border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200n relative" onClick={() => setIntractUser(true)}>Begin</button>
+					<button className="bg-indigo-500 border-none py-6 px-4 outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200n relative rounded-full" onClick={() => setIntractUser(true)}>Begin</button>
 				</div>
 			}
 			<section className="w-full py-5 px-4 reletive">

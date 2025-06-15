@@ -1068,6 +1068,13 @@ export default function () {
 
 	const handleAddPlaylist = (data) => {
 		let clone = JSON.parse(JSON.stringify(selectPlayListSong.songs));
+		let isExistAlready = clone.find(song => song._id == data._id);
+
+		if(isExistAlready){
+			const confirm = window.confirm("This Song is already exist are you sure you want to add ?")
+			if(!confirm) return
+		}
+
 		clone.push(data);
 		setSelectPlayListSong({ ...selectPlayListSong, songs: clone })
 
@@ -1196,11 +1203,14 @@ export default function () {
 	const handleSongDropOnPlaylintList = (e) => {
 		const isPlaylist = e.dataTransfer.getData("isPlaylist");
 		if (isPlaylist) {
+			const confirm = window.confirm("Are you sure you want to add the complete playlist?")
+			if(!confirm) return
 			const id = e.dataTransfer.getData("id");
 			const sourcePlaylist = allplaylists.find(playlist => playlist._id.toString() === id);
 			setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs, ...sourcePlaylist.songs] })
 			return
 		}
+
 		const data = JSON.parse(e.dataTransfer.getData("song"));
 		handleAddPlaylist(data)
 	}

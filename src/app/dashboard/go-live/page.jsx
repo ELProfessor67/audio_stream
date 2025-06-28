@@ -743,6 +743,13 @@ export default function () {
 		}
 	}
 
+	const handleSongPause = () => {
+		if (songPlaying) {
+			setSongPlaying(false);
+			pauseSong();
+		}
+	}
+
 
 	const handleMessageSubmit = async (e) => {
 		e.preventDefault();
@@ -1293,6 +1300,7 @@ export default function () {
 		if(isEndedRef.current) return;
 		isEndedRef.current = true;
 		console.log("ending tone")
+		handleSongPause();
 		const audio = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${user?.endingTone}`);
 		audio.play().then(() => {
 			console.log("ending tone played")

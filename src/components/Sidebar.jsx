@@ -283,25 +283,25 @@ export default function Sidebar(){
             show: isAllow('dashboard'),
             desc: "overview of channel"
         },
-        // {
-        //     icon: <BsCloudUpload size={30}/>,
-        //     text:  `${user?.isDJ ? 'DJ' : 'Admin'} Uploads Song`,
-        //     alert: false,
-        //     active: pathname == '/dashboard/songs/upload',
-        //     link: '/dashboard/songs/upload',
-        //     show: isAllow('songs'),
-        //     desc: "You are able to upload your songs"
+        {
+            icon: <BsCloudUpload size={30}/>,
+            text:  `${user?.isDJ ? 'DJ' : 'Admin'} Uploads Song`,
+            alert: false,
+            active: pathname == '/dashboard/songs/upload',
+            link: '/dashboard/songs/upload',
+            show: isAllow('songs'),
+            desc: "You are able to upload your songs"
     
-        // },
-        // {
-        //     icon: <GiLoveSong size={30}/>,
-        //     text: `${user?.isDJ ? 'DJ' : 'Admin'} Uploaded Songs`,
-        //     alert: false,
-        //     active: pathname == '/dashboard/songs',
-        //     link: '/dashboard/songs',
-        //     show: true,
-        //     desc: "All your uploaded songs will display here"
-        // },
+        },
+        {
+            icon: <GiLoveSong size={30}/>,
+            text: `${user?.isDJ ? 'DJ' : 'Admin'} Uploaded Songs`,
+            alert: false,
+            active: pathname == '/dashboard/songs',
+            link: '/dashboard/songs',
+            show: true,
+            desc: "All your uploaded songs will display here"
+        },
         // {
         //     icon: <MdPlaylistAdd size={30}/>,
         //     text: `${user?.isDJ ? 'DJ' : 'Admin'} Create Playlist`,

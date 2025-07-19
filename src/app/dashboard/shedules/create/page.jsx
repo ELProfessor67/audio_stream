@@ -87,6 +87,9 @@ const page = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+        if(!user.isDJ){
+            return alert('you are admin, you can not create schedule');
+        }
         try {
             let selectedSong1 = selectedSong
             if (audiofile) {
@@ -165,6 +168,12 @@ const page = () => {
         <section className='w-full py-5 px-4'>
             <div className='flex justify-start items-center h-full flex-col'>
                 <h1 className='main-heading mb-10'>Create Song Schedule</h1>
+                {
+                    !user?.isDJ &&
+                    <div className='w-[40rem] max-w-[40rem] border border-x-gray-100 shadow-md p-3 rounded-md mb-6'>
+                        <h1 className='text-red-500 text-lg font-semibold'>You are admin, you can not create schedule</h1>
+                    </div>
+                }
                 <div className='w-[40rem] max-w-[40rem] border border-x-gray-100 shadow-md p-3 rounded-md mb-6'>
                     <form className='p-3 px-6' onSubmit={handleSubmit}>
                         {

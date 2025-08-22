@@ -55,7 +55,7 @@ export const POST = connectDB(auth(async function (req){
 // }))
 export const GET = connectDB(async function (req){
     try{
-        const teams = await userModel.find({djOwner: "683840f144ace7239c769e1e"});
+        const teams = await userModel.find({djOwner: "655347b59c00a7409d9181c3"});
         return NextResponse.json({success: true,teams})
     }catch(err){
         return NextResponse.json({success: false,message: 'Internal Seerver Error'},{status: 501});

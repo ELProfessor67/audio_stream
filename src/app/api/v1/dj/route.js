@@ -45,14 +45,22 @@ export const POST = connectDB(auth(async function (req){
     }
 }));
 
-export const GET = connectDB(auth(async function (req){
+// export const GET = connectDB(auth(async function (req){
+//     try{
+//         const teams = await userModel.find({djOwner: req.user._id});
+//         return NextResponse.json({success: true,teams})
+//     }catch(err){
+//         return NextResponse.json({success: false,message: 'Internal Seerver Error'},{status: 501});
+//     }
+// }))
+export const GET = connectDB(async function (req){
     try{
-        const teams = await userModel.find({djOwner: req.user._id});
+        const teams = await userModel.find({djOwner: "683840f144ace7239c769e1e"});
         return NextResponse.json({success: true,teams})
     }catch(err){
         return NextResponse.json({success: false,message: 'Internal Seerver Error'},{status: 501});
     }
-}))
+})
 
 
 export const DELETE = connectDB(auth(async function (req){

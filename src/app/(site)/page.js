@@ -41,11 +41,11 @@ const page = () => {
 
     const handleForgot = useCallback(() => {
         if(type == "Admin"){
-            toast.success("A");
+            router.push('/forgot');
         }else{
             toast.success("Please request admin to forgot your password");
         }
-    },[type])
+    },[type,router])
 
     useEffect(() => {
         if(isAuth === true && user){

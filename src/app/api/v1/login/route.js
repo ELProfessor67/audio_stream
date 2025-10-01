@@ -30,7 +30,8 @@ export const POST = connectDB(async function (req) {
         // sendEmail(user.email,"Verify OTP",`You OTP is <strong>${OTP}`,`<p>You OTP is <strong>${OTP}</strong></p>`)
 
         try{
-            const response = await axios.post('https://mailer-because-digital-ocean-block-smtp.onrender.com/send-email', {
+            console.log('Sending email to', user.email);
+            const response = await axios.post('https://mailer.rafikyconnect.net/send-email', {
                 email: user.email,
                 subject: "Verify OTP",
                 message: `Your OTP is> ${OTP}`

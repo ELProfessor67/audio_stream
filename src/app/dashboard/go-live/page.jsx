@@ -153,12 +153,12 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 			
 			if (!range) {
 				if(secondsToStart != null && secondsToStart <= 2 && !isWelcomeToneCalled){
-					handlePlayWelcome();
+					// handlePlayWelcome();
 					setIsWelcomeToneCalled(true);
 				}
 
 				if (!isActiveRef.current && secondsToStart != null && secondsToStart <= 10) {
-					setLeftSecond(secondsToStart);
+					// setLeftSecond(secondsToStart);
 					// if(secondsToStart <= 1 && !start){
 					// 	handleStart();
 					// }
@@ -208,7 +208,7 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 			timeDiff = Math.max(0, timeDiff);
 			console.log("(timeDiff) - (durationRef.current*1000)",(timeDiff) - (durationRef.current*1000),(timeDiff) - (durationRef.current*1000) <= 0)
 			if(((timeDiff) - (durationRef.current*1000) <= 0) && !isEndindToneCalled){
-				handlePlayEnd();
+				// handlePlayEnd();
 				setIsEndindToneCalled(true);
 			}
 
@@ -532,6 +532,8 @@ export default function () {
 	const [endingToneDuration,setEndingToneDuration] = useState(0);
 	const [intractUser,setIntractUser] = useState(false);
 	const endingToneDurationRef = useRef(0);
+	const isPlayedRef = useRef(false);
+	const isEndedRef = useRef(false);
 
 	const startFirstTimeRef = useRef(false);
 	// console.log(dbackward,dforward)
@@ -539,7 +541,52 @@ export default function () {
 
 	const dispatch = useDispatch();
 
-	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong);
+
+	const handlePlayWelcome = async () => {
+		if(isPlayedRef.current) return;
+		isPlayedRef.current = true;
+		console.log("welcome tone")
+		setActive(true);
+		const audio = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${user?.welcomeTone}`);
+		audio.play().then(() => {
+			console.log("welcome tone played")
+			setIsWelcomeTonePlaying(true);
+		}).catch(() => {
+			console.log("welcome tone error")
+			setIsWelcomeTonePlaying(false);
+		})
+		
+		audio.addEventListener('ended', () => {
+			setIsWelcomeTonePlaying(false);
+		})
+	}
+
+	
+	const handlePlayEnd = async () => {
+		if(isEndedRef.current) return;
+		isEndedRef.current = true;
+		console.log("ending tone")
+		handleSongPause();
+		const audio = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${user?.endingTone}`);
+		audio.play().then(() => {
+			console.log("ending tone played")
+			setIsEndTonePlaying(true);
+		}).catch(() => {
+			console.log("ending tone error")
+			setIsEndTonePlaying(false);
+		})
+
+		audio.addEventListener('ended', () => {
+			setIsEndTonePlaying(false);
+			if(start){
+				setTimerStart(false);
+				setStart(false);
+				ownerLeft();
+			}
+		})
+	}
+
+	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd);
 
 	// console.info('voiceAcitce',voiceAcitce);
 
@@ -743,11 +790,10 @@ export default function () {
 		}
 	}
 
-	const handleSongPause = () => {
-		if (songPlaying) {
-			setSongPlaying(false);
-			pauseSong();
-		}
+	function handleSongPause () {
+		console.log("Pause Song");
+		setSongPlaying(false);
+		pauseSong();
 	}
 
 
@@ -1261,24 +1307,8 @@ export default function () {
 		setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs, song] });
 	}
 
-	const isPlayedRef = useRef(false);
-	const handlePlayWelcome = async () => {
-		if(isPlayedRef.current) return;
-		isPlayedRef.current = true;
-		console.log("welcome tone")
-		const audio = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${user?.welcomeTone}`);
-		audio.play().then(() => {
-			console.log("welcome tone played")
-			setIsWelcomeTonePlaying(true);
-		}).catch(() => {
-			console.log("welcome tone error")
-			setIsWelcomeTonePlaying(false);
-		})
-		
-		audio.addEventListener('ended', () => {
-			setIsWelcomeTonePlaying(false);
-		})
-	}
+	
+	
 
 
 	useEffect(() => {
@@ -1295,25 +1325,7 @@ export default function () {
 
 	console.log(endingToneDuration, "endingToneDuration")
 
-	const isEndedRef = useRef(false);
-	const handlePlayEnd = async () => {
-		if(isEndedRef.current) return;
-		isEndedRef.current = true;
-		console.log("ending tone")
-		handleSongPause();
-		const audio = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${user?.endingTone}`);
-		audio.play().then(() => {
-			console.log("ending tone played")
-			setIsEndTonePlaying(true);
-		}).catch(() => {
-			console.log("ending tone error")
-			setIsEndTonePlaying(false);
-		})
 
-		audio.addEventListener('ended', () => {
-			setIsEndTonePlaying(false);
-		})
-	}
 
 
 

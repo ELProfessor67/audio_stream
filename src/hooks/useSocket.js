@@ -104,7 +104,7 @@ const sleep = ms => new Promise(r => window.setTimeout(r, ms))
 
 
 
-const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong) => {
+const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd) => {
 	const socketRef = useRef();
 	const { user } = useSelector(store => store.user);
 	const peersRef = useRef({});
@@ -176,6 +176,9 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	const callerDetailsRef = useRef({});
 	const callsElementRef = useRef(null);
 	const nextSongRef = useRef({});
+	const socketListnerRef = useRef(null);
+
+
 
 
 
@@ -991,12 +994,42 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			setcallComing(false);
 		})
 
+		
+
 		return () => {
 			socketRef.current?.off('recieve-request-song');
 			socketRef.current?.off('user-disconnet');
 			socketRef.current?.off('receive-message');
+			socketRef.current?.off('play-ending-tone');
+			socketRef.current?.off('play-welcome-tone');
 		}
 	}, [socketRef.current]);
+
+
+
+
+	useEffect(() => {
+		socketListnerRef.current = socketInit();
+		let userTemp = JSON.parse(JSON.stringify(user));
+		console.log(userTemp?._id,"roomiddddddddddd")
+		socketListnerRef.current.emit('user-join', { roomId: userTemp?._id });
+
+
+		socketListnerRef.current?.on('play-ending-tone', (data) => {
+			console.log("Ending Tone called!");
+			handlePlayEnd();
+		});
+
+		socketListnerRef.current?.on('play-welcome-tone', (data) => {
+			console.log("Welcome Tone called!");
+			handlePlayWelcome();
+		});
+
+		return () => {
+			socketListnerRef.current?.off('play-ending-tone');
+			socketListnerRef.current?.off('play-welcome-tone');
+		}
+	},[user])
 
 
 	useEffect(() => {
@@ -1171,7 +1204,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		const listeners = Object.keys(peersRef.current).length;
 
 		Object.keys(peersRef.current).forEach((peerId) => {
-			peersRef.current[peerId].destroy();
+			peersRef.current[peerId]?.destroy();
 			delete peersRef.current[peerId];
 		});
 

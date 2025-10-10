@@ -174,7 +174,7 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 				isActiveRef.current = true;
 			}
 
-			setActive(isActiveRef.current);
+			// setActive(isActiveRef.current);
 
 			if (!user || !user.djStartTime || !user.djEndTime) {
 				setRemainingTime("00:00");
@@ -578,11 +578,12 @@ export default function () {
 
 		audio.addEventListener('ended', () => {
 			setIsEndTonePlaying(false);
-			if(start){
+			// if(start){
 				setTimerStart(false);
 				setStart(false);
+				setActive(false);
 				ownerLeft();
-			}
+			// }
 		})
 	}
 

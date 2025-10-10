@@ -1195,9 +1195,9 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 		console.log('left')
 
-		socketRef.current.disconnect();
+		socketRef.current?.disconnect();
 		setMicOn(false);
-		localStreamRef.current.getTracks().forEach(track => track.enabled = false);
+		localStreamRef.current?.getTracks().forEach(track => track.enabled = false);
 
 
 

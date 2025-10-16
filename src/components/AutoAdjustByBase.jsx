@@ -10,7 +10,6 @@ const AutoAdjustByBase = ({ songPlaying, songBase, handleVolumeChange,userChange
                 handleVolumeChange(0.15);
             }
         } else if (songPlaying && !userChangeVolume) {
-            console.log("Adjusting...")
             let adjustedVolume = volume.current;
 
             // // Normalize volume based on the song base level

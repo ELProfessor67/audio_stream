@@ -803,7 +803,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 	const changeValume = (value) => {
 		if (gainNodeRef.current?.gain && gainNodeStreamRef.current?.gain) {
-			console.log('inside song volume')
+			
 			gainNodeRef.current.gain.value = value;
 			gainNodeStreamRef.current.gain.value = value;
 		}
@@ -1204,7 +1204,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		const listeners = Object.keys(peersRef.current).length;
 
 		Object.keys(peersRef.current).forEach((peerId) => {
-			peersRef.current[peerId]?.destroy();
+			peersRef.current[peerId]?.close();
 			delete peersRef.current[peerId];
 		});
 

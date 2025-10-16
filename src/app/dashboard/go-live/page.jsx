@@ -1324,8 +1324,6 @@ export default function () {
 		}
 	}, [user])
 
-	console.log(endingToneDuration, "endingToneDuration")
-
 
 
 

@@ -177,6 +177,9 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	const callsElementRef = useRef(null);
 	const nextSongRef = useRef({});
 	const socketListnerRef = useRef(null);
+	const breakLookRef = useRef(false);
+	const songAnimationFrameIdRef = useRef(null);
+	const filterAnimationFrameIdRef = useRef(null);
 
 
 
@@ -268,6 +271,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	}
 
 
+	
 	function getSongStream(songUrl, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setduration, isFilter = false) {
 		return fetch(songUrl)
 			.then(response => response.arrayBuffer())
@@ -302,6 +306,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 						let startTime = audioContext.currentTime;
 						setduration(Math.floor(source.buffer.duration));
 						console.info('startTime', startTime)
+						breakLookRef.current = true;
 						const updateProgess = () => {
 							const currentTime = audioContext.currentTime;
 							const duration = source.buffer.duration;
@@ -316,7 +321,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 							if (isFilter) {
 								if (currentTime < duration && filterPlayingRef.current) {
-									requestAnimationFrame(updateProgess);
+										requestAnimationFrame(updateProgess);
 								} else {
 									if (filterPlayingRef.current && isFilter) {
 										console.log('next filter');
@@ -327,7 +332,11 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 								if (currentTime < duration && songPlayRef.current) {
-									requestAnimationFrame(updateProgess);
+									if(breakLookRef.current == true){
+										requestAnimationFrame(updateProgess);
+									}else{
+										console.log('break look ref', breakLookRef.current);
+									}
 								} else {
 									if (songPlayRef.current && !isFilter && continuePlayRef.current === true) {
 										const sindex = selectPlayListSongRef.current?.songs?.indexOf(selectedSongRef.current);
@@ -413,6 +422,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			})
 			.catch(error => console.error('Error loading song:', error));
 	}
+
 
 
 
@@ -695,6 +705,8 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	async function playSong(url, volume) {
 		console.log(url);
 
+		breakLookRef.current = false;
+		await sleep(2000);
 		if (songStreamloading) {
 			console.log('stream loading true')
 			return

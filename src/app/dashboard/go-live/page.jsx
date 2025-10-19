@@ -63,6 +63,8 @@ function addOneMinute(hours, minutes) {
 	return [hours, minutes];
 }
 
+const sleep = ms => new Promise(r => setTimeout(r, ms))
+
 // function checkInTimeRangeForDay(startTime, endTime, user) {
 // 	let currentHour = new Date().getUTCHours();
 // 	let currentMinute = new Date().getUTCMinutes();
@@ -172,9 +174,9 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 
 			if(range && !isActiveRef.current){
 				isActiveRef.current = true;
+				setActive(true);
 			}
 
-			// setActive(isActiveRef.current);
 
 			if (!user || !user.djStartTime || !user.djEndTime) {
 				setRemainingTime("00:00");
@@ -761,7 +763,7 @@ export default function () {
 	}
 
 
-	function handleSelectedSong(data, index) {
+	async function handleSelectedSong(data, index) {
 		setSeletedSong(data);
 		setOpen(false);
 		setSongPlaying(true);

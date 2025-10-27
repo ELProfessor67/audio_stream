@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { MdAlternateEmail, MdAudiotrack, MdKey, MdDateRange, MdPlaylistAdd } from 'react-icons/md'
+import { MdAlternateEmail, MdAudiotrack, MdKey, MdDateRange, MdPlaylistAdd, MdDelete } from 'react-icons/md'
 import Link from 'next/link'
 import { MdOutlineSubtitles, MdDescription, MdPhoto } from 'react-icons/md';
 import { IoMdTime } from 'react-icons/io';
@@ -12,6 +12,8 @@ import { FaArrowUpRightFromSquare } from 'react-icons/fa6';
 import { showMessage, showError, clearMessage, clearError } from '@/utils/showAlert';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
+import { BsEye, BsViewList } from 'react-icons/bs';
+import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 
 const days = {
     0: "Sunday",
@@ -40,10 +42,11 @@ const page = () => {
     const [songTitle, setSongTitle] = useState('');
     const [isShowRole, setShowRole] = useState(false);
     const [role, setRole] = useState(undefined);
-
+    const [viewSongs, setViewSongs] = useState(false);
     const [loading, setLoading] = useState(false);
     const dispatch = useDispatch();
     const { user } = useSelector(store => store.user);
+    const [mappedSongs, setMappedSongs] = useState({});
 
     useEffect(() => {
         if (user && user.role) {
@@ -68,7 +71,11 @@ const page = () => {
         setSongOpen(false)
     }
 
-    const handleCheckbox = (id) => {
+    const handleCheckbox = (id,data) => {
+        setMappedSongs(prev => ({
+            ...prev,
+            [id]: data
+        }));
         setSelectedSong(prev => {
             if (prev.includes(id)) {
                 return prev.filter(_id => _id != id);
@@ -87,7 +94,7 @@ const page = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        if(!user.isDJ){
+        if (!user.isDJ) {
             return alert('you are admin, you can not create schedule');
         }
         try {
@@ -99,7 +106,7 @@ const page = () => {
             if (selectedSong1.length === 0) {
                 return alert('plase select at least 1 song');
             }
-            const { data } = await axios.post('/api/v1/schedule', { day: selectedDay, songs: selectedSong1,role: user?.role ? undefined : role });
+            const { data } = await axios.post('/api/v1/schedule', { day: selectedDay, songs: selectedSong1, role: user?.role ? undefined : role });
             setSelectedDay('0')
 
             setSelectedSong([]);
@@ -164,6 +171,26 @@ const page = () => {
         reader.readAsDataURL(file);
     }
 
+
+    function handleOnDragEnd(result) {
+        if (!result.destination) return;
+
+        let items = Array.from(selectedSong);
+        let [reorderedItem] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, reorderedItem);
+        setSelectedSong(items);
+    }
+
+
+    const handleDelete = async (index) => {
+        try {
+            let items = selectedSong.filter((s,i) => i != index);
+            setSelectedSong(items);
+        } catch (error) {
+            console.log('Getting Error During Delete',error.message)
+        }
+    }
+
     return (
         <section className='w-full py-5 px-4'>
             <div className='flex justify-start items-center h-full flex-col'>
@@ -208,15 +235,29 @@ const page = () => {
 
                         {
                             role == "dj" &&
-                            <div className='input-group flex flex-col gap-1 mb-6'>
-                                <label for="description" className='text-black text-lg'>Select Songs</label>
-                                <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
-                                    <MdPlaylistAdd size={20} className='text-gray-400' />
-                                    <button type="button" className="w-full h-full text-gray-400 text-left bg-none border-none outline-none px-1" onClick={() => setOpen(true)}>
-                                        {selectedSong.length === 0 ? "Select Song" : `${selectedSong.length} song seleted`}
-                                    </button>
-                                </div>
-                            </div>
+
+                            (
+                                <>
+                                    <div className='input-group flex flex-col gap-1 mb-6'>
+                                        <label for="description" className='text-black text-lg'>Select Songs</label>
+                                        <div className='flex items-center gap-2'>
+                                            <div className='flex flex-1 items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
+                                                <MdPlaylistAdd size={20} className='text-gray-400' />
+                                                <button type="button" className="w-full h-full text-gray-400 text-left bg-none border-none outline-none px-1" onClick={() => setOpen(true)}>
+                                                    {selectedSong.length === 0 ? "Select Song" : `${selectedSong.length} song seleted`}
+                                                </button>
+                                            </div>
+
+                                            <button title='View Songs' type='button' className='bg-none outline-none border-none'>
+                                                <BsEye size={20} className='text-blue-400 cursor-pointer' onClick={() => setViewSongs(true)} title='View Songs' />
+                                            </button>
+                                        </div>
+                                    </div>
+
+
+                                </>
+                            )
+
                         }
 
                         <div className='input-group flex flex-col gap-1 mb-6'>
@@ -267,13 +308,48 @@ const page = () => {
                             </div>
 
                             <div className="mr-10">
-                                <input type="checkbox" className="p-4" checked={selectedSong.includes(data._id)} onChange={() => handleCheckbox(data._id)} />
+                                <input type="checkbox" className="p-4" checked={selectedSong.includes(data._id)} onChange={() => handleCheckbox(data._id,data)} />
                             </div>
                         </div>
                     ))
                 }
             </Dialog>
 
+
+            <Dialog open={viewSongs} onClose={() => setViewSongs(false)} heading={'View Songs'}>
+                <div className='p-2'>
+                    <DragDropContext onDragEnd={handleOnDragEnd}>
+                        <Droppable droppableId="characters">
+                            {(provided) => (
+                                <div {...provided.droppableProps} ref={provided.innerRef}>
+                                    {
+                                        selectedSong && selectedSong?.map((_id, index) => (
+                                            <Draggable key={mappedSongs[_id]?._id.toString()} draggableId={mappedSongs[_id]?._id.toString()} index={index}>
+                                                {(provided) => (
+                                                    <div className={`flex justify-between items-center my-6 rounded-md`} ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
+                                                        <div className="flex items-center gap-4">
+                                                            <span className="text-black text-2xl">{index + 1}</span>
+                                                            <Image src={mappedSongs[_id]?.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
+                                                            <div>
+                                                                <h2 className="text-xl text-black">{mappedSongs[_id]?.title?.slice(0, 40)}</h2>
+                                                                <p className="para"> ~ {mappedSongs[_id]?.artist} - {mappedSongs[_id]?.album}</p>
+
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <button className="p-2 rounded-full text-red-400 hover:text-white hover:bg-red-400 mr-4"><MdDelete size={20} onClick={() => handleDelete(index)} /></button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </Draggable>
+                                        ))
+                                    }
+                                </div>
+                            )}
+                        </Droppable>
+                    </DragDropContext>
+                </div>
+            </Dialog>
         </section>
     )
 }

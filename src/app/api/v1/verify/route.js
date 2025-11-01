@@ -16,7 +16,7 @@ export const POST = connectDB(async function (req) {
             name: 'token',
             value: token,
             httpOnly: true,
-            expires: new Date(Date.now() + Number(process.env.TOEKN_EXPIRE) * 24 * 60 * 60 * 1000)
+            expires: new Date(Date.now() + Number(process.env.TOEKN_EXPIRE) * 60 * 60 * 1000)
         });
 
         return res;

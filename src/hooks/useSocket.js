@@ -552,7 +552,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 	function getSongStream(songUrl, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setduration, isFilter = false) {
 		return new Promise((resolve, reject) => {
-			const audio = new Audio(songUrl);
+			const audio = new Audio("/audio/audip.mp3");
 			audio.muted = false;
 			
 			audio.addEventListener('canplaythrough', () => {

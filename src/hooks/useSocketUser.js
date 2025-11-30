@@ -3,6 +3,7 @@ import { useRef, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import Peer from 'simple-peer';
 import Hls from 'hls.js';
+import { useLive } from '@/context/LiveContext';
 
 
 const peerConfig = {
@@ -137,9 +138,8 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 	const peerRef = useRef({});
 	const [owner, setOwner] = useState('');
 	const ownerRef = useRef();
-	const [roomActive, setRoomActive] = useState(false);
+	
 	const [scheduleActive, setScheduleActive] = useState(false);
-	const [isLive, setIsLive] = useState(false);
 	const [autodj, setAutoDj] = useState(false);
 	const [messageList, setMessageList] = useState([]);
 	const [nextSong, setNextSong] = useState({});
@@ -152,6 +152,8 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 	const myAudioStreamRef = useRef();
 	const hlsSetAlreadyRef = useRef(false);
 	const hlsRef = useRef();
+
+	const { roomRef, isLive, setIsLive, roomActive, setRoomActive } = useLive();
 
 
 	useEffect(() => {
@@ -648,23 +650,32 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 
 
 		socketRef.current.on('call-response', (data) => {
-			if (data.response) {
+			// if (data.response) {
 
+			// 	setCallStatus('accepted');
+			// 	audioRef.current.play();
+
+			// 	//replace tracks
+			// 	const audioSender = peerRef.current.getSenders().find(sender => sender.track && sender.track.kind === "audio");
+			// 	if (audioSender && myAudioStreamRef.current.getAudioTracks().length > 0) {
+			// 		const newAudioTrack = myAudioStreamRef.current.getAudioTracks()[0];
+			// 		// Replace the existing track with the new audi track
+			// 		audioSender.replaceTrack(newAudioTrack);
+			// 		console.log("✅ Audio track replaced successfully!");
+			// 	} else {
+			// 		console.warn("⚠️ No audio sender found or new stream has no audio track.");
+			// 	}
+
+			// 	// peerRef.current.replaceTrack(myStreamRef.current?.getTracks().find((track) => track.kind === 'audio'), myAudioStreamRef.current.getTracks().find((track) => track.kind === 'audio'), myStreamRef.current);
+			// } else {
+			// 	setCallStatus('rejected');
+			// }
+
+
+			if(data.response){
 				setCallStatus('accepted');
+				roomRef.current.localParticipant.setMicrophoneEnabled(true);
 				audioRef.current.play();
-
-				//replace tracks
-				const audioSender = peerRef.current.getSenders().find(sender => sender.track && sender.track.kind === "audio");
-				if (audioSender && myAudioStreamRef.current.getAudioTracks().length > 0) {
-					const newAudioTrack = myAudioStreamRef.current.getAudioTracks()[0];
-					// Replace the existing track with the new audi track
-					audioSender.replaceTrack(newAudioTrack);
-					console.log("✅ Audio track replaced successfully!");
-				} else {
-					console.warn("⚠️ No audio sender found or new stream has no audio track.");
-				}
-
-				// peerRef.current.replaceTrack(myStreamRef.current?.getTracks().find((track) => track.kind === 'audio'), myAudioStreamRef.current.getTracks().find((track) => track.kind === 'audio'), myStreamRef.current);
 			} else {
 				setCallStatus('rejected');
 			}
@@ -672,10 +683,14 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 
 
 		socketRef.current.on('admin-call-cut', (data) => {
-			myStreamRef.current?.getTracks().forEach(track => track.stop());
-			myAudioStreamRef.current?.getTracks().forEach(track => track.stop());
-			// peerRef.current.removeStream(myStreamRef.current);
+			// myStreamRef.current?.getTracks().forEach(track => track.stop());
+			// myAudioStreamRef.current?.getTracks().forEach(track => track.stop());
+			// // peerRef.current.removeStream(myStreamRef.current);
+			// setCallStatus('complete');
+			// audioRef.current.pause();
+
 			setCallStatus('complete');
+			roomRef.current.localParticipant.setMicrophoneEnabled(false);
 			audioRef.current.pause();
 		});
 
@@ -721,11 +736,13 @@ const useSocket = (streamId, audioRef, name, isPlay, setIsPlay, message, setMess
 	}
 
 	async function cutCall() {
-		myStreamRef.current?.getTracks().forEach(track => track.stop());
-		myAudioStreamRef.current?.getTracks().forEach(track => track.stop());
+		// myStreamRef.current?.getTracks().forEach(track => track.stop());
+		// myAudioStreamRef.current?.getTracks().forEach(track => track.stop());
 		// peerRef.current.removeStream(myStreamRef.current);
 		socketRef.current.emit('cut-admin', { roomId: streamId });
 		setCallStatus('complete');
+		roomRef.current.localParticipant.setMicrophoneEnabled(false);
+		audioRef.current.pause();
 	}
 
 

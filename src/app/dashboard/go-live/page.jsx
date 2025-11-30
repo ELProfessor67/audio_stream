@@ -36,6 +36,7 @@ import RenamePlaylistComponents from '@/components/RenamePlaylistComponents';
 // import VolumePopup from '@/components/VolumePopup';
 // import VolumePopupsDeck from '@/components/VolumePopupsDeck';
 import AutoAdjustByBase from '@/components/AutoAdjustByBase';
+import { useLive } from '@/context/LiveContext';
 
 function addOneMinute(hours, minutes) {
 	// Split the time string into hours and minutes
@@ -89,8 +90,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms))
 // }
 
 
-function checkInTimeRangeForDay(startTime, endTime, user,seconds=0) {
-	console.log(seconds,"duration ending tone....")
+function checkInTimeRangeForDay(startTime, endTime, user, seconds = 0) {
+	console.log(seconds, "duration ending tone....")
 	let now = new Date();
 	let currentHour = now.getUTCHours();
 	let currentMinute = now.getUTCMinutes();
@@ -124,18 +125,18 @@ function checkInTimeRangeForDay(startTime, endTime, user,seconds=0) {
 
 
 
-const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setStart, setTimerStart, handleStart, startFirstTimeRef, endingToneDuration, handlePlayWelcome, handlePlayEnd }) => {
-	
+const TimeRemaining = ({ setLeftSecond, user, setActive, ownerLeft, start, setStart, setTimerStart, handleStart, startFirstTimeRef, endingToneDuration, handlePlayWelcome, handlePlayEnd }) => {
+
 	const [remainingTime, setRemainingTime] = useState("00:00");
 	const startRef = useRef()
 	const isActiveRef = useRef(false);
-	const [isEndindToneCalled,setIsEndindToneCalled] = useState(false);
-	const [isWelcomeToneCalled,setIsWelcomeToneCalled] = useState(false);
+	const [isEndindToneCalled, setIsEndindToneCalled] = useState(false);
+	const [isWelcomeToneCalled, setIsWelcomeToneCalled] = useState(false);
 	const router = useRouter()
 	const durationRef = useRef(0)
 
 	useEffect(() => {
-		console.log("endingToneDurationRef.current",endingToneDuration)
+		console.log("endingToneDurationRef.current", endingToneDuration)
 		durationRef.current = endingToneDuration;
 	}, [endingToneDuration])
 
@@ -149,12 +150,12 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 			// if(isActiveRef.current){
 			// 	minusSeconds = endingToneDuration;
 			// }
-			console.log(minusSeconds, "hello",isActiveRef.current,endingToneDuration)
+			console.log(minusSeconds, "hello", isActiveRef.current, endingToneDuration)
 			let { inRange: range, secondsToStart } = checkInTimeRangeForDay(user?.djStartTime, user?.djEndTime, user)
 
-			
+
 			if (!range) {
-				if(secondsToStart != null && secondsToStart <= 2 && !isWelcomeToneCalled){
+				if (secondsToStart != null && secondsToStart <= 2 && !isWelcomeToneCalled) {
 					// handlePlayWelcome();
 					setIsWelcomeToneCalled(true);
 				}
@@ -164,7 +165,7 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 					// if(secondsToStart <= 1 && !start){
 					// 	handleStart();
 					// }
-				}else{
+				} else {
 					setLeftSecond(null);
 				}
 				setRemainingTime(`${convertUTCToLocalTime(user?.djStartTime)} to ${convertUTCToLocalTime(user?.djEndTime)}`);
@@ -172,7 +173,7 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 				return
 			}
 
-			if(range && !isActiveRef.current){
+			if (range && !isActiveRef.current) {
 				isActiveRef.current = true;
 				setActive(true);
 			}
@@ -208,8 +209,8 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 
 			// If current time is after end time, set remaining time to 0
 			timeDiff = Math.max(0, timeDiff);
-			console.log("(timeDiff) - (durationRef.current*1000)",(timeDiff) - (durationRef.current*1000),(timeDiff) - (durationRef.current*1000) <= 0)
-			if(((timeDiff) - (durationRef.current*1000) <= 0) && !isEndindToneCalled){
+			console.log("(timeDiff) - (durationRef.current*1000)", (timeDiff) - (durationRef.current * 1000), (timeDiff) - (durationRef.current * 1000) <= 0)
+			if (((timeDiff) - (durationRef.current * 1000) <= 0) && !isEndindToneCalled) {
 				// handlePlayEnd();
 				setIsEndindToneCalled(true);
 			}
@@ -528,16 +529,17 @@ export default function () {
 	const [renameOpen, setRenameOpen] = useState(false);
 	const [showTitle, setShowTitle] = useState(false);
 	const [userChangeVolume, setUserChangeVolume] = useState(false);
-	const [leftSecond,setLeftSecond] = useState(null);
-	const [isWelcomeTonePlaying,setIsWelcomeTonePlaying] = useState(false);
-	const [isEndTonePlaying,setIsEndTonePlaying] = useState(false);
-	const [endingToneDuration,setEndingToneDuration] = useState(0);
-	const [intractUser,setIntractUser] = useState(false);
+	const [leftSecond, setLeftSecond] = useState(null);
+	const [isWelcomeTonePlaying, setIsWelcomeTonePlaying] = useState(false);
+	const [isEndTonePlaying, setIsEndTonePlaying] = useState(false);
+	const [endingToneDuration, setEndingToneDuration] = useState(0);
+	const [intractUser, setIntractUser] = useState(false);
 	const endingToneDurationRef = useRef(0);
 	const isPlayedRef = useRef(false);
 	const isEndedRef = useRef(false);
 
 	const startFirstTimeRef = useRef(false);
+
 	// console.log(dbackward,dforward)
 
 
@@ -545,51 +547,35 @@ export default function () {
 
 
 	const handlePlayWelcome = async () => {
-		if(isPlayedRef.current) return;
+		if (isPlayedRef.current) return;
 		isPlayedRef.current = true;
-		console.log("welcome tone")
 		setActive(true);
-		const audio = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${user?.welcomeTone}`);
-		audio.play().then(() => {
-			console.log("welcome tone played")
-			setIsWelcomeTonePlaying(true);
-		}).catch(() => {
-			console.log("welcome tone error")
-			setIsWelcomeTonePlaying(false);
-		})
-		
-		audio.addEventListener('ended', () => {
-			setIsWelcomeTonePlaying(false);
-		})
+		setIsWelcomeTonePlaying(true);
 	}
 
-	
+
+	const handleWelcomeTonePlayed = () => {
+		setIsWelcomeTonePlaying(false);
+	}
+
+
 	const handlePlayEnd = async () => {
-		if(isEndedRef.current) return;
+		if (isEndedRef.current) return;
 		isEndedRef.current = true;
-		console.log("ending tone")
 		handleSongPause();
-		const audio = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${user?.endingTone}`);
-		audio.play().then(() => {
-			console.log("ending tone played")
-			setIsEndTonePlaying(true);
-		}).catch(() => {
-			console.log("ending tone error")
-			setIsEndTonePlaying(false);
-		})
-
-		audio.addEventListener('ended', () => {
-			setIsEndTonePlaying(false);
-			// if(start){
-				setTimerStart(false);
-				setStart(false);
-				setActive(false);
-				ownerLeft();
-			// }
-		})
+		setIsEndTonePlaying(true);
 	}
 
-	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd);
+	const handleEndTonePlayed = () => {
+		setTimerStart(false);
+		setStart(false);
+		setActive(false);
+		ownerLeft();
+		setIsEndTonePlaying(false);
+	}
+
+	const { participantCount, roomRef } = useLive();
+	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd, handleWelcomeTonePlayed, handleEndTonePlayed, roomRef);
 
 	// console.info('voiceAcitce',voiceAcitce);
 
@@ -754,7 +740,7 @@ export default function () {
 			console.log('handle start')
 		} else {
 			const confirmOff = window.confirm("Are you sure you want to end the live stream?");
-			if(!confirmOff) return;
+			if (!confirmOff) return;
 			setTimerStart(false);
 			setStart(false);
 			ownerLeft();
@@ -789,11 +775,12 @@ export default function () {
 			pauseSong();
 		} else {
 			setSongPlaying(true);
-			playSong(selectedSong.audio, volume);
+			// playSong(selectedSong.audio, volume);
+			resumeSong();
 		}
 	}
 
-	function handleSongPause () {
+	function handleSongPause() {
 		console.log("Pause Song");
 		setSongPlaying(false);
 		pauseSong();
@@ -1126,9 +1113,9 @@ export default function () {
 		let clone = JSON.parse(JSON.stringify(selectPlayListSong.songs));
 		let isExistAlready = clone.find(song => song._id == data._id);
 
-		if(isExistAlready){
+		if (isExistAlready) {
 			const confirm = window.confirm("This Song is already exist are you sure you want to add ?")
-			if(!confirm) return
+			if (!confirm) return
 		}
 
 		clone.push(data);
@@ -1260,7 +1247,7 @@ export default function () {
 		const isPlaylist = e.dataTransfer.getData("isPlaylist");
 		if (isPlaylist) {
 			const confirm = window.confirm("Are you sure you want to add the complete playlist?")
-			if(!confirm) return
+			if (!confirm) return
 			const id = e.dataTransfer.getData("id");
 			const sourcePlaylist = allplaylists.find(playlist => playlist._id.toString() === id);
 			setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs, ...sourcePlaylist.songs] })
@@ -1310,16 +1297,16 @@ export default function () {
 		setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs, song] });
 	}
 
-	
-	
+
+
 
 
 	useEffect(() => {
-		if(user){
-			console.log("user00000000000",user?.endingTone)
+		if (user) {
+			console.log("user00000000000", user?.endingTone)
 			const endingTone = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${user?.endingTone}`);
 			endingTone.addEventListener('loadedmetadata', () => {
-				console.log("ending tone loadedmetadata",endingTone.duration)
+				console.log("ending tone loadedmetadata", endingTone.duration)
 				setEndingToneDuration(endingTone.duration);
 				endingToneDurationRef.current = endingTone.duration;
 			})
@@ -1496,28 +1483,33 @@ export default function () {
 								</div>
 
 
+
 								{
 									user?.isDJ &&
 									<div>
 
-										<>
+										{/* <>
 
 											<h2 className="text-white text-lg text-center">
 												{
 													!active ? "Schedule Time" : "Remaining Time"
 												}
-
 											</h2>
-											<TimeRemaining handleStart={handleStart} start={start} startFirstTimeRef={startFirstTimeRef} setLeftSecond={setLeftSecond} user={user} setTimerStart={setTimerStart} setActive={setActive} ownerLeft={ownerLeft} setStart={setStart} endingToneDuration={endingToneDuration} handlePlayWelcome={handlePlayWelcome} handlePlayEnd={handlePlayEnd}/>
-										</>
+											<TimeRemaining handleStart={handleStart} start={start} startFirstTimeRef={startFirstTimeRef} setLeftSecond={setLeftSecond} user={user} setTimerStart={setTimerStart} setActive={setActive} ownerLeft={ownerLeft} setStart={setStart} endingToneDuration={endingToneDuration} handlePlayWelcome={handlePlayWelcome} handlePlayEnd={handlePlayEnd} />
+
+											
+										</> */}
 
 
+
+										<h2 className="text-white text-lg text-center">Schedule Time</h2>
+										<span className="text-white text-lg text-center">{convertUTCToLocalTime(user?.djStartTime)} to {convertUTCToLocalTime(user?.djEndTime)}</span>
 									</div>
 								}
 
 							</div>
 							<div className="py-2 rounded-b-md flex justify-around items-center shadow-md">
-								<h3 className="text-black text-xl text-center">{listners}
+								<h3 className="text-black text-xl text-center">{participantCount}
 									<br />
 									Listeners
 								</h3>
@@ -1726,7 +1718,7 @@ export default function () {
 											</div>
 
 											<div className="w-[100%] flex flex-col reletive px-3 py-2">
-												<input type="range" className="w-[100%]" value={progress} onChange={handleProgressChange} step={1} min={0} max={sduration} />
+												<input type="range" className="w-[100%]" value={progress} onChange={(e) => handleProgressChange("song",e.target.value)} step={1} min={0} max={sduration} />
 												<div className="w-[100%] flex items-center justify-between">
 													<time className="text-black text-xs">{Math.floor(remaining / 60)}:{Math.floor(remaining % 60)}</time>
 													<time className="text-black text-xs">{Math.floor(sduration / 60)}:{Math.floor(sduration % 60)}</time>
@@ -1958,7 +1950,7 @@ export default function () {
 											</div>
 
 											<div className="w-[100%] flex flex-col reletive px-3 py-2">
-												<input type="range" className="w-[100%]" value={fprogress} step={1} min={0} max={fduration} />
+												<input type="range" className="w-[100%]" value={fprogress} step={1} min={0} max={fduration} onChange={(e) => handleProgressChange("filter",e.target.value)} />
 												<div className="w-[100%] flex items-center justify-between">
 													<time className="text-black text-xs">{Math.floor(fremaining / 60)}:{Math.floor(fremaining % 60)}</time>
 													<time className="text-black text-xs">{Math.floor(fduration / 60)}:{Math.floor(fduration % 60)}</time>
@@ -2282,12 +2274,12 @@ export default function () {
 			} */}
 
 			{
-				leftSecond != null && 
+				leftSecond != null &&
 				<div className='w-[90%] h-[90%] pointer-events-none absolute top-14 bg-transparent z-[100000] rounded-md flex flex-col items-center justify-center gap-6'>
 					<h1 className='text-8xl text-black font-medium'>{leftSecond}</h1>
 				</div>
 			}
-			
+
 
 			{contextMenuPosition && (
 				<CustomContextMenu xPos={contextMenuPosition.x} yPos={contextMenuPosition.y} setRenameOpen={setRenameOpen} clickedData={clickedData} handleDelete={handleDelete} setCreatePlaylistOpen={setCreatePlaylistOpen} setEditPlaylistOpen={setEditPlaylistOpen} />

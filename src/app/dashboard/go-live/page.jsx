@@ -1399,7 +1399,7 @@ export default function () {
 
 						<div className="w-full relative p-2">
 							<h2 className="text-white text-lg mb-1">Deck A Volume</h2>
-							<input type="range" className="w-full cursor-pointer" min={0} max={0.1} value={volume} step="0.05" onChange={handleVolumeChange} />
+							<input type="range" className="w-full cursor-pointer" min={0} max={1} value={volume} step="0.1" onChange={handleVolumeChange} />
 
 							<div className="w-full flex items-center justify-between mt-1 px-1">
 								<span className="text-white">0</span>

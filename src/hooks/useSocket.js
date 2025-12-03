@@ -105,7 +105,7 @@ const sleep = ms => new Promise(r => window.setTimeout(r, ms))
 
 
 
-const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd, handleWelcomeTonePlayed, handleEndTonePlayed, roomRef) => {
+const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd, handleWelcomeTonePlayed, handleEndTonePlayed, roomRef, setActive) => {
 	const socketRef = useRef();
 	const { user } = useSelector(store => store.user);
 	const peersRef = useRef({});
@@ -1277,7 +1277,12 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		socketListnerRef.current = socketInit();
 		let userTemp = JSON.parse(JSON.stringify(user));
 		console.log(userTemp?._id,"roomiddddddddddd")
-		socketListnerRef.current.emit('user-join', { roomId: userTemp?._id });
+		socketListnerRef.current.emit('user-join', { roomId: userTemp?._id },(data) => {
+			console.log("User joined!",data,userTemp.name);
+			if(data == userTemp.name){
+				setActive(true);
+			}
+		});
 
 
 		socketListnerRef.current?.on('play-ending-tone', (data) => {
@@ -1300,10 +1305,14 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			console.log("Ending Tone played!");
 			handleEndTonePlayed();
 		});
+		socketListnerRef.current?.on('active-dj-name', (data) => {
+			console.log("Active DJ Name:", data);
+		});
 
 		return () => {
 			socketListnerRef.current?.off('play-ending-tone');
 			socketListnerRef.current?.off('play-welcome-tone');
+			socketListnerRef.current?.off('active-dj-name');
 		}
 	},[user])
 

@@ -216,7 +216,7 @@ const page = ({ params }) => {
                 {playlists.map(data => (
                     <div className="flex justify-between items-center my-2 py-1 border-b border-gray-100">
                         <div className="flex items-center gap-4">
-                            <Image src={data?.songs[0].cover} width={200} height={200} alt="cover" className="w-[5rem] h-[5rem] rounded-md" />
+                            <Image src={data?.songs[0]?.cover} width={200} height={200} alt="cover" className="w-[5rem] h-[5rem] rounded-md" />
                             <div className="">
                                 <h2 className="text-black text-xl font-semibold">{data?.title}</h2>
                                 <p className="para">{data?.description}</p>

@@ -35,7 +35,8 @@ const userSchema = new mongoose.Schema({
     rawTime: {type: String,default: ''},
     phone: {type: String,default: undefined},
     OTP: {type: String,default: undefined},
-    role: {type: String,default: undefined}
+    role: {type: String,default: undefined},
+    jwt: {type: String,default: undefined}
 },{timestamps: true});
 
 

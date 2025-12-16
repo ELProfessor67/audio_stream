@@ -11,6 +11,8 @@ export const POST = connectDB(async function (req) {
         const res = NextResponse.json({ success: true, message: 'Login Sucessfully', user }, { status: 200 });
         
         const token = await user.getJWTToken();
+        user.jwt = token;
+        await user.save();
 
         res.cookies.set({
             name: 'token',

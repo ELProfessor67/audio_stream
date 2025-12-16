@@ -42,7 +42,7 @@ export const POST = connectDB(async function (req) {
               });
               console.log('Success:', response.data);
         }catch(err){
-            console.error('Error:', error.response?.data || error.message);
+            console.error('Error:', err.response?.data || err.message);
         }
 
         console.log(OTP)
@@ -58,7 +58,7 @@ export const POST = connectDB(async function (req) {
 
         return res;
     } catch (err) {
-        return NextResponse.json({ success: false, message: 'Internal Seerver Error' }, { status: 501 });
+        return NextResponse.json({ success: false, message: err.message || 'Internal Seerver Error' }, { status: 501 });
     }
 });
 

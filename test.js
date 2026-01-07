@@ -1,9 +1,9 @@
 import { IngressClient, IngressInput, IngressAudioOptions } from 'livekit-server-sdk';
 
 const ingressClient = new IngressClient(
-  'https://interview-nxkp6sn9.livekit.cloud',
-  'APIjUmJuRYvXa2W', 
-  'SL8ZNCWAOamwXKxcCI3bt2I3Ti1AK1iUcRoDSWFxnCB'
+  'https://webrtc.hgdjlive.com',
+  'APIKJkbMhAsjRRQ', 
+  'xBQXfZlu1nwVbGA8gNIeI5bRHixNcSMZN34HzpKXhEx'
 );
 
 try {

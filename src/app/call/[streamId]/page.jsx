@@ -309,7 +309,7 @@ export default function page({ params }) {
 
 			<CallComponents open={callOpen} onClose={() => setCallOpen(false)} name={name} setName={setName}>
 				<div className='w-full h-full flex flex-col gap-5 justify-center items-center'>
-					<h2 className='text-3xl text-white'>{user?.name && toTitleCase(user?.name)}</h2>
+					<h2 className='text-3xl text-white'>{name && toTitleCase(name)}</h2>
 					{
 						callStatus == 'processing' &&
 						<div className='flex items-center'>

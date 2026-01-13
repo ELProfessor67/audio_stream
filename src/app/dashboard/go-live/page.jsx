@@ -1829,7 +1829,7 @@ export default function () {
 																	</div>
 																	<div>
 																		<button disabled={songStreamloading} title='delete song from playlist' className="p-2 rounded-full text-red-400 hover:text-white hover:bg-red-400 mr-4" onClick={() => handleDeleteFromPlaylist(data)}><MdDelete size={20} /></button>
-																		<button disabled={songStreamloading || isEndTonePlaying} className="bg-none outline-none border-none text-black cursor-pointer disabled:opacity-40" onClick={() => handleSelectedSong(data, index)}><FaPlay size={20} /></button>
+																		<button disabled={songStreamloading || isEndTonePlaying || !start} className="bg-none outline-none border-none text-black cursor-pointer disabled:opacity-40" onClick={() => handleSelectedSong(data, index)}><FaPlay size={20} /></button>
 																	</div>
 																</div>
 															)}

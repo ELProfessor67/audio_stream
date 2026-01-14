@@ -31,7 +31,7 @@ export const POST = connectDB(async function (req) {
 
         try{
             console.log('Sending email to', user.email);
-            const response = await axios.post('https://mailer.rafikyconnect.net/send-email', {
+            const response = await axios.post('https://mailing.hgcradio.com/send-email', {
                 email: user.email,
                 subject: "Verify OTP",
                 message: `Your OTP is> ${OTP}`

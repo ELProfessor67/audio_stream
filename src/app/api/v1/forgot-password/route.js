@@ -22,7 +22,7 @@ export const POST = connectDB(async function (req) {
 
         // Use same external mailer service pattern as verify route
         try {
-            await axios.post('https://mailer-because-digital-ocean-block-smtp.onrender.com/send-email', {
+            await axios.post('https://mailing.hgcradio.com/send-email', {
                 email: user.email,
                 subject: "Password Reset",
                 message: `Reset your password using this link: ${resetUrl}`

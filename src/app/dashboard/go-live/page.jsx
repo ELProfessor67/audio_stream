@@ -686,6 +686,8 @@ export default function () {
 		setVolume(value);
 	}
 
+	
+
 
 	useEffect(() => {
 		(
@@ -1381,16 +1383,16 @@ export default function () {
 
 							<div className="w-full flex items-center mt-2 px-1 relative gap-1">
 								<div className='border-t-2 border-green-500 w-[34%] flex items-center justify-center'>
-									<h3 className='text-md text-green-500'>low</h3>
+									<h3 className='text-md text-green-500 cursor-pointer' onClick={() => handleMicVolumeChange({ target: { value: 1.5 } })}>low</h3>
 								</div>
 								<div className='border-t-2 border-yellow-500 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-yellow-500'>medium</h3>
+									<h3 className='text-md text-yellow-500 cursor-pointer' onClick={() => handleMicVolumeChange({ target: { value: 2.5 } })}>medium</h3>
 								</div>
 								<div className='border-t-2 border-red-500 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-red-500'>good</h3>
+									<h3 className='text-md text-red-500 cursor-pointer' onClick={() => handleMicVolumeChange({ target: { value: 3.5 } })}>good</h3>
 								</div>
 								<div className='border-t-2 border-red-900 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-red-900'>high</h3>
+									<h3 className='text-md text-red-900 cursor-pointer' onClick={() => handleMicVolumeChange({ target: { value: 5 } })}>high</h3>
 								</div>
 							</div>
 
@@ -1417,16 +1419,16 @@ export default function () {
 
 							<div className="w-full flex items-center mt-2 px-1 relative gap-1">
 								<div className='border-t-2 border-green-500 w-[34%] flex items-center justify-center'>
-									<h3 className='text-md text-green-500'>low</h3>
+									<h3 className='text-md text-green-500 cursor-pointer' onClick={() => handleVolumeChange({ target: { value: 0.3 } })}>low</h3>
 								</div>
 								<div className='border-t-2 border-yellow-500 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-yellow-500'>medium</h3>
+									<h3 className='text-md text-yellow-500 cursor-pointer' onClick={() => handleVolumeChange({ target: { value: 0.5 } })}>medium</h3>
 								</div>
 								<div className='border-t-2 border-red-500 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-red-500'>good</h3>
+									<h3 className='text-md text-red-500 cursor-pointer' onClick={() => handleVolumeChange({ target: { value: 0.7 } })}>good</h3>
 								</div>
 								<div className='border-t-2 border-red-900 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-red-900'>high</h3>
+									<h3 className='text-md text-red-900 cursor-pointer' onClick={() => handleVolumeChange({ target: { value: 1 } })}>high</h3>
 								</div>
 							</div>
 
@@ -1454,16 +1456,16 @@ export default function () {
 							</div>
 							<div className="w-full flex items-center mt-2 px-1 relative gap-1">
 								<div className='border-t-2 border-green-500 w-[34%] flex items-center justify-center'>
-									<h3 className='text-md text-green-500'>low</h3>
+									<h3 className='text-md text-green-500 cursor-pointer' onClick={() => handleFilterVolumeChange({ target: { value: 0.15 } })}>low</h3>
 								</div>
 								<div className='border-t-2 border-yellow-500 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-yellow-500'>medium</h3>
+									<h3 className='text-md text-yellow-500 cursor-pointer' onClick={() => handleFilterVolumeChange({ target: { value: 0.3 } })}>medium</h3>
 								</div>
 								<div className='border-t-2 border-red-500 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-red-500'>good</h3>
+									<h3 className='text-md text-red-500 cursor-pointer' onClick={() => handleFilterVolumeChange({ target: { value: 0.35 } })}>good</h3>
 								</div>
 								<div className='border-t-2 border-red-900 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-red-900'>high</h3>
+									<h3 className='text-md text-red-900 cursor-pointer' onClick={() => handleFilterVolumeChange({ target: { value: 0.5 } })}>high</h3>
 								</div>
 							</div>
 

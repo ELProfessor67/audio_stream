@@ -1577,14 +1577,14 @@ export default function () {
 									</div>
 								</div>
 
-								<div className="flex justify-center mt-5">
+								{/*<div className="flex justify-center mt-5">
 									<div className="flex flex-col items-center gap-3">
 										<button disabled={!recordReady} onClick={handleRecord} className="bg-indigo-600 disabled:opacity-50 outline-none border-none text-2xl py-2 px-4 rounded-md text-white" title="record live stream">
 											{record ? <Timer timerStart={record} /> : 'Record'}
 										</button>
 
 									</div>
-								</div>
+								</div>*/}
 
 							</div>
 						</div>

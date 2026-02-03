@@ -552,7 +552,6 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 	function getSongStream(songUrl, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setduration, isFilter = false) {
 		const url = songUrl.replace(process.env.NEXT_PUBLIC_SOCKET_URL,'');
-
 		
 		// const url = "/audio/audip.mp3";
 		return new Promise((resolve, reject) => {

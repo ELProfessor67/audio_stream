@@ -5,6 +5,7 @@ import Peer from 'simple-peer';
 import axios from 'axios';
 import { data } from 'autoprefixer';
 import hark from 'hark';
+import { Track } from 'livekit-client';
 
 
 
@@ -104,7 +105,7 @@ const sleep = ms => new Promise(r => window.setTimeout(r, ms))
 
 
 
-const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong) => {
+const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd, handleWelcomeTonePlayed, handleEndTonePlayed, roomRef, setActive) => {
 	const socketRef = useRef();
 	const { user } = useSelector(store => store.user);
 	const peersRef = useRef({});
@@ -176,6 +177,12 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	const callerDetailsRef = useRef({});
 	const callsElementRef = useRef(null);
 	const nextSongRef = useRef({});
+	const socketListnerRef = useRef(null);
+	const breakLookRef = useRef(false);
+	const songAnimationFrameIdRef = useRef(null);
+	const filterAnimationFrameIdRef = useRef(null);
+
+
 
 
 
@@ -230,6 +237,26 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 
+    const replaceTrack = async (track, name) => {
+		const publications = Array.from(
+			roomRef.current.localParticipant.trackPublications.values()
+		);
+		const publication =  publications.find(
+			pub => pub.trackName === name
+		);
+		if (publication) {
+			await roomRef.current.localParticipant.unpublishTrack(publication.track);
+		}
+		await roomRef.current.localParticipant.publishTrack(track, {
+			red: true,
+			source: Track.Source.Unknown,
+			name: name
+		});
+	}
+
+
+
+
 
 	function AudioProcessSongFilter(isFilter) {
 		let analyser;
@@ -266,150 +293,111 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 	function getSongStream(songUrl, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setduration, isFilter = false) {
-		return fetch(songUrl)
-			.then(response => response.arrayBuffer())
-			.then(arrayBuffer => {
-				return new Promise((resolve, reject) => {
-					const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-					audioContext.decodeAudioData(arrayBuffer, buffer => {
-
-						const gainNode = audioContext.createGain();
-						gainNode.connect(audioContext.destination);
-						gainNode.gain.value = volume;
-
-						gainNodeRef.current = gainNode
-
-
-
-						const createSource = () => {
-							const source = audioContext.createBufferSource();
-							source.buffer = buffer;
-							source.connect(gainNode);
-							songSourceRef.current = source;
-							return source;
+		const url = songUrl.replace(process.env.NEXT_PUBLIC_SOCKET_URL,'');
+		
+		// const url = "/audio/audip.mp3";
+		return new Promise((resolve, reject) => {
+			const audio = new Audio(url);
+			
+			audio.muted = false;
+			audio.addEventListener('canplaythrough', () => {
+				//create audio context first
+				const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+				
+				// Create source from audio element directly (better for seeking)
+				let source;
+				try {
+					source = audioContext.createMediaElementSource(audio);
+				} catch (error) {
+					console.error('Error creating media element source:', error);
+					return reject(error);
+				}
+				
+				//create gain node
+				const gainNode = audioContext.createGain();
+				// gainNode.gain.value = volume;
+				gainNodeRef.current = gainNode;
+				
+				//create analyser
+				const analyser = audioContext.createAnalyser();
+				analyser.smoothingTimeConstant = 0.8;
+				analyser.fftSize = 1024;
+				
+				//create stream destination for WebRTC
+				const streamDestination = audioContext.createMediaStreamDestination();
+				
+				// Audio routing: source -> analyser -> gain -> streamDestination
+				// source -> gain -> destination (for local playback)
+				source.connect(analyser);
+				analyser.connect(gainNode);
+				// gainNode.connect(audioContext.destination); // Local playback
+				gainNode.connect(streamDestination); // WebRTC stream
+				
+				songSourceRef.current = audio;
+				audioContextRef.current = audioContext;
+				setduration(Math.floor(audio.duration));
+				
+				if(isFilter) {
+					filterAnalyserRef.current = analyser;
+				} else {
+					songAnalyserRef.current = analyser;
+				}
+				
+				//script processor
+				const scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
+				analyser.connect(scriptProcessor);
+				scriptProcessor.connect(audioContext.destination);
+				scriptProcessor.addEventListener('audioprocess', () => AudioProcessSongFilter(isFilter));
+				
+				audio.addEventListener('timeupdate', () => {
+					const currentTime = audio.currentTime;
+					const duration = audio.duration;
+					const progress = {
+						currentTime,
+						duration,
+						percentage: (currentTime / duration) * 100,
+						remainTime: duration - currentTime,
+					}
+					progressCallback(progress);
+				});
+				
+				audio.addEventListener('ended', () => {
+					console.log('audio ended');
+					if(isFilter) {
+						if(filterPlayingRef.current) {
+							console.log('next filter');
+							// pending auto play filter 
 						}
-
-						let source = createSource();
-
-
-
-
-
-						audioContextRef.current = audioContext;
-						let startTime = audioContext.currentTime;
-						setduration(Math.floor(source.buffer.duration));
-						console.info('startTime', startTime)
-						const updateProgess = () => {
-							const currentTime = audioContext.currentTime;
-							const duration = source.buffer.duration;
-							const progress = {
-								currentTime,
-								duration,
-								percentage: (currentTime / duration) * 100,
-								remainTime: duration - currentTime,
-							}
-							progressCallback(progress);
-
-
-							if (isFilter) {
-								if (currentTime < duration && filterPlayingRef.current) {
-									requestAnimationFrame(updateProgess);
+					} else {
+						console.log('song play ref', songPlayRef.current);
+						if (songPlayRef.current && !isFilter && continuePlayRef.current === true) {
+							const sindex = selectPlayListSongRef.current?.songs?.indexOf(selectedSongRef.current);
+							if (sindex >= selectPlayListSongRef.current?.songs?.length - 1) {
+								if (repeatPlaylistRef.current) {
+									setSongPlaying(false);
+									setProgress(0);
 								} else {
-									if (filterPlayingRef.current && isFilter) {
-										console.log('next filter');
-										// pending auto play filter 
-									}
+									setSongPlaying(false);
+									setProgress(0)
 								}
 							} else {
-
-
-								if (currentTime < duration && songPlayRef.current) {
-									requestAnimationFrame(updateProgess);
-								} else {
-									if (songPlayRef.current && !isFilter && continuePlayRef.current === true) {
-										const sindex = selectPlayListSongRef.current?.songs?.indexOf(selectedSongRef.current);
-										if (sindex >= selectPlayListSongRef.current?.songs?.length - 1) {
-											if (repeatPlaylistRef.current) {
-												// const song = selectPlayListSongRef.current?.songs[0];
-												// setSeletedSong(song);
-												// setSongPlaying(true);
-												// setProgress(0);
-												// playSong(song.audio,volumeRef.current);
-												setSongPlaying(false);
-												setProgress(0);
-											} else {
-												setSongPlaying(false);
-												setProgress(0)
-											}
-
-										} else {
-											const song = selectPlayListSongRef.current?.songs[sindex + 1];
-
-											handleSelectedSong(song, sindex);
-											// setSeletedSong(song);
-											// setSongPlaying(true);
-											// setProgress(0);
-											// playSong(song.audio,volumeRef.current);
-										}
-									}
-								}
-							}
-
-						}
-
-						const changeCurrentTime = async (newTime) => {
-							if (newTime >= 0 && newTime <= source.buffer.duration) {
-								source.stop();
-								source = createSource();
-								source.start(0, newTime, audioContext.buffer.duration);
-								audioContext.resume();
-								performance.now();
+								const song = selectPlayListSongRef.current?.songs[sindex + 1];
+								handleSelectedSong(song, sindex);
 							}
 						}
-
-
-						source.start();
-						updateProgess();
-
-
-
-						const songStream = audioContext.createMediaStreamDestination();
-
-
-						source.connect(songStream);
-
-
-						const analyseraudioContext = new (window.AudioContext || window.webkitAudioContext)();
-						const audio = analyseraudioContext.createMediaStreamSource(songStream.stream);
-						//deteting the audio
-						const analyser = analyseraudioContext.createAnalyser();
-						const scriptProcessor = analyseraudioContext.createScriptProcessor(2048, 1, 1);
-						analyser.smoothingTimeConstant = 0.8;
-						analyser.fftSize = 1024;
-						if (isFilter) {
-							filterAnalyserRef.current = analyser;
-						} else {
-							songAnalyserRef.current = analyser;
-						}
-
-
-						audio.connect(analyser);
-						analyser.connect(scriptProcessor);
-						scriptProcessor.connect(analyseraudioContext.destination);
-
-						scriptProcessor.addEventListener('audioprocess', () => AudioProcessSongFilter(isFilter));
-
-
-						resolve({ songStream: songStream.stream, changeCurrentTime });
-					}, reject);
+					}
 				});
-			})
-			.then(songStream => {
-				console.log(songStream);
-				return songStream;
-			})
-			.catch(error => console.error('Error loading song:', error));
+				
+				const changeCurrentTime = (newTime) => {
+					audio.currentTime = newTime;
+				}
+				
+				audio.play();
+				resolve({ songStream: streamDestination.stream, changeCurrentTime });
+			});
+		});
 	}
+
 
 
 
@@ -683,22 +671,28 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		// console.info('progress',progress);
 	}
 
-	function handleProgressChange(e) {
-		console.log(e.target.value)
-		setProgress(e.target.value);
-
+	function handleProgressChange(type,value) {
+		
+		if(type == "song") {
+			changeCurrentTimeRef.current(value)
+		}
+		if(type == "filter") {
+			filterchangeCurrentTimeRef.current(value)
+		}
 	}
 
 	async function playSong(url, volume) {
 		console.log(url);
 
+		breakLookRef.current = false;
+		await sleep(2000);
 		if (songStreamloading) {
 			console.log('stream loading true')
 			return
 		}
 
-		if (songSourceRef.current?.stop) {
-			songSourceRef.current.stop();
+		if (songSourceRef.current?.pause) {
+			songSourceRef.current.pause();
 		}
 
 		setSongStreamLoading(true);
@@ -712,6 +706,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			let { songStream, changeCurrentTime } = await getSongStream(url, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setsduration);
 			changeCurrentTimeRef.current = changeCurrentTime;
 
+			console.log(songStream,"songStream")
 
 			const gaudioContext = new (window.AudioContext || window.webkitAudioContext)();
 			const gsong = gaudioContext.createMediaStreamSource(songStream);
@@ -721,7 +716,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 			gsong.connect(gsongGainNode);
 			gsongGainNode.connect(gdest);
-			gsongGainNode.gain.value = volume;
+			// gsongGainNode.gain.value = volume;
 			gainNodeStreamRef.current = gsongGainNode;
 
 
@@ -732,54 +727,60 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 			setSongStreamLoading(false);
 
-			const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-			console.error('mic', typeof (localStreamRef.current), localStreamRef.current)
-			const mic = audioContext.createMediaStreamSource(localStreamRef.current);
-			console.error('ye mic ho gaya ha')
-			console.error('song', typeof (songStream), songStream);
-			const song = audioContext.createMediaStreamSource(songStream);
-			console.error('ye song bhi ho gaya')
-			const dest = audioContext.createMediaStreamDestination();
-			mic.connect(dest);
-			song.connect(dest);
-			if (filterStreamRef.current) {
-				const filter = audioContext.createMediaStreamSource(filterStreamRef.current);
-				filter.connect(dest);
-			}
+		    replaceTrack(songStream.getAudioTracks()[0],'song');
 
-			for (let peerId in callerStreamsRef.current) {
-				const userStream = audioContext.createMediaStreamSource(callerStreamsRef.current[peerId]);
-				userStream.connect(dest);
-			}
+			// const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+			// console.error('mic', typeof (localStreamRef.current), localStreamRef.current)
+			// const mic = audioContext.createMediaStreamSource(localStreamRef.current);
+			// console.error('ye mic ho gaya ha')
+			// console.error('song', typeof (songStream), songStream);
+			// const song = audioContext.createMediaStreamSource(songStream);
+			// console.error('ye song bhi ho gaya')
+			// const dest = audioContext.createMediaStreamDestination();
+			// mic.connect(dest);
+			// song.connect(dest);
+			// if (filterStreamRef.current) {
+			// 	const filter = audioContext.createMediaStreamSource(filterStreamRef.current);
+			// 	filter.connect(dest);
+			// }
 
-			const combinedStream = dest.stream;
+			// for (let peerId in callerStreamsRef.current) {
+			// 	const userStream = audioContext.createMediaStreamSource(callerStreamsRef.current[peerId]);
+			// 	userStream.connect(dest);
+			// }
+
+			// const combinedStream = dest.stream;
 
 
 			// recording 
 
-			recordMediaRef.current.removeTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'))
-			// combinedStreamRef.current = combinedStream.getTracks()[0];
-			combinedStreamRef.current = combinedStream;
-			recordMediaRef.current.addTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'));
+			// recordMediaRef.current.removeTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'))
+			// // combinedStreamRef.current = combinedStream.getTracks()[0];
+			// combinedStreamRef.current = combinedStream;
+			// recordMediaRef.current.addTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'));
 
 			// end 
 
-			Object.keys(peersRef.current).forEach((peerId) => {
+			// Object.keys(peersRef.current).forEach((peerId) => {
 
-				if (peersRef.current[peerId].isCall == false) {
-					const audioSender = peersRef.current[peerId].getSenders().find(sender => sender.track && sender.track.kind === "audio");
-					if (audioSender && combinedStream.getTracks().length > 0) {
-						const newAudioTrack = combinedStream.getTracks()[0];
+			// 	if (peersRef.current[peerId].isCall == false) {
+			// 		const audioSender = peersRef.current[peerId].getSenders().find(sender => sender.track && sender.track.kind === "audio");
+			// 		if (audioSender && combinedStream.getTracks().length > 0) {
+			// 			const newAudioTrack = combinedStream.getTracks()[0];
 
-						// Replace the existing track with the new audi track
-						audioSender.replaceTrack(newAudioTrack);
-						console.log("✅ Audio track replaced successfully!");
-					} else {
-						console.warn("⚠️ No audio sender found or new stream has no audio track.");
-					}
-				}
-				// peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'), combinedStream.getTracks()[0], localStreamRef.current);
-			});
+			// 			// Replace the existing track with the new audi track
+			// 			audioSender.replaceTrack(newAudioTrack);
+			// 			console.log("✅ Audio track replaced successfully!");
+			// 		} else {
+			// 			console.warn("⚠️ No audio sender found or new stream has no audio track.");
+			// 		}
+			// 	}
+			// 	// peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'), combinedStream.getTracks()[0], localStreamRef.current);
+			// });
+
+			// await replaceTrack(combinedStream.getTracks()[0])
+
+			
 
 			nextSongRef.current.user = user;
 			console.info('sss', nextSongRef.current, selectedSongRef.current)
@@ -793,16 +794,23 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	}
 
 	const pauseSong = () => {
-		if (songSourceRef.current?.stop) {
-			songSourceRef.current.stop();
+		if (songSourceRef.current?.pause) {
+			songSourceRef.current.pause();
+		}
+	}
+
+	const resumeSong = () => {
+		if (songSourceRef.current?.play) {
+			songSourceRef.current.play();
 		}
 	}
 
 	const changeValume = (value) => {
 		if (gainNodeRef.current?.gain && gainNodeStreamRef.current?.gain) {
-			console.log('inside song volume')
-			gainNodeRef.current.gain.value = value;
-			gainNodeStreamRef.current.gain.value = value;
+			
+			// gainNodeRef.current.gain.value = value;
+			// gainNodeStreamRef.current.gain.value = value;
+			songSourceRef.current.volume = value;
 		}
 	}
 
@@ -825,8 +833,8 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			return
 		}
 
-		if (filterSourceRef.current?.stop) {
-			filterSourceRef.current.stop();
+		if (filterSourceRef.current?.pause) {
+			filterSourceRef.current.pause();
 		}
 
 		setFilterStreamLoading(true);
@@ -844,7 +852,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 			gsong.connect(gsongGainNode);
 			gsongGainNode.connect(gdest);
-			gsongGainNode.gain.value = volume;
+			// gsongGainNode.gain.value = volume;
 			filterGainStreamNodeRef.current = gsongGainNode;
 
 
@@ -856,35 +864,38 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			setFilterStreamLoading(false);
 
 
+			replaceTrack(filterStreamRef.current.getAudioTracks()[0],'filter');
+
+
 			// filterStreamRef.current = songStream;
-			const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+			// const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-			const mic = audioContext.createMediaStreamSource(localStreamRef.current);
+			// const mic = audioContext.createMediaStreamSource(localStreamRef.current);
 
-			const filter = audioContext.createMediaStreamSource(filterStreamRef.current);
-			const dest = audioContext.createMediaStreamDestination();
-			mic.connect(dest);
-			filter.connect(dest);
-			if (songStreamRef.current) {
-				const song = audioContext.createMediaStreamSource(songStreamRef.current);
-				song.connect(dest);
-			}
+			// const filter = audioContext.createMediaStreamSource(filterStreamRef.current);
+			// const dest = audioContext.createMediaStreamDestination();
+			// mic.connect(dest);
+			// filter.connect(dest);
+			// if (songStreamRef.current) {
+			// 	const song = audioContext.createMediaStreamSource(songStreamRef.current);
+			// 	song.connect(dest);
+			// }
 
-			for (let peerId in callerStreamsRef.current) {
-				const userStream = audioContext.createMediaStreamSource(callerStreamsRef.current[peerId]);
-				userStream.connect(dest);
-			}
-			const combinedStream = dest.stream;
+			// for (let peerId in callerStreamsRef.current) {
+			// 	const userStream = audioContext.createMediaStreamSource(callerStreamsRef.current[peerId]);
+			// 	userStream.connect(dest);
+			// }
+			// const combinedStream = dest.stream;
 
 
 
 
 			// recording 
 
-			recordMediaRef.current.removeTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'))
-			// combinedStreamRef.current = combinedStream.getTracks()[0];
-			combinedStreamRef.current = combinedStream;
-			recordMediaRef.current.addTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'));
+			// recordMediaRef.current.removeTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'))
+			// // combinedStreamRef.current = combinedStream.getTracks()[0];
+			// combinedStreamRef.current = combinedStream;
+			// recordMediaRef.current.addTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'));
 
 			// end
 
@@ -892,22 +903,24 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 
-			Object.keys(peersRef.current).forEach((peerId) => {
+			// Object.keys(peersRef.current).forEach((peerId) => {
 
-				if (peersRef.current[peerId].isCall == false) {
-					const audioSender = peersRef.current[peerId].getSenders().find(sender => sender.track && sender.track.kind === "audio");
-					if (audioSender && combinedStream.getTracks().length > 0) {
-						const newAudioTrack = combinedStream.getTracks()[0];
+			// 	if (peersRef.current[peerId].isCall == false) {
+			// 		const audioSender = peersRef.current[peerId].getSenders().find(sender => sender.track && sender.track.kind === "audio");
+			// 		if (audioSender && combinedStream.getTracks().length > 0) {
+			// 			const newAudioTrack = combinedStream.getTracks()[0];
 
-						// Replace the existing track with the new audi track
-						audioSender.replaceTrack(newAudioTrack);
-						console.log("✅ Audio track replaced successfully!");
-					} else {
-						console.warn("⚠️ No audio sender found or new stream has no audio track.");
-					}
-				}
-				// peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'), combinedStream.getTracks()[0], localStreamRef.current);
-			});
+			// 			// Replace the existing track with the new audi track
+			// 			audioSender.replaceTrack(newAudioTrack);
+			// 			console.log("✅ Audio track replaced successfully!");
+			// 		} else {
+			// 			console.warn("⚠️ No audio sender found or new stream has no audio track.");
+			// 		}
+			// 	}
+			// 	// peersRef.current[peerId].replaceTrack(localStreamRef.current.getTracks().find((track) => track.kind === 'audio'), combinedStream.getTracks()[0], localStreamRef.current);
+			// });
+
+			// await replaceTrack(combinedStream.getTracks()[0])
 
 		} catch (err) {
 			setFilterStreamLoading(false);
@@ -917,15 +930,16 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 	const pauseFilter = () => {
-		if (filterSourceRef.current?.stop) {
-			filterSourceRef.current.stop();
+		if (filterSourceRef.current?.pause) {
+			filterSourceRef.current.pause();
 		}
 	}
 
 	const changeFilterValume = (value) => {
 		if (filterGainNodeRef.current?.gain && filterGainStreamNodeRef.current?.gain) {
-			filterGainNodeRef.current.gain.value = value;
-			filterGainStreamNodeRef.current.gain.value = value;
+			// filterGainNodeRef.current.gain.value = value;
+			// filterGainStreamNodeRef.current.gain.value = value;
+			filterSourceRef.current.volume = value;
 		}
 	}
 
@@ -957,7 +971,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		});
 
 		socketRef.current?.on('user-disconnet', ({ id }) => {
-			console.log('disconnect', id)
+			console.log('disconnect', id);
 			if (peersRef.current[id]) {
 				delete peersRef.current[id];
 			}
@@ -991,12 +1005,62 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			setcallComing(false);
 		})
 
+		
+
 		return () => {
 			socketRef.current?.off('recieve-request-song');
 			socketRef.current?.off('user-disconnet');
 			socketRef.current?.off('receive-message');
+			// socketRef.current?.off('play-ending-tone');
+			// socketRef.current?.off('play-welcome-tone');
 		}
 	}, [socketRef.current]);
+
+
+
+
+	// useEffect(() => {
+	// 	socketListnerRef.current = socketInit();
+	// 	let userTemp = JSON.parse(JSON.stringify(user));
+	// 	console.log(userTemp?._id,"roomiddddddddddd")
+	// 	socketListnerRef.current.emit('user-join', { roomId: userTemp?._id },(data) => {
+	// 		console.log("User joined!",data,userTemp.name);
+	// 		if(data == userTemp.name){
+	// 			setActive(true);
+	// 		}
+	// 	});
+
+
+	// 	socketListnerRef.current?.on('play-ending-tone', (data) => {
+	// 		console.log("Ending Tone called!");
+	// 		handlePlayEnd();
+	// 	});
+
+	// 	socketListnerRef.current?.on('play-welcome-tone', (data) => {
+	// 		console.log("Welcome Tone called!");
+	// 		handlePlayWelcome();
+	// 	});
+
+
+	// 	socketListnerRef.current?.on('welcome-tone-played', (data) => {
+	// 		console.log("Welcome Tone played!");
+	// 		handleWelcomeTonePlayed();
+	// 	});
+
+	// 	socketListnerRef.current?.on('ending-tone-played', (data) => {
+	// 		console.log("Ending Tone played!");
+	// 		handleEndTonePlayed();
+	// 	});
+	// 	socketListnerRef.current?.on('active-dj-name', (data) => {
+	// 		console.log("Active DJ Name:", data);
+	// 	});
+
+	// 	return () => {
+	// 		socketListnerRef.current?.off('play-ending-tone');
+	// 		socketListnerRef.current?.off('play-welcome-tone');
+	// 		socketListnerRef.current?.off('active-dj-name');
+	// 	}
+	// },[user])
 
 
 	useEffect(() => {
@@ -1016,7 +1080,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	}, [])
 
 	const handleShare = async (id=null) => {
-		const url = `${window.location.origin}/public/${id ? id : user?._id}`;
+		const url = `${window.location.origin}/public/${user.originalId}`;
 		await navigator.clipboard.writeText(url);
 	}
 
@@ -1086,15 +1150,12 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 
-
 	const ownerJoin = async (id = null) => {
 		console.log('join')
 		socketRef.current = socketInit();
-		socketRef.current.on('offer', handleOffer);
+		// socketRef.current.on('offer', handleOffer);
 		let userTemp = JSON.parse(JSON.stringify(user));
-		if(id){
-			userTemp._id = id;
-		}
+		userTemp._id = user.originalId;
 
 		socketRef.current.emit('owner-join', { user: userTemp });
 		// localStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -1139,7 +1200,13 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		combinedStreamRef.current = localStreamRef.current
 		recordMediaRef.current.addTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'));
 
-		// end
+		
+
+		//publishing the stream
+		roomRef.current.localParticipant.publishTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'),{
+			red: true,
+			source: Track.Source.Microphone
+		});
 
 
 
@@ -1161,19 +1228,26 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 	const ownerLeft = async () => {
 
-		console.log('left')
-
-		socketRef.current.disconnect();
+		socketRef.current?.disconnect();
 		setMicOn(false);
-		localStreamRef.current.getTracks().forEach(track => track.enabled = false);
+		localStreamRef.current?.getTracks().forEach(track => track.enabled = false);
 
 
 
 		const listeners = Object.keys(peersRef.current).length;
 
-		Object.keys(peersRef.current).forEach((peerId) => {
-			peersRef.current[peerId].destroy();
-			delete peersRef.current[peerId];
+		// Object.keys(peersRef.current).forEach((peerId) => {
+		// 	peersRef.current[peerId]?.close();
+		// 	delete peersRef.current[peerId];
+		// });
+
+		//unpublish song, filter and mic
+		const publications = Array.from(
+			roomRef.current.localParticipant.trackPublications.values()
+		);
+		publications.forEach(publication => {
+			console.log('publication', publication)
+			roomRef.current.localParticipant.unpublishTrack(publication.track);
 		});
 
 		try {
@@ -1182,7 +1256,6 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		} catch (err) {
 			console.log(err.message);
 		}
-
 	}
 
 	function handleSendMessage() {
@@ -1218,7 +1291,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 
-	return { socketRef, ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef: newUser, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef: mediaRecorderRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange }
+	return { socketRef, ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef: newUser, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef: mediaRecorderRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong }
 }
 
 export default useSocket;

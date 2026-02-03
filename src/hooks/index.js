@@ -1,7 +1,8 @@
 import useSocket from './useSocket';
 import useSocketUser from './useSocketUser';
+import useSocketTest from './useSocketTest';
 
-export {useSocket,useSocketUser}
+export {useSocket,useSocketUser,useSocketTest}
 
 
 // function getSongStream(songUrl,gainNodeRef,songSourceRef,volume,audioContextRef,progressCallback) {

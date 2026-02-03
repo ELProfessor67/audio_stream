@@ -9,7 +9,7 @@ import axios from 'axios';
 import { FaArrowUpRightFromSquare, FaRegMessage } from 'react-icons/fa6';
 import Link from 'next/link';
 import Dialog from '@/components/Dialog';
-import useSocket from '@/hooks/useSocket';
+import { useSocketTest as useSocket } from '@/hooks';
 import { MdModeEdit } from 'react-icons/md'
 import { useDispatch, useSelector } from 'react-redux';
 import { showMessage, showError, clearMessage, clearError } from '@/utils/showAlert'
@@ -33,15 +33,66 @@ import { MdAlternateEmail, MdAudiotrack, MdKey } from 'react-icons/md'
 import { MdOutlineSubtitles, MdDescription, MdPhoto } from 'react-icons/md';
 import { FaUserAlt } from 'react-icons/fa';
 import RenamePlaylistComponents from '@/components/RenamePlaylistComponents';
+// import VolumePopup from '@/components/VolumePopup';
+// import VolumePopupsDeck from '@/components/VolumePopupsDeck';
 import AutoAdjustByBase from '@/components/AutoAdjustByBase';
+import { useLive } from '@/context/LiveContextTest';
+
+function addOneMinute(hours, minutes) {
+	// Split the time string into hours and minutes
+	// let [hours, minutes] = time.split(':').map(Number);
+
+	// Increment the minutes
+	minutes++;
+
+	// If minutes exceed 59, adjust hours and minutes
+	if (minutes > 59) {
+		hours++;
+		minutes = 0;
+	}
+
+	// If hours exceed 23, reset to 00
+	if (hours > 23) {
+		hours = 0;
+	}
+
+	// Format hours and minutes to have leading zeros if necessary
+	hours = +hours;
+	minutes = +minutes;
+
+	// Return the result
+	return [hours, minutes];
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms))
+
+// function checkInTimeRangeForDay(startTime, endTime, user) {
+// 	let currentHour = new Date().getUTCHours();
+// 	let currentMinute = new Date().getUTCMinutes();
+// 	[currentHour, currentMinute] = addOneMinute(currentHour, currentMinute);
 
 
+// 	const rangeStartHour = +startTime?.split(':')[0];
+// 	const rangeStartMinute = +startTime?.split(':')[1];
+
+// 	const rangeEndHour = +endTime?.split(':')[0];
+// 	const rangeEndMinute = +endTime?.split(':')[1];
+
+// 	const timeInRange = (currentHour > rangeStartHour || (currentHour === rangeStartHour && currentMinute >= rangeStartMinute)) && (currentHour < rangeEndHour || (currentHour === rangeEndHour && currentMinute <= rangeEndMinute));
+
+// 	const checkDay = user?.djDays?.includes((new Date().getDay()).toString())
+// 	if (checkDay && timeInRange) {
+// 		return true;
+// 	} else {
+// 		return false;
+// 	}
+// 	// return timeInRange;
+// }
 
 
-
-function checkInTimeRangeForDay(startTime, endTime, user,seconds=0) {
+function checkInTimeRangeForDay(startTime, endTime, user, seconds = 0) {
+	console.log(seconds, "duration ending tone....")
 	let now = new Date();
-	now.setSeconds(now.getSeconds() - seconds);
 	let currentHour = now.getUTCHours();
 	let currentMinute = now.getUTCMinutes();
 	let currentSecond = now.getUTCSeconds();
@@ -51,7 +102,7 @@ function checkInTimeRangeForDay(startTime, endTime, user,seconds=0) {
 
 	const currentTimeInSeconds = currentHour * 3600 + currentMinute * 60 + currentSecond;
 	const startTimeInSeconds = startHour * 3600 + startMinute * 60;
-	const endTimeInSeconds = endHour * 3600 + endMinute * 60;
+	let endTimeInSeconds = endHour * 3600 + endMinute * 60;
 
 	// Check if the current day is in the allowed DJ days
 	const checkDay = user?.djDays?.includes(now.getDay().toString());
@@ -74,16 +125,20 @@ function checkInTimeRangeForDay(startTime, endTime, user,seconds=0) {
 
 
 
-const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setStart, setTimerStart, handleStart, startFirstTimeRef, endingToneDuration, handlePlayWelcome, handlePlayEnd }) => {
-	useEffect(() => {
-		console.log("endingToneDurationRef.current",endingToneDuration)
-	}, [endingToneDuration])
+const TimeRemaining = ({ setLeftSecond, user, setActive, ownerLeft, start, setStart, setTimerStart, handleStart, startFirstTimeRef, endingToneDuration, handlePlayWelcome, handlePlayEnd }) => {
+
 	const [remainingTime, setRemainingTime] = useState("00:00");
 	const startRef = useRef()
 	const isActiveRef = useRef(false);
-	const [isEndindToneCalled,setIsEndindToneCalled] = useState(false);
-	const [isWelcomeToneCalled,setIsWelcomeToneCalled] = useState(false);
+	const [isEndindToneCalled, setIsEndindToneCalled] = useState(false);
+	const [isWelcomeToneCalled, setIsWelcomeToneCalled] = useState(false);
 	const router = useRouter()
+	const durationRef = useRef(0)
+
+	useEffect(() => {
+		console.log("endingToneDurationRef.current", endingToneDuration)
+		durationRef.current = endingToneDuration;
+	}, [endingToneDuration])
 
 	useEffect(() => {
 		startRef.current = start
@@ -92,23 +147,25 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 	useEffect(() => {
 		const calculateRemainingTime = () => {
 			let minusSeconds = 0;
-			if(isActiveRef.current){
-				console.log("hello000000000000",endingToneDuration)
-				minusSeconds = endingToneDuration;
-			}
-			console.log(minusSeconds, "hello",isActiveRef.current,endingToneDuration)
-			let { inRange: range, secondsToStart } = checkInTimeRangeForDay(user?.djStartTime, user?.djEndTime, user,minusSeconds)
+			// if(isActiveRef.current){
+			// 	minusSeconds = endingToneDuration;
+			// }
+			console.log(minusSeconds, "hello", isActiveRef.current, endingToneDuration)
+			let { inRange: range, secondsToStart } = checkInTimeRangeForDay(user?.djStartTime, user?.djEndTime, user)
 
-			
+
 			if (!range) {
-				if(secondsToStart != null && secondsToStart <= 2 && !isWelcomeToneCalled){
-					handlePlayWelcome();
+				if (secondsToStart != null && secondsToStart <= 2 && !isWelcomeToneCalled) {
+					// handlePlayWelcome();
 					setIsWelcomeToneCalled(true);
 				}
 
 				if (!isActiveRef.current && secondsToStart != null && secondsToStart <= 10) {
-					setLeftSecond(secondsToStart);
-				}else{
+					// setLeftSecond(secondsToStart);
+					// if(secondsToStart <= 1 && !start){
+					// 	handleStart();
+					// }
+				} else {
 					setLeftSecond(null);
 				}
 				setRemainingTime(`${convertUTCToLocalTime(user?.djStartTime)} to ${convertUTCToLocalTime(user?.djEndTime)}`);
@@ -116,16 +173,21 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 				return
 			}
 
-			if(range && !isActiveRef.current){
+			if (range && !isActiveRef.current) {
 				isActiveRef.current = true;
+				setActive(true);
 			}
 
-			setActive(isActiveRef.current);
 
 			if (!user || !user.djStartTime || !user.djEndTime) {
 				setRemainingTime("00:00");
 				return;
 			}
+
+			// if(startFirstTimeRef.current == false && !start){
+			// 	startFirstTimeRef.current = true;
+			// 	handleStart();
+			// }
 
 			setLeftSecond(null);
 
@@ -143,14 +205,13 @@ const TimeRemaining = ({setLeftSecond, user, setActive, ownerLeft, start, setSta
 
 			// Calculate remaining time in milliseconds
 			let timeDiff = endTimeUTC.getTime() - nowUTCTimestamp;
-			timeDiff = timeDiff + (endingToneDuration * 1000);
+			// timeDiff = timeDiff + (endingToneDuration * 1000);
 
 			// If current time is after end time, set remaining time to 0
 			timeDiff = Math.max(0, timeDiff);
-
-			console.log(timeDiff/1000, endingToneDuration, isEndindToneCalled)
-			if(timeDiff/1000 <= endingToneDuration && !isEndindToneCalled){
-				handlePlayEnd();
+			console.log("(timeDiff) - (durationRef.current*1000)", (timeDiff) - (durationRef.current * 1000), (timeDiff) - (durationRef.current * 1000) <= 0)
+			if (((timeDiff) - (durationRef.current * 1000) <= 0) && !isEndindToneCalled) {
+				// handlePlayEnd();
 				setIsEndindToneCalled(true);
 			}
 
@@ -406,7 +467,7 @@ const Timer = ({ timerStart }) => {
 }
 
 export default function () {
-	const [volume, setVolume] = useState(0.25);
+	const [volume, setVolume] = useState(0.5);
 	const [playlists, setPlaylists] = useState([]);
 	const [selectPlayListSong, setSelectPlayListSong] = useState([]);
 	const [open, setOpen] = useState(false);
@@ -468,19 +529,53 @@ export default function () {
 	const [renameOpen, setRenameOpen] = useState(false);
 	const [showTitle, setShowTitle] = useState(false);
 	const [userChangeVolume, setUserChangeVolume] = useState(false);
-	const [leftSecond,setLeftSecond] = useState(null);
-	const [isWelcomeTonePlaying,setIsWelcomeTonePlaying] = useState(false);
-	const [isEndTonePlaying,setIsEndTonePlaying] = useState(false);
-	const [endingToneDuration,setEndingToneDuration] = useState(0);
-	const [intractUser,setIntractUser] = useState(false);
+	const [leftSecond, setLeftSecond] = useState(null);
+	const [isWelcomeTonePlaying, setIsWelcomeTonePlaying] = useState(false);
+	const [isEndTonePlaying, setIsEndTonePlaying] = useState(false);
+	const [endingToneDuration, setEndingToneDuration] = useState(0);
+	const [intractUser, setIntractUser] = useState(false);
 	const endingToneDurationRef = useRef(0);
+	const isPlayedRef = useRef(false);
+	const isEndedRef = useRef(false);
 
 	const startFirstTimeRef = useRef(false);
+
+	// console.log(dbackward,dforward)
 
 
 	const dispatch = useDispatch();
 
-	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong);
+
+	const handlePlayWelcome = async () => {
+		if (isPlayedRef.current) return;
+		isPlayedRef.current = true;
+		setActive(true);
+		setIsWelcomeTonePlaying(true);
+	}
+
+
+	const handleWelcomeTonePlayed = () => {
+		setIsWelcomeTonePlaying(false);
+	}
+
+
+	const handlePlayEnd = async () => {
+		if (isEndedRef.current) return;
+		isEndedRef.current = true;
+		handleSongPause();
+		setIsEndTonePlaying(true);
+	}
+
+	const handleEndTonePlayed = () => {
+		setTimerStart(false);
+		setStart(false);
+		setActive(false);
+		ownerLeft();
+		setIsEndTonePlaying(false);
+	}
+
+	const { participantCount, roomRef } = useLive();
+	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd, handleWelcomeTonePlayed, handleEndTonePlayed, roomRef,setActive);
 
 	// console.info('voiceAcitce',voiceAcitce);
 
@@ -591,6 +686,8 @@ export default function () {
 		setVolume(value);
 	}
 
+	
+
 
 	useEffect(() => {
 		(
@@ -640,11 +737,12 @@ export default function () {
 		if (!start) {
 			setTimerStart(true);
 			setStart(true);
-			ownerJoin(user?.originalId || user?._id);
+			ownerJoin();
+
 			console.log('handle start')
 		} else {
 			const confirmOff = window.confirm("Are you sure you want to end the live stream?");
-			if(!confirmOff) return;
+			if (!confirmOff) return;
 			setTimerStart(false);
 			setStart(false);
 			ownerLeft();
@@ -653,7 +751,7 @@ export default function () {
 	}
 
 
-	function handleSelectedSong(data, index) {
+	async function handleSelectedSong(data, index) {
 		setSeletedSong(data);
 		setOpen(false);
 		setSongPlaying(true);
@@ -679,8 +777,15 @@ export default function () {
 			pauseSong();
 		} else {
 			setSongPlaying(true);
-			playSong(selectedSong.audio, volume);
+			// playSong(selectedSong.audio, volume);
+			resumeSong();
 		}
+	}
+
+	function handleSongPause() {
+		console.log("Pause Song");
+		setSongPlaying(false);
+		pauseSong();
 	}
 
 
@@ -1008,6 +1113,13 @@ export default function () {
 
 	const handleAddPlaylist = (data) => {
 		let clone = JSON.parse(JSON.stringify(selectPlayListSong.songs));
+		let isExistAlready = clone.find(song => song._id == data._id);
+
+		if (isExistAlready) {
+			const confirm = window.confirm("This Song is already exist are you sure you want to add ?")
+			if (!confirm) return
+		}
+
 		clone.push(data);
 		setSelectPlayListSong({ ...selectPlayListSong, songs: clone })
 
@@ -1136,11 +1248,14 @@ export default function () {
 	const handleSongDropOnPlaylintList = (e) => {
 		const isPlaylist = e.dataTransfer.getData("isPlaylist");
 		if (isPlaylist) {
+			const confirm = window.confirm("Are you sure you want to add the complete playlist?")
+			if (!confirm) return
 			const id = e.dataTransfer.getData("id");
 			const sourcePlaylist = allplaylists.find(playlist => playlist._id.toString() === id);
 			setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs, ...sourcePlaylist.songs] })
 			return
 		}
+
 		const data = JSON.parse(e.dataTransfer.getData("song"));
 		handleAddPlaylist(data)
 	}
@@ -1184,73 +1299,38 @@ export default function () {
 		setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs, song] });
 	}
 
-	const isPlayedRef = useRef(false);
-	const handlePlayWelcome = async () => {
-		if(isPlayedRef.current) return;
-		isPlayedRef.current = true;
-		console.log("welcome tone")
-		const audio = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${user?.welcomeTone}`);
-		audio.play().then(() => {
-			console.log("welcome tone played")
-			setIsWelcomeTonePlaying(true);
-		}).catch(() => {
-			console.log("welcome tone error")
-			setIsWelcomeTonePlaying(false);
-		})
-		
-		audio.addEventListener('ended', () => {
-			setIsWelcomeTonePlaying(false);
-		})
-	}
+
+
 
 
 	useEffect(() => {
-		if(user){
-			console.log("user00000000000",user?.endingTone)
+		if (user) {
+			console.log("user00000000000", user?.endingTone)
 			const endingTone = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${user?.endingTone}`);
 			endingTone.addEventListener('loadedmetadata', () => {
-				console.log("ending tone loadedmetadata",endingTone.duration)
+				console.log("ending tone loadedmetadata", endingTone.duration)
 				setEndingToneDuration(endingTone.duration);
 				endingToneDurationRef.current = endingTone.duration;
 			})
 		}
 	}, [user])
 
-	console.log(endingToneDuration, "endingToneDuration")
 
-	const isEndedRef = useRef(false);
-	const handlePlayEnd = async () => {
-		if(isEndedRef.current) return;
-		isEndedRef.current = true;
-		console.log("ending tone")
-		const audio = new Audio(`${process.env.NEXT_PUBLIC_SOCKET_URL}${user?.endingTone}`);
-		audio.play().then(() => {
-			console.log("ending tone played")
-			setIsEndTonePlaying(true);
-		}).catch(() => {
-			console.log("ending tone error")
-			setIsEndTonePlaying(false);
-		})
-
-		audio.addEventListener('ended', () => {
-			setIsEndTonePlaying(false);
-		})
-	}
 
 
 
 	return (
 		<>
+			{
+				!intractUser &&
+				<div className="w-full h-full bg-black/50 fixed top-0 left-0 z-50 flex items-center justify-center flex-col gap-5">
+					<h2 className="text-white text-2xl">Ready when you are — click to begin.</h2>
+					<button className="bg-indigo-500 border-none py-6 px-4 outline-none text-white disabled:cursor-[not-allowed] disabled:bg-indigo-200 cursor-pointer disabled:text-gray-200n relative rounded-full" onClick={() => setIntractUser(true)}>Begin</button>
+				</div>
+			}
 			<section className="w-full py-5 px-4 reletive">
 				<a className="hidden" ref={downloadLink}></a>
-				<div className='relative w-full'>
-					<div className="m-auto p-4 max-w-[40rem] flex items-center justify-center gap-3 mb-5">
-						<div className="border-b-2 border-indigo-600">
-							<h3 className="text-3xl text-gray-600 scrolling-text-container" style={{ maxWidth: "50rem" }}><p className="scrolling-text">{message}</p></h3>
-						</div>
-						<button onClick={() => setMEdit(true)} className="bg-none outline-none border-none text-green-400 hover:text-green-500"><MdModeEdit size={20} /></button>
-					</div>
-				</div>
+				
 
 
 				{
@@ -1290,16 +1370,16 @@ export default function () {
 
 							<div className="w-full flex items-center mt-2 px-1 relative gap-1">
 								<div className='border-t-2 border-green-500 w-[34%] flex items-center justify-center'>
-									<h3 className='text-md text-green-500'>low</h3>
+									<h3 className='text-md text-green-500 cursor-pointer' onClick={() => handleMicVolumeChange({ target: { value: 1.5 } })}>low</h3>
 								</div>
 								<div className='border-t-2 border-yellow-500 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-yellow-500'>medium</h3>
+									<h3 className='text-md text-yellow-500 cursor-pointer' onClick={() => handleMicVolumeChange({ target: { value: 2.5 } })}>medium</h3>
 								</div>
 								<div className='border-t-2 border-red-500 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-red-500'>good</h3>
+									<h3 className='text-md text-red-500 cursor-pointer' onClick={() => handleMicVolumeChange({ target: { value: 3.5 } })}>good</h3>
 								</div>
 								<div className='border-t-2 border-red-900 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-red-900'>high</h3>
+									<h3 className='text-md text-red-900 cursor-pointer' onClick={() => handleMicVolumeChange({ target: { value: 5 } })}>high</h3>
 								</div>
 							</div>
 
@@ -1308,7 +1388,7 @@ export default function () {
 
 						<div className="w-full relative p-2">
 							<h2 className="text-white text-lg mb-1">Deck A Volume</h2>
-							<input type="range" className="w-full cursor-pointer" min={0} max={0.5} value={volume} step="0.05" onChange={handleVolumeChange} />
+							<input type="range" className="w-full cursor-pointer" min={0} max={1} value={volume} step="0.1" onChange={handleVolumeChange} />
 
 							<div className="w-full flex items-center justify-between mt-1 px-1">
 								<span className="text-white">0</span>
@@ -1326,21 +1406,21 @@ export default function () {
 
 							<div className="w-full flex items-center mt-2 px-1 relative gap-1">
 								<div className='border-t-2 border-green-500 w-[34%] flex items-center justify-center'>
-									<h3 className='text-md text-green-500'>low</h3>
+									<h3 className='text-md text-green-500 cursor-pointer' onClick={() => handleVolumeChange({ target: { value: 0.3 } })}>low</h3>
 								</div>
 								<div className='border-t-2 border-yellow-500 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-yellow-500'>medium</h3>
+									<h3 className='text-md text-yellow-500 cursor-pointer' onClick={() => handleVolumeChange({ target: { value: 0.5 } })}>medium</h3>
 								</div>
 								<div className='border-t-2 border-red-500 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-red-500'>good</h3>
+									<h3 className='text-md text-red-500 cursor-pointer' onClick={() => handleVolumeChange({ target: { value: 0.7 } })}>good</h3>
 								</div>
 								<div className='border-t-2 border-red-900 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-red-900'>high</h3>
+									<h3 className='text-md text-red-900 cursor-pointer' onClick={() => handleVolumeChange({ target: { value: 1 } })}>high</h3>
 								</div>
 							</div>
 
 							{/* <VolumePopupsDeck deckname={'Deck A'} volume={volume} handleMicVolumeChange={handleVolumeChange}/> */}
-							<AutoAdjustByBase songPlaying={songPlaying} songBase={songBase} handleVolumeChange={changeValume} volume={volume} userChangeVolume={userChangeVolume} voiceAcitce={voiceAcitce} />
+							{/* <AutoAdjustByBase songPlaying={songPlaying} songBase={songBase} handleVolumeChange={changeValume} volume={volume} userChangeVolume={userChangeVolume} voiceAcitce={voiceAcitce} />*/}
 
 						</div>
 
@@ -1363,16 +1443,16 @@ export default function () {
 							</div>
 							<div className="w-full flex items-center mt-2 px-1 relative gap-1">
 								<div className='border-t-2 border-green-500 w-[34%] flex items-center justify-center'>
-									<h3 className='text-md text-green-500'>low</h3>
+									<h3 className='text-md text-green-500 cursor-pointer' onClick={() => handleFilterVolumeChange({ target: { value: 0.15 } })}>low</h3>
 								</div>
 								<div className='border-t-2 border-yellow-500 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-yellow-500'>medium</h3>
+									<h3 className='text-md text-yellow-500 cursor-pointer' onClick={() => handleFilterVolumeChange({ target: { value: 0.3 } })}>medium</h3>
 								</div>
 								<div className='border-t-2 border-red-500 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-red-500'>good</h3>
+									<h3 className='text-md text-red-500 cursor-pointer' onClick={() => handleFilterVolumeChange({ target: { value: 0.35 } })}>good</h3>
 								</div>
 								<div className='border-t-2 border-red-900 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-red-900'>high</h3>
+									<h3 className='text-md text-red-900 cursor-pointer' onClick={() => handleFilterVolumeChange({ target: { value: 0.5 } })}>high</h3>
 								</div>
 							</div>
 
@@ -1391,36 +1471,14 @@ export default function () {
 									<Timer timerStart={timerStart} />
 								</div>
 
+
 							</div>
 							<div className="py-2 rounded-b-md flex justify-around items-center shadow-md">
-								<h3 className="text-black text-xl text-center">{listners}
-									<br />
-									Listeners
-								</h3>
+								
 								<div className="flex flex-col items-center gap-3 relative cursor-pointer" onMouseEnter={() => setShowTitle(true)} onMouseLeave={() => setShowTitle(false)}>
-									<button onClick={handleStart} className={`bg-none hover-button outline-none border-none disabled:opacity-20 ${start ? 'text-green-400' : 'text-red-600'}`}><LuPower size={40} /></button>
+									<button onClick={handleStart} className={`bg-none hover-button outline-none border-none disabled:opacity-20 ${start ? 'text-green-400' : 'text-red-600'}`} disabled={false}><LuPower size={40} /></button>
 
-									{
-										showTitle &&
-										<span className='block absolute top-0 left-[50px] w-[30rem] p-2 bg-white shadow-md rounded-md'>
-											{
-												user?.djTimeInDays ?
-													(
-														user?.djDays.includes(new Date().getDay().toString()) ?
-															(
-																`${daysObject[new Date().getDay().toString()]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`
-															) :
-															(
-																`${user?.djDays?.map((p, i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)}`
-															)
-
-													)
-													:
-													(`${user?.djDate} / ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)
-											}
-											{/* {user?.djTimeInDays ? `${user?.djDays?.map((p, i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)}` : `${user?.djDate} / ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`} */}
-										</span>
-									}
+								
 
 									<span className="text-black text-2xl">{start ? 'ON' : "OFF"}</span>
 								</div>
@@ -1451,7 +1509,7 @@ export default function () {
 
 									<div className="flex justify-center mt-5">
 										<div className="flex flex-col items-center gap-3">
-											<button className="bg-none outline-none border-none text-black" onClick={() => handleShare(user?.originalId || user?._id)}>
+											<button className="bg-none outline-none border-none text-black" onClick={handleShare}>
 												<IoMdShare size={40} />
 											</button>
 											<span className="text-black text-lg">Copy Link</span>
@@ -1459,14 +1517,14 @@ export default function () {
 									</div>
 								</div>
 
-								<div className="flex justify-center mt-5">
+								{/*<div className="flex justify-center mt-5">
 									<div className="flex flex-col items-center gap-3">
 										<button disabled={!recordReady} onClick={handleRecord} className="bg-indigo-600 disabled:opacity-50 outline-none border-none text-2xl py-2 px-4 rounded-md text-white" title="record live stream">
 											{record ? <Timer timerStart={record} /> : 'Record'}
 										</button>
 
 									</div>
-								</div>
+								</div>*/}
 
 							</div>
 						</div>
@@ -1538,7 +1596,7 @@ export default function () {
 													<h2 className="text-black">{data?.title?.slice(0, 20)}</h2>
 												</div>
 
-												<button className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => { handleSelectedSong(data); setDforward(false); setDbackward(false) }}><FaPlay size={20} /></button>
+												<button disabled={isEndTonePlaying} className="bg-none outline-none border-none text-black cursor-pointer disabled:opacity-40" onClick={() => { handleSelectedSong(data); setDforward(false); setDbackward(false) }}><FaPlay size={20} /></button>
 											</div>
 										</div>
 									))
@@ -1602,7 +1660,7 @@ export default function () {
 											</div>
 
 											<div className="w-[100%] flex flex-col reletive px-3 py-2">
-												<input type="range" className="w-[100%]" value={progress} onChange={handleProgressChange} step={1} min={0} max={sduration} />
+												<input type="range" className="w-[100%]" value={progress} onChange={(e) => handleProgressChange("song",e.target.value)} step={1} min={0} max={sduration} />
 												<div className="w-[100%] flex items-center justify-between">
 													<time className="text-black text-xs">{Math.floor(remaining / 60)}:{Math.floor(remaining % 60)}</time>
 													<time className="text-black text-xs">{Math.floor(sduration / 60)}:{Math.floor(sduration % 60)}</time>
@@ -1713,7 +1771,7 @@ export default function () {
 																	</div>
 																	<div>
 																		<button disabled={songStreamloading} title='delete song from playlist' className="p-2 rounded-full text-red-400 hover:text-white hover:bg-red-400 mr-4" onClick={() => handleDeleteFromPlaylist(data)}><MdDelete size={20} /></button>
-																		<button disabled={songStreamloading} className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handleSelectedSong(data, index)}><FaPlay size={20} /></button>
+																		<button disabled={songStreamloading || isEndTonePlaying || !start} className="bg-none outline-none border-none text-black cursor-pointer disabled:opacity-40" onClick={() => handleSelectedSong(data, index)}><FaPlay size={20} /></button>
 																	</div>
 																</div>
 															)}
@@ -1834,7 +1892,7 @@ export default function () {
 											</div>
 
 											<div className="w-[100%] flex flex-col reletive px-3 py-2">
-												<input type="range" className="w-[100%]" value={fprogress} step={1} min={0} max={fduration} />
+												<input type="range" className="w-[100%]" value={fprogress} step={1} min={0} max={fduration} onChange={(e) => handleProgressChange("filter",e.target.value)} />
 												<div className="w-[100%] flex items-center justify-between">
 													<time className="text-black text-xs">{Math.floor(fremaining / 60)}:{Math.floor(fremaining % 60)}</time>
 													<time className="text-black text-xs">{Math.floor(fduration / 60)}:{Math.floor(fduration % 60)}</time>
@@ -2007,7 +2065,7 @@ export default function () {
 														</div>
 														<div>
 															<button disabled={songStreamloading} title='delete song from playlist' className="p-2 rounded-full text-red-400 hover:text-white hover:bg-red-400 mr-4" onClick={() => handleDeleteFromPlaylist(data)}><MdDelete size={20} /></button>
-															<button disabled={songStreamloading} className="bg-none outline-none border-none text-black cursor-pointer" onClick={() => handleSelectedSong(data, index)}><FaPlay size={20} /></button>
+															<button disabled={songStreamloading || isEndTonePlaying} className="bg-none outline-none border-none text-black cursor-pointer disabled:opacity-40" onClick={() => handleSelectedSong(data, index)}><FaPlay size={20} /></button>
 														</div>
 													</div>
 												)}
@@ -2158,12 +2216,12 @@ export default function () {
 			} */}
 
 			{
-				leftSecond != null && 
+				leftSecond != null &&
 				<div className='w-[90%] h-[90%] pointer-events-none absolute top-14 bg-transparent z-[100000] rounded-md flex flex-col items-center justify-center gap-6'>
 					<h1 className='text-8xl text-black font-medium'>{leftSecond}</h1>
 				</div>
 			}
-			
+
 
 			{contextMenuPosition && (
 				<CustomContextMenu xPos={contextMenuPosition.x} yPos={contextMenuPosition.y} setRenameOpen={setRenameOpen} clickedData={clickedData} handleDelete={handleDelete} setCreatePlaylistOpen={setCreatePlaylistOpen} setEditPlaylistOpen={setEditPlaylistOpen} />

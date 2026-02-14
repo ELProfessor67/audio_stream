@@ -71,10 +71,23 @@ const Page = () => {
 
   useEffect(() => {
     if (isAuth && user) {
-      if (user?.isSubscriber) {
-        redirect('/dashboard');
-      } else {
-        redirect('/subscribe');
+      // Check if user is a DJ
+      if (user?.isDJ === false) {
+        // Not a DJ, check subscription and redirect to dashboard
+        if (user?.isSubscriber) {
+          redirect('/dashboard');
+        } else {
+          redirect('/subscribe');
+        }
+      } else if (user?.isDJ === true) {
+        // Is a DJ, check if forms are filled
+        if (user?.volunteerForm && user?.executiveLegalForm) {
+          // Forms are filled, redirect to dashboard
+          redirect('/dashboard');
+        } else {
+          // Forms not filled, redirect to DJ forms page
+          redirect('/dj-forms');
+        }
       }
     }
   }, [isAuth, user]);

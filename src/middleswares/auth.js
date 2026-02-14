@@ -19,7 +19,7 @@ export const auth = (func) => async (req) => {
         // '/playlist',
         const url = req.url;
         
-        const djList = ['/playlist','/filter','/temp-playlist','/welcome-tone','/ending-tone','/song','/filter','/dashboard','/schedule']
+        const djList = ['/playlist','/filter','/temp-playlist','/welcome-tone','/ending-tone','/song','/filter','/dashboard','/schedule','/dj-forms/volunteer','/dj-forms/executive','/dj-forms/status','dj-forms/all','dj-forms/approve','dj-forms/disapprove']
 
         // if(user.isDJ && !user.djPermissions.includes('playlists')){
         //    djList.push('/playlist');

@@ -36,7 +36,9 @@ const userSchema = new mongoose.Schema({
     phone: {type: String,default: undefined},
     OTP: {type: String,default: undefined},
     role: {type: String,default: undefined},
-    jwt: {type: String,default: undefined}
+    jwt: {type: String,default: undefined},
+    volunteerForm: {type: mongoose.Schema.Types.ObjectId,ref: 'volunteerForm',default: undefined},
+    executiveLegalForm: {type: mongoose.Schema.Types.ObjectId,ref: 'executiveLegalForm',default: undefined}
 },{timestamps: true});
 
 

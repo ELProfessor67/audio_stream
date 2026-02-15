@@ -179,10 +179,7 @@ export default function page({ params }) {
 	}
 
 	const handleCall = async () => {
-		if(!is18plus){
-			setError('You must be 18+ to call');
-			return
-		}
+		
 		setError('');
 		const audioPermissionStatus = await navigator.permissions.query({ name: 'microphone' });
 		// if (audioPermissionStatus.state === 'granted' || audioPermissionStatus.state === 'denied') {
@@ -195,6 +192,12 @@ export default function page({ params }) {
 			return
 		}else{
 			setGetDetailsOpne(false);
+		}
+
+
+		if(!is18plus){
+			setError('You must be 18+ to call');
+			return
 		}
 		setCallOpen(true);
 		if (callStatus == 'processing' || callStatus == 'accepted') return

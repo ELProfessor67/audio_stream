@@ -226,11 +226,11 @@ const TableRow = ({ name, email, djPermissions, _id, djStartTime, djEndTime, del
 				djTimeInDays ?
 					<td className="px-6 py-4 whitespace-nowarp">
 						{djDays?.map((p, i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]}`)} on {rawTime.split("|")[0]} - {rawTime.split("|")[1]}
-						<span className='block text-red-500'>{currentStatus}</span>
+						
 					</td>
 					: <td className="px-6 py-4 whitespace-nowarp">
 						{djDate} / {rawTime.split("|")[0]} - {rawTime.split("|")[1]}
-						<span className='block'>{currentStatus}</span>
+						
 					</td>
 			}
 

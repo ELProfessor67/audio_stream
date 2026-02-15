@@ -46,7 +46,7 @@ export default function Page() {
         const maybePromise = audio.play();
         if (maybePromise && typeof maybePromise.catch === "function") {
           // Ignore play() rejections (e.g., due to browser policies)
-          maybePromise.catch(() => {});
+          maybePromise.catch(() => { });
         }
       } catch {
         /* no-op */

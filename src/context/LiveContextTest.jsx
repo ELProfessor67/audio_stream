@@ -14,7 +14,7 @@ export const LiveProvider = ({ children, isAdmin = true, isCall = false }) => {
     const [isLive, setIsLive] = useState(false);
     const [roomActive, setRoomActive] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
-    const {streamId} = useParams();
+    const { streamId } = useParams();
 
 
     useEffect(() => {
@@ -31,15 +31,15 @@ export const LiveProvider = ({ children, isAdmin = true, isCall = false }) => {
         roomRef.current.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
             console.log('Track subscribed:', track.kind, participant.identity);
             handleTrackSubscribed(track);
-           
+
         });
 
         roomRef.current.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
             console.log('Track unsubscribed:', track.kind, participant.identity);
             track.detach();
-            
 
-            if(participant.identity == "admin" && track.source == Track.Source.Microphone){
+
+            if (participant.identity == "admin" && track.source == Track.Source.Microphone) {
                 setRoomActive(false);
                 setIsLive(false);
             }
@@ -53,7 +53,7 @@ export const LiveProvider = ({ children, isAdmin = true, isCall = false }) => {
         // audioElement.autoplay = true;
         track.attach(audioElement);
         document.body.appendChild(audioElement);
-        if(isPlaying){
+        if (isPlaying) {
             audioElement.play();
         }
     }
@@ -63,10 +63,10 @@ export const LiveProvider = ({ children, isAdmin = true, isCall = false }) => {
             connect(user?.originalId?.toString());
         }
 
-        if(!isAdmin){
+        if (!isAdmin) {
             connect(streamId);
         }
-    }, [user,streamId]);
+    }, [user, streamId]);
 
     return (
         <LiveContext.Provider value={{ isConnected, roomRef, participantCount, isLive, setIsLive, roomActive, setRoomActive, isPlaying, setIsPlaying }}>

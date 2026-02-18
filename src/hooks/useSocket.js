@@ -248,7 +248,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			await roomRef.current.localParticipant.unpublishTrack(publication.track);
 		}
 		await roomRef.current.localParticipant.publishTrack(track, {
-			red: true,
+			red: false,
 			source: Track.Source.Unknown,
 			name: name
 		});
@@ -548,12 +548,35 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	// 	})
 	// }
 
+   async function getObjectUrlFromAudio(audioUrl) {
+	try {
+		// 1. Fetch audio as buffer
+		const response = await fetch(audioUrl);
+		if (!response.ok) throw new Error("Failed to fetch audio");
 
+		const arrayBuffer = await response.arrayBuffer();
 
-	function getSongStream(songUrl, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setduration, isFilter = false) {
-		const url = songUrl.replace(process.env.NEXT_PUBLIC_SOCKET_URL,'');
+		// 2. Convert to Blob
+		const blob = new Blob([arrayBuffer], {
+		type: response.headers.get("content-type") || "audio/mpeg",
+		});
+
+		// 3. Create Object URL
+		const objectUrl = URL.createObjectURL(blob);
+
+		return objectUrl;
+	} catch (err) {
+		console.error("Audio fetch error:", err);
+		throw err;
+	}
+	}
+
+	async function getSongStream(songUrl, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setduration, isFilter = false) {
+		let url = songUrl.replace(process.env.NEXT_PUBLIC_SOCKET_URL,'');
+		url = await getObjectUrlFromAudio(url)
 		
 		// const url = "/audio/audip.mp3";
+		// const url = await getObjectUrlFromAudio("/audio/audip.mp3")
 		return new Promise((resolve, reject) => {
 			const audio = new Audio(url);
 			audio.muted = false;
@@ -655,6 +678,11 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		});
 	}
 
+
+
+
+
+	
 
 	useEffect(() => {
 		micOnRef.current = micOn;
@@ -1461,7 +1489,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 		//publishing the stream
 		roomRef.current.localParticipant.publishTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'),{
-			red: true,
+			red: false,
 			source: Track.Source.Microphone
 		});
 

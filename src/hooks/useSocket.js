@@ -152,6 +152,8 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	const continuePlayRef = useRef();
 	const repeatPlaylistRef = useRef();
 	const chatOpenRef = useRef();
+	const compressorRef = useRef();
+	const offAutoLevelingRef = useRef();
 
 
 	const filterSourceRef = useRef();
@@ -575,7 +577,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		let url = songUrl.replace(process.env.NEXT_PUBLIC_SOCKET_URL,'');
 		url = await getObjectUrlFromAudio(url)
 		
-		// const url = "/audio/audip.mp3";
+		
 		// const url = await getObjectUrlFromAudio("/audio/audip.mp3")
 		return new Promise((resolve, reject) => {
 			const audio = new Audio(url);
@@ -602,16 +604,56 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 				const analyser = audioContext.createAnalyser();
 				analyser.smoothingTimeConstant = 0.8;
 				analyser.fftSize = 1024;
+
+
+	
+		   
+				 // Compressor for auto-leveling
+				 const compressor = audioContext.createDynamicsCompressor();
+				 compressor.threshold.setValueAtTime(-30, audioContext.currentTime);
+				 compressor.knee.setValueAtTime(40, audioContext.currentTime);
+				 compressor.ratio.setValueAtTime(12, audioContext.currentTime);
+				 compressor.attack.setValueAtTime(0.003, audioContext.currentTime);
+				 compressor.release.setValueAtTime(0.25, audioContext.currentTime);
+				 compressorRef.current = compressor;
 				
 				//create stream destination for WebRTC
 				const streamDestination = audioContext.createMediaStreamDestination();
+
+
+				let autoLevelingOn = true;
+				function connectAudioNodes() {
+					gainNode.disconnect();
+					compressor.disconnect();
+			
+					if (autoLevelingOn) {
+					  gainNode.connect(compressor);
+					  compressor.connect(audioContext.destination); // local playback
+					  compressor.connect(streamDestination);         // WebRTC
+					} else {
+					  gainNode.connect(audioContext.destination);   // local playback
+					  gainNode.connect(streamDestination);          // WebRTC
+					}
+				}
 				
 				// Audio routing: source -> analyser -> gain -> streamDestination
 				// source -> gain -> destination (for local playback)
 				source.connect(analyser);
 				analyser.connect(gainNode);
-				gainNode.connect(audioContext.destination); // Local playback
-				gainNode.connect(streamDestination); // WebRTC stream
+				connectAudioNodes();
+
+
+				const offAutoLeveling = () => {
+					if(autoLevelingOn == false) return;
+					autoLevelingOn = false;
+					connectAudioNodes();
+				};
+
+				// gainNode.connect(audioContext.destination); // Local playback
+				// gainNode.connect(streamDestination); // WebRTC stream
+
+
+
 				
 				songSourceRef.current = audio;
 				audioContextRef.current = audioContext;
@@ -673,7 +715,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 				}
 				
 				audio.play();
-				resolve({ songStream: streamDestination.stream, changeCurrentTime });
+				resolve({ songStream: streamDestination.stream, changeCurrentTime, offAutoLeveling });
 			});
 		});
 	}
@@ -986,8 +1028,9 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 		try {
-			let { songStream, changeCurrentTime } = await getSongStream(url, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setsduration);
+			let { songStream, changeCurrentTime,offAutoLeveling } = await getSongStream(url, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setsduration);
 			changeCurrentTimeRef.current = changeCurrentTime;
+			offAutoLevelingRef.current = offAutoLeveling;
 
 			console.log(songStream,"songStream")
 
@@ -1093,6 +1136,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			
 			// gainNodeRef.current.gain.value = value;
 			// gainNodeStreamRef.current.gain.value = value;
+			offAutoLevelingRef.current();
 			songSourceRef.current.volume = value;
 		}
 	}

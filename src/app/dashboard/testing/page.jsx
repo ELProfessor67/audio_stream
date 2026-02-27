@@ -575,7 +575,7 @@ export default function () {
 	}
 
 	const { participantCount, roomRef } = useLive();
-	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd, handleWelcomeTonePlayed, handleEndTonePlayed, roomRef,setActive);
+	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd, handleWelcomeTonePlayed, handleEndTonePlayed, roomRef, setActive);
 
 	// console.info('voiceAcitce',voiceAcitce);
 
@@ -686,7 +686,7 @@ export default function () {
 		setVolume(value);
 	}
 
-	
+
 
 
 	useEffect(() => {
@@ -1330,7 +1330,7 @@ export default function () {
 			}
 			<section className="w-full py-5 px-4 reletive">
 				<a className="hidden" ref={downloadLink}></a>
-				
+
 
 
 				{
@@ -1420,7 +1420,7 @@ export default function () {
 							</div>
 
 							{/* <VolumePopupsDeck deckname={'Deck A'} volume={volume} handleMicVolumeChange={handleVolumeChange}/> */}
-							{/* <AutoAdjustByBase songPlaying={songPlaying} songBase={songBase} handleVolumeChange={changeValume} volume={volume} userChangeVolume={userChangeVolume} voiceAcitce={voiceAcitce} />*/}
+							<AutoAdjustByBase songPlaying={songPlaying} songBase={songBase} handleVolumeChange={changeValume} volume={volume} userChangeVolume={userChangeVolume} voiceAcitce={voiceAcitce} />
 
 						</div>
 
@@ -1474,11 +1474,11 @@ export default function () {
 
 							</div>
 							<div className="py-2 rounded-b-md flex justify-around items-center shadow-md">
-								
+
 								<div className="flex flex-col items-center gap-3 relative cursor-pointer" onMouseEnter={() => setShowTitle(true)} onMouseLeave={() => setShowTitle(false)}>
 									<button onClick={handleStart} className={`bg-none hover-button outline-none border-none disabled:opacity-20 ${start ? 'text-green-400' : 'text-red-600'}`} disabled={false}><LuPower size={40} /></button>
 
-								
+
 
 									<span className="text-black text-2xl">{start ? 'ON' : "OFF"}</span>
 								</div>
@@ -1660,7 +1660,7 @@ export default function () {
 											</div>
 
 											<div className="w-[100%] flex flex-col reletive px-3 py-2">
-												<input type="range" className="w-[100%]" value={progress} onChange={(e) => handleProgressChange("song",e.target.value)} step={1} min={0} max={sduration} />
+												<input type="range" className="w-[100%]" value={progress} onChange={(e) => handleProgressChange("song", e.target.value)} step={1} min={0} max={sduration} />
 												<div className="w-[100%] flex items-center justify-between">
 													<time className="text-black text-xs">{Math.floor(remaining / 60)}:{Math.floor(remaining % 60)}</time>
 													<time className="text-black text-xs">{Math.floor(sduration / 60)}:{Math.floor(sduration % 60)}</time>
@@ -1892,7 +1892,7 @@ export default function () {
 											</div>
 
 											<div className="w-[100%] flex flex-col reletive px-3 py-2">
-												<input type="range" className="w-[100%]" value={fprogress} step={1} min={0} max={fduration} onChange={(e) => handleProgressChange("filter",e.target.value)} />
+												<input type="range" className="w-[100%]" value={fprogress} step={1} min={0} max={fduration} onChange={(e) => handleProgressChange("filter", e.target.value)} />
 												<div className="w-[100%] flex items-center justify-between">
 													<time className="text-black text-xs">{Math.floor(fremaining / 60)}:{Math.floor(fremaining % 60)}</time>
 													<time className="text-black text-xs">{Math.floor(fduration / 60)}:{Math.floor(fduration % 60)}</time>

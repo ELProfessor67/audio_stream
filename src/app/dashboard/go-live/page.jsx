@@ -1116,8 +1116,8 @@ export default function () {
 		let isExistAlready = clone.find(song => song._id == data._id);
 
 		if (isExistAlready) {
-			const confirm = window.confirm("This Song is already exist are you sure you want to add ?")
-			if (!confirm) return
+			window.alert("This Song is already exist")
+			return
 		}
 
 		clone.push(data);

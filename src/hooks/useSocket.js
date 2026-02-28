@@ -574,11 +574,11 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	}
 
 	async function getSongStream(songUrl, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setduration, isFilter = false) {
-		// let url = songUrl.replace(process.env.NEXT_PUBLIC_SOCKET_URL,'');
-		// url = await getObjectUrlFromAudio(url)
+		let url = songUrl.replace(process.env.NEXT_PUBLIC_SOCKET_URL,'');
+		url = await getObjectUrlFromAudio(url)
 		
 		
-		const url = await getObjectUrlFromAudio("/audio/audip.mp3")
+		// const url = await getObjectUrlFromAudio("/audio/audip.mp3")
 		return new Promise((resolve, reject) => {
 			const audio = new Audio(url);
 			audio.muted = false;

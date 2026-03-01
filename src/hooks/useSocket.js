@@ -578,7 +578,6 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		url = await getObjectUrlFromAudio(url)
 		
 		
-		// const url = await getObjectUrlFromAudio("/audio/audip.mp3")
 		return new Promise((resolve, reject) => {
 			const audio = new Audio(url);
 			audio.muted = false;

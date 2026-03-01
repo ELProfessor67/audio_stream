@@ -1401,7 +1401,6 @@ export default function () {
 								<span className="text-white">7</span>
 								<span className="text-white">8</span>
 								<span className="text-white">9</span>
-
 							</div>
 
 							<div className="w-full flex items-center mt-2 px-1 relative gap-1">
@@ -1420,7 +1419,7 @@ export default function () {
 							</div>
 
 							{/* <VolumePopupsDeck deckname={'Deck A'} volume={volume} handleMicVolumeChange={handleVolumeChange}/> */}
-							<AutoAdjustByBase songPlaying={songPlaying} songBase={songBase} handleVolumeChange={changeValume} volume={volume} userChangeVolume={userChangeVolume} voiceAcitce={voiceAcitce} />
+							<AutoAdjustByBase micOn={micOn} songPlaying={songPlaying} songBase={songBase} handleVolumeChange={changeValume} volume={volume} userChangeVolume={userChangeVolume} voiceAcitce={voiceAcitce} />
 
 						</div>
 

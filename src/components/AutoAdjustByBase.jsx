@@ -1,11 +1,11 @@
 import { Elsie_Swash_Caps } from 'next/font/google';
 import React, { useEffect, useRef } from 'react';
 
-const AutoAdjustByBase = ({ songPlaying, songBase, handleVolumeChange, userChangeVolume, voiceAcitce, volume: currentVolume }) => {
+const AutoAdjustByBase = ({ songPlaying, songBase, handleVolumeChange, userChangeVolume, voiceAcitce, volume: currentVolume, micOn }) => {
     const volume = useRef(0.25); // Start with a midpoint volume
 
     useEffect(() => {
-        if (voiceAcitce && songPlaying) {
+        if (voiceAcitce && songPlaying && micOn) {
             if (currentVolume > 0) {
                 handleVolumeChange(0.03);
             }
@@ -45,7 +45,7 @@ const AutoAdjustByBase = ({ songPlaying, songBase, handleVolumeChange, userChang
         } else {
             handleVolumeChange(currentVolume);
         }
-    }, [songPlaying, songBase, handleVolumeChange, userChangeVolume]);
+    }, [songPlaying, songBase, handleVolumeChange, userChangeVolume, micOn]);
 
     return null;
 };

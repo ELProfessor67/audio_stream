@@ -1433,7 +1433,7 @@ export default function () {
 							</div>
 
 							{/* <VolumePopupsDeck deckname={'Deck A'} volume={volume} handleMicVolumeChange={handleVolumeChange}/> */}
-							<AutoAdjustByBase songPlaying={songPlaying} songBase={songBase} handleVolumeChange={changeValume} volume={volume} userChangeVolume={userChangeVolume} voiceAcitce={voiceAcitce} />
+							<AutoAdjustByBase songPlaying={songPlaying} songBase={songBase} handleVolumeChange={changeValume} volume={volume} userChangeVolume={userChangeVolume} voiceAcitce={voiceAcitce} micOn={micOn} />
 
 						</div>
 

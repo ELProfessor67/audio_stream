@@ -14,7 +14,8 @@ export async function GET(request) {
     const searchParams = new URLSearchParams(request.url.split('?')[1]);
     const roomName = searchParams.get('room');
     const isAdmin = searchParams.get('isAdmin') == 'true' ? true : false;
-    const participantIdentity = isAdmin ? 'admin' : uuidv4();
+    const isCall = searchParams.get('isCall') == 'true' ? true : false;
+    const participantIdentity = isAdmin ? 'admin' : isCall ? `call-${uuidv4()}` : uuidv4();
 
 
     if (!LIVEKIT_URL) {

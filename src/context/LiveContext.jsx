@@ -13,7 +13,7 @@ export const LiveProvider = ({ children, isAdmin = true, isCall = false }) => {
     const { isConnected, roomRef, connect, participantCount, setParticipantCount } = useConnect(isAdmin);
     const [isLive, setIsLive] = useState(false);
     const [roomActive, setRoomActive] = useState(false);
-    const {streamId} = useParams();
+    const { streamId } = useParams();
 
 
     useEffect(() => {
@@ -29,13 +29,13 @@ export const LiveProvider = ({ children, isAdmin = true, isCall = false }) => {
 
         roomRef.current.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
             console.log('Track subscribed:', track.kind, participant.identity);
-            if(!isCall){
+            if (!isCall) {
                 console.log('Track subscribed:', track.kind, participant.identity);
                 handleTrackSubscribed(track);
-            }else{
+            } else {
                 console.log('Track subscribed:', track.kind, participant.identity);
-                if(participant.identity == "admin" && track.source == Track.Source.Microphone){
-                    
+                if (participant.identity == "admin" && track.source == Track.Source.Microphone) {
+
                     setRoomActive(true);
                     setIsLive(true);
 
@@ -49,9 +49,9 @@ export const LiveProvider = ({ children, isAdmin = true, isCall = false }) => {
         roomRef.current.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
             console.log('Track unsubscribed:', track.kind, participant.identity);
             track.detach();
-            
 
-            if(participant.identity == "admin" && track.source == Track.Source.Microphone){
+
+            if (participant.identity == "admin" && track.source == Track.Source.Microphone) {
                 setRoomActive(false);
                 setIsLive(false);
             }
@@ -69,13 +69,13 @@ export const LiveProvider = ({ children, isAdmin = true, isCall = false }) => {
 
     useEffect(() => {
         if (user) {
-            connect(user?._id.toString());
+            connect(user?._id.toString(), false);
         }
 
-        if(streamId){
-            connect(streamId);
+        if (streamId) {
+            connect(streamId, true);
         }
-    }, [user,streamId]);
+    }, [user, streamId]);
 
     return (
         <LiveContext.Provider value={{ isConnected, roomRef, participantCount, isLive, setIsLive, roomActive, setRoomActive }}>

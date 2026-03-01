@@ -8,9 +8,9 @@ const useConnect = (isAdmin = true) => {
     const roomRef = useRef(new Room());
     const [participantCount, setParticipantCount] = useState(0);
 
-    const connect = async (roomName) => {
+    const connect = async (roomName, isCall = false) => {
         try {
-            const response = await fetch(`/api/v1/token?room=${roomName}&isAdmin=${isAdmin}`);
+            const response = await fetch(`/api/v1/token?room=${roomName}&isAdmin=${isAdmin}&isCall=${isCall}`);
             const data = await response.json();
             roomRef.current.connect(data.serverUrl, data.participantToken);
             setParticipantCount(roomRef.current.numParticipants);

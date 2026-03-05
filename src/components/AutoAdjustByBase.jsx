@@ -5,11 +5,13 @@ const AutoAdjustByBase = ({ songPlaying, songBase, handleVolumeChange, userChang
     const volume = useRef(0.25); // Start with a midpoint volume
 
     useEffect(() => {
-        if (voiceAcitce && songPlaying && micOn) {
-            if (currentVolume > 0) {
-                handleVolumeChange(0.03);
-            }
-        } else if (songPlaying && !userChangeVolume) {
+        // if (voiceAcitce && songPlaying && micOn) {
+        //     if (currentVolume > 0) {
+        //         handleVolumeChange(0.03);
+        //     }
+        // } else
+
+        if (songPlaying && !userChangeVolume) {
             let adjustedVolume = volume.current;
 
             if (songBase < 5) {
@@ -42,9 +44,10 @@ const AutoAdjustByBase = ({ songPlaying, songBase, handleVolumeChange, userChang
             volume.current = adjustedVolume;
             // Call handleVolumeChange with the adjusted volume
             handleVolumeChange(adjustedVolume);
-        } else {
-            handleVolumeChange(currentVolume);
         }
+        // else {
+        //     handleVolumeChange(currentVolume);
+        // }
     }, [songPlaying, songBase, handleVolumeChange, userChangeVolume, micOn]);
 
     return null;

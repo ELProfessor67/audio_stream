@@ -6,6 +6,8 @@ import { useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { showMessage, showError, clearMessage, clearError } from '@/utils/showAlert';
 import { useDispatch } from 'react-redux';
+import { CONTRACT_CONTENT } from '@/constants/contracts';
+import { IoMdClose } from 'react-icons/io';
 
 const DJFormsPage = () => {
     const [step, setStep] = useState(1);
@@ -14,6 +16,13 @@ const DJFormsPage = () => {
     const { isAuth, user } = useSelector(store => store.user);
     const router = useRouter();
     const dispatch = useDispatch();
+
+    // Modal State
+    const [modal, setModal] = useState({
+        show: false,
+        title: '',
+        content: ''
+    });
 
     // Volunteer Form State
     const [volunteerForm, setVolunteerForm] = useState({
@@ -66,17 +75,17 @@ const DJFormsPage = () => {
         digitalSignature: ''
     });
 
-    useEffect(() => {
-        // Redirect if not authenticated or not a DJ
-        if (!isAuth || !user) {
-            router.push('/login');
-        } else if (!user.isDJ) {
-            router.push('/dashboard');
-        } else if (user.volunteerForm && user.executiveLegalForm) {
-            // Already filled forms
-            router.push('/dashboard');
-        }
-    }, [isAuth, user, router]);
+    // useEffect(() => {
+    //     // Redirect if not authenticated or not a DJ
+    //     if (!isAuth || !user) {
+    //         router.push('/login');
+    //     } else if (!user.isDJ) {
+    //         router.push('/dashboard');
+    //     } else if (user.volunteerForm && user.executiveLegalForm) {
+    //         // Already filled forms
+    //         router.push('/dashboard');
+    //     }
+    // }, [isAuth, user, router]);
 
     const handleVolunteerFormChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -95,6 +104,15 @@ const DJFormsPage = () => {
                 ...prev,
                 [name]: type === 'checkbox' ? checked : value
             }));
+
+            // Show modal if it's a checkbox and being checked
+            if (type === 'checkbox' && checked && CONTRACT_CONTENT[name]) {
+                setModal({
+                    show: true,
+                    title: CONTRACT_CONTENT[name].title,
+                    content: CONTRACT_CONTENT[name].content
+                });
+            }
         }
     };
 
@@ -115,6 +133,15 @@ const DJFormsPage = () => {
                 ...prev,
                 [name]: type === 'checkbox' ? checked : value
             }));
+
+            // Show modal if it's a checkbox and being checked
+            if (type === 'checkbox' && checked && CONTRACT_CONTENT[name]) {
+                setModal({
+                    show: true,
+                    title: CONTRACT_CONTENT[name].title,
+                    content: CONTRACT_CONTENT[name].content
+                });
+            }
         }
     };
 
@@ -187,6 +214,37 @@ const DJFormsPage = () => {
             await dispatch(clearError());
         }
         setLoading(false);
+    };
+
+    const ContractModal = ({ show, title, content, onClose }) => {
+        if (!show) return null;
+
+        return (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+                    <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50/50">
+                        <h3 className="text-xl font-bold text-gray-900">{title}</h3>
+                        <button
+                            onClick={onClose}
+                            className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-900"
+                        >
+                            <IoMdClose size={24} />
+                        </button>
+                    </div>
+                    <div className="p-8 overflow-y-auto text-gray-700 leading-relaxed custom-scrollbar">
+                        <div dangerouslySetInnerHTML={{ __html: content }} />
+                    </div>
+                    <div className="p-6 border-t border-gray-100 flex justify-end bg-gray-50/50">
+                        <button
+                            onClick={onClose}
+                            className="px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-indigo-200 transition-all hover:-translate-y-0.5"
+                        >
+                            Understood
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -693,6 +751,14 @@ const DJFormsPage = () => {
                     )}
                 </div>
             </div>
+
+            {/* Contract Modal */}
+            <ContractModal
+                show={modal.show}
+                title={modal.title}
+                content={modal.content}
+                onClose={() => setModal({ ...modal, show: false })}
+            />
 
             {/* Success Popup */}
             {showSuccessPopup && (

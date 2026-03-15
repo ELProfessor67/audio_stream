@@ -68,17 +68,17 @@ const DJFormsPage = () => {
         digitalSignature: ''
     });
 
-    // useEffect(() => {
-    //     // Redirect if not authenticated or not a DJ
-    //     if (!isAuth || !user) {
-    //         router.push('/login');
-    //     } else if (!user.isDJ) {
-    //         router.push('/dashboard');
-    //     } else if (user.volunteerForm && user.executiveLegalForm) {
-    //         // Already filled forms
-    //         router.push('/dashboard');
-    //     }
-    // }, [isAuth, user, router]);
+    useEffect(() => {
+        // Redirect if not authenticated or not a DJ
+        if (!isAuth || !user) {
+            router.push('/login');
+        } else if (!user.isDJ) {
+            router.push('/dashboard');
+        } else if (user.volunteerForm && user.executiveLegalForm) {
+            // Already filled forms
+            router.push('/dashboard');
+        }
+    }, [isAuth, user, router]);
 
     const handleVolunteerFormChange = (e) => {
         const { name, value, type, checked } = e.target;

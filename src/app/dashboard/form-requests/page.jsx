@@ -349,19 +349,45 @@ const FormRequests = () => {
                                                 <p className='text-sm text-gray-600'>Email</p>
                                                 <p className='font-semibold'>{selectedForm.user.email}</p>
                                             </div>
-                                            {selectedForm.executiveForm?.titleOrPosition && (
+                                            {selectedForm.executiveLegalForm?.titleOrPosition && (
                                                 <div>
                                                     <p className='text-sm text-gray-600'>Title/Position</p>
-                                                    <p className='font-semibold'>{selectedForm.executiveForm.titleOrPosition}</p>
-                                                </div>
-                                            )}
-                                            {selectedForm.executiveForm?.responsibilities && (
-                                                <div>
-                                                    <p className='text-sm text-gray-600'>Responsibilities</p>
-                                                    <p className='font-semibold'>{selectedForm.executiveForm.responsibilities}</p>
+                                                    <p className='font-semibold'>{selectedForm.executiveLegalForm.titleOrPosition}</p>
                                                 </div>
                                             )}
                                         </div>
+                                    </div>
+                                </div>
+
+                                {/* Legal Agreements Status */}
+                                <div className='mt-6 border border-gray-200 rounded-lg p-4'>
+                                    <h3 className='text-lg font-semibold text-gray-800 mb-4'>Legal Agreements & Declarations</h3>
+                                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+                                        {[
+                                            { label: 'Volunteer Agreement', key: 'volunteerAgreementAccepted' },
+                                            { label: 'NDA', key: 'ndaAccepted' },
+                                            { label: 'IP Assignment', key: 'ipAssignmentAccepted' },
+                                            { label: 'Liability Waiver', key: 'liabilityWaiverAccepted' },
+                                            { label: 'Non-Compete', key: 'nonCompeteAccepted' },
+                                            { label: 'Faith Acknowledgment', key: 'faithAcknowledgementAccepted' },
+                                            { label: 'Arbitration Agreement', key: 'arbitrationAccepted' },
+                                            { label: 'Non-Solicitation', key: 'nonSolicitationAccepted' },
+                                            { label: 'Profit Compensation', key: 'profitCompensationActivationAcknowledged' },
+                                            { label: 'DJ Quick Rules', key: 'djQuickRulesAccepted', highlight: true },
+                                        ].map((item) => (
+                                            <div key={item.key} className={`flex items-center justify-between p-2 rounded ${item.highlight ? 'bg-indigo-50 border border-indigo-100' : 'bg-gray-50'}`}>
+                                                <span className={`text-sm ${item.highlight ? 'font-bold text-indigo-700' : 'text-gray-700'}`}>{item.label}</span>
+                                                {selectedForm.executiveLegalForm?.[item.key] ? (
+                                                    <span className='text-green-600 bg-green-100 px-2 py-0.5 rounded text-xs font-bold'>ACCEPTED</span>
+                                                ) : (
+                                                    <span className='text-red-500 bg-red-100 px-2 py-0.5 rounded text-xs font-bold'>NOT ACCEPTED</span>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className='mt-4 pt-4 border-t border-gray-100'>
+                                        <p className='text-sm text-gray-600'>Digital Signature:</p>
+                                        <p className='font-serif italic text-lg text-indigo-900'>{selectedForm.executiveLegalForm?.digitalSignature || 'N/A'}</p>
                                     </div>
                                 </div>
 

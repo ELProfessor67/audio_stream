@@ -38,15 +38,7 @@ const DJFormsPage = () => {
             state: '',
             country: '',
             zipCode: ''
-        },
-        volunteerAgreementAccepted: false,
-        ndaAccepted: false,
-        ipAssignmentAccepted: false,
-        liabilityWaiverAccepted: false,
-        nonCompeteAccepted: false,
-        faithAcknowledgementAccepted: false,
-        arbitrationAccepted: false,
-        digitalSignature: ''
+        }
     });
 
     // Executive Legal Form State
@@ -55,6 +47,7 @@ const DJFormsPage = () => {
         responsibilities: '',
         profitCompensationActivationAcknowledged: false,
         nonSolicitationAccepted: false,
+        djQuickRulesAccepted: false, // New field
         fullName: '',
         email: '',
         phone: '',
@@ -75,17 +68,17 @@ const DJFormsPage = () => {
         digitalSignature: ''
     });
 
-    useEffect(() => {
-        // Redirect if not authenticated or not a DJ
-        if (!isAuth || !user) {
-            router.push('/login');
-        } else if (!user.isDJ) {
-            router.push('/dashboard');
-        } else if (user.volunteerForm && user.executiveLegalForm) {
-            // Already filled forms
-            router.push('/dashboard');
-        }
-    }, [isAuth, user, router]);
+    // useEffect(() => {
+    //     // Redirect if not authenticated or not a DJ
+    //     if (!isAuth || !user) {
+    //         router.push('/login');
+    //     } else if (!user.isDJ) {
+    //         router.push('/dashboard');
+    //     } else if (user.volunteerForm && user.executiveLegalForm) {
+    //         // Already filled forms
+    //         router.push('/dashboard');
+    //     }
+    // }, [isAuth, user, router]);
 
     const handleVolunteerFormChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -146,15 +139,8 @@ const DJFormsPage = () => {
     };
 
     const validateVolunteerForm = async () => {
-        if (!volunteerForm.fullName || !volunteerForm.email || !volunteerForm.digitalSignature) {
+        if (!volunteerForm.fullName || !volunteerForm.email) {
             await dispatch(showError('Please fill all required fields'));
-            await dispatch(clearError());
-            return false;
-        }
-        if (!volunteerForm.volunteerAgreementAccepted || !volunteerForm.ndaAccepted ||
-            !volunteerForm.ipAssignmentAccepted || !volunteerForm.liabilityWaiverAccepted ||
-            !volunteerForm.arbitrationAccepted) {
-            await dispatch(showError('Please accept all required agreements'));
             await dispatch(clearError());
             return false;
         }
@@ -170,7 +156,7 @@ const DJFormsPage = () => {
         if (!executiveForm.profitCompensationActivationAcknowledged || !executiveForm.nonSolicitationAccepted ||
             !executiveForm.volunteerAgreementAccepted || !executiveForm.ndaAccepted ||
             !executiveForm.ipAssignmentAccepted || !executiveForm.liabilityWaiverAccepted ||
-            !executiveForm.arbitrationAccepted) {
+            !executiveForm.arbitrationAccepted || !executiveForm.djQuickRulesAccepted) {
             await dispatch(showError('Please accept all required agreements'));
             await dispatch(clearError());
             return false;
@@ -406,94 +392,6 @@ const DJFormsPage = () => {
                                 </div>
                             </div>
 
-                            <div className='border-t pt-6'>
-                                <h3 className='text-xl font-semibold text-gray-800 mb-4'>Legal Agreements *</h3>
-                                <div className='space-y-3'>
-                                    <label className='flex items-start'>
-                                        <input
-                                            type='checkbox'
-                                            name='volunteerAgreementAccepted'
-                                            checked={volunteerForm.volunteerAgreementAccepted}
-                                            onChange={handleVolunteerFormChange}
-                                            className='mt-1 mr-3'
-                                        />
-                                        <span className='text-gray-700'>I accept the Volunteer Agreement</span>
-                                    </label>
-                                    <label className='flex items-start'>
-                                        <input
-                                            type='checkbox'
-                                            name='ndaAccepted'
-                                            checked={volunteerForm.ndaAccepted}
-                                            onChange={handleVolunteerFormChange}
-                                            className='mt-1 mr-3'
-                                        />
-                                        <span className='text-gray-700'>I accept the Non-Disclosure Agreement (NDA)</span>
-                                    </label>
-                                    <label className='flex items-start'>
-                                        <input
-                                            type='checkbox'
-                                            name='ipAssignmentAccepted'
-                                            checked={volunteerForm.ipAssignmentAccepted}
-                                            onChange={handleVolunteerFormChange}
-                                            className='mt-1 mr-3'
-                                        />
-                                        <span className='text-gray-700'>I accept the Intellectual Property Assignment</span>
-                                    </label>
-                                    <label className='flex items-start'>
-                                        <input
-                                            type='checkbox'
-                                            name='liabilityWaiverAccepted'
-                                            checked={volunteerForm.liabilityWaiverAccepted}
-                                            onChange={handleVolunteerFormChange}
-                                            className='mt-1 mr-3'
-                                        />
-                                        <span className='text-gray-700'>I accept the Liability Waiver</span>
-                                    </label>
-                                    <label className='flex items-start'>
-                                        <input
-                                            type='checkbox'
-                                            name='nonCompeteAccepted'
-                                            checked={volunteerForm.nonCompeteAccepted}
-                                            onChange={handleVolunteerFormChange}
-                                            className='mt-1 mr-3'
-                                        />
-                                        <span className='text-gray-700'>I accept the Non-Compete Agreement (Optional)</span>
-                                    </label>
-                                    <label className='flex items-start'>
-                                        <input
-                                            type='checkbox'
-                                            name='faithAcknowledgementAccepted'
-                                            checked={volunteerForm.faithAcknowledgementAccepted}
-                                            onChange={handleVolunteerFormChange}
-                                            className='mt-1 mr-3'
-                                        />
-                                        <span className='text-gray-700'>I acknowledge the Faith-Based Organization Statement (Optional)</span>
-                                    </label>
-                                    <label className='flex items-start'>
-                                        <input
-                                            type='checkbox'
-                                            name='arbitrationAccepted'
-                                            checked={volunteerForm.arbitrationAccepted}
-                                            onChange={handleVolunteerFormChange}
-                                            className='mt-1 mr-3'
-                                        />
-                                        <span className='text-gray-700'>I accept the Arbitration Agreement</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className='block text-gray-700 mb-2'>Digital Signature (Type your full name) *</label>
-                                <input
-                                    type='text'
-                                    name='digitalSignature'
-                                    value={volunteerForm.digitalSignature}
-                                    onChange={handleVolunteerFormChange}
-                                    className='w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
-                                    required
-                                />
-                            </div>
-
                             <div className='flex justify-end'>
                                 <button
                                     type='button'
@@ -645,6 +543,16 @@ const DJFormsPage = () => {
                                             className='mt-1 mr-3'
                                         />
                                         <span className='text-gray-700'>I accept the Non-Solicitation Agreement</span>
+                                    </label>
+                                    <label className='flex items-start'>
+                                        <input
+                                            type='checkbox'
+                                            name='djQuickRulesAccepted'
+                                            checked={executiveForm.djQuickRulesAccepted}
+                                            onChange={handleExecutiveFormChange}
+                                            className='mt-1 mr-3'
+                                        />
+                                        <span className='font-bold text-indigo-600'>I accept the DJ Quick Rules & Disclaimers</span>
                                     </label>
                                     <label className='flex items-start'>
                                         <input

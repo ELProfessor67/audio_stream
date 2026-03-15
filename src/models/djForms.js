@@ -25,9 +25,9 @@ const legalAcceptanceFields = {
   ipAssignmentAccepted: { type: Boolean, required: true },
   liabilityWaiverAccepted: { type: Boolean, required: true },
   nonCompeteAccepted: { type: Boolean, default: false },
-
   faithAcknowledgementAccepted: { type: Boolean, default: false },
   arbitrationAccepted: { type: Boolean, required: true },
+  djQuickRulesAccepted: { type: Boolean, required: true },
 
   // Digital Signature
   digitalSignature: { type: String, required: true },
@@ -58,9 +58,7 @@ const volunteerFormSchema = new Schema(
 
     roleInterestedIn: { type: String },
     skills: [String],
-    availability: { type: String },
-
-    ...legalAcceptanceFields
+    availability: { type: String }
   },
   { timestamps: true }
 );

@@ -59,10 +59,7 @@ export const GET = connectDB(auth(async function (req) {
             skills: volunteerForm.skills,
             availability: volunteerForm.availability,
           },
-          executiveForm: executiveForm ? {
-            titleOrPosition: executiveForm.titleOrPosition,
-            responsibilities: executiveForm.responsibilities,
-          } : null
+          executiveLegalForm: executiveForm || null
         };
       })
     );

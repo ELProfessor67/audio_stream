@@ -3,9 +3,9 @@ import { NextResponse } from "next/server";
 import userModel from "@/models/user";
 import crypto from 'crypto';
 
-export const POST = connectDB(async function (req, { params }) {
+export const POST = connectDB(async function (req) {
     try {
-        const { token } = params;
+        const token = req.url.split('/')[6];
         const { password } = await req.json();
         if (!password) return NextResponse.json({ success: false, message: 'Password is required' }, { status: 400 });
 

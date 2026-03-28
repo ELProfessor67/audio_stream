@@ -1,9 +1,9 @@
 /**
  * Email Service using Custom API
- * Sends emails via https://mailing.hgcradio.org/send-email
+ * Sends emails via https://mail.hgdjlive.com/send-email
  */
 
-const EMAIL_API_URL = 'https://mailing.hgcradio.org/send-email';
+const EMAIL_API_URL = 'https://mail.hgdjlive.com/send-email';
 
 /**
  * Send email using custom API

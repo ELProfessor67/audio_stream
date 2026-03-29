@@ -48,6 +48,8 @@ export const GET = connectDB(auth(async function (req) {
       );
     }
 
+    
+
     // No forms found
     return NextResponse.json(
       {

@@ -89,11 +89,35 @@ const executiveLegalFormSchema = new Schema(
   { timestamps: true }
 );
 
+/* =====================================================
+   CONTRACT AGREEMENT SCHEMA
+   (Volunteer Independent Contractor Agreement)
+===================================================== */
+
+const contractAgreementSchema = new Schema(
+  {
+    user: { type: Schema.Types.ObjectId, ref: userSchme, required: true },
+    contractorName: { type: String, required: true },
+    contractorSignatureUrl: { type: String, required: true },
+    signedDate: { type: Date, default: Date.now },
+    agreementVersion: { type: String, default: "v2.0" },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected", "terminated"],
+      default: "pending"
+    },
+    rejectionReason: { type: String, default: undefined }
+  },
+  { timestamps: true }
+);
+
 // Prevent model recompilation in Next.js development
 const VolunteerForm = mongoose.models.VolunteerForm || mongoose.model("VolunteerForm", volunteerFormSchema);
 const ExecutiveLegalForm = mongoose.models.ExecutiveLegalForm || mongoose.model("ExecutiveLegalForm", executiveLegalFormSchema);
+const ContractAgreement = mongoose.models.ContractAgreement || mongoose.model("ContractAgreement", contractAgreementSchema);
 
 export default {
   VolunteerForm,
-  ExecutiveLegalForm
+  ExecutiveLegalForm,
+  ContractAgreement
 };

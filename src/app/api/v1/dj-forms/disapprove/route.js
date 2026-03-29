@@ -42,6 +42,9 @@ export const POST = connectDB(auth(async function (req) {
       );
     }
 
+
+   
+
     // Update both forms to rejected status with reason
     const volunteerForm = await djFormsModels.VolunteerForm.findOneAndUpdate(
       { user: userId },
@@ -55,13 +58,22 @@ export const POST = connectDB(auth(async function (req) {
       { new: true }
     );
 
-    if (!volunteerForm || !executiveForm) {
-      return NextResponse.json(
-        { success: false, message: "Forms not found for this user" },
-        { status: 404 }
-      );
-    }
+    const contractAgreement = await djFormsModels.ContractAgreement.findOneAndUpdate(
+      { user: userId },
+      { status: "rejected", rejectionReason: reason },
+      { new: true }
+    );
 
+
+    // if (!volunteerForm || !executiveForm) {
+    //   return NextResponse.json(
+    //     { success: false, message: "Forms not found for this user" },
+    //     { status: 404 }
+    //   );
+    // }
+
+
+    
     // Send disapproval email with reason
     try {
       await sendDisapprovalEmail(user.email, user.name, reason);

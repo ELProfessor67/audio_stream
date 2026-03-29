@@ -6,57 +6,55 @@ import { auth } from "@/middleswares/auth";
 export const GET = connectDB(auth(async function (req) {
   try {
     const userId = req.user._id;
-    
-    console.log('Fetching forms for user:', userId);
 
-    // Fetch both volunteer and executive forms for the user
+    // Fetch contract agreement (new form)
+    const contractAgreement = await djFormsModels.ContractAgreement.findOne({ user: userId });
+
+    // Fetch legacy forms
     const volunteerForm = await djFormsModels.VolunteerForm.findOne({ user: userId });
     const executiveForm = await djFormsModels.ExecutiveLegalForm.findOne({ user: userId });
 
-    console.log('Volunteer form found:', !!volunteerForm);
-    console.log('Executive form found:', !!executiveForm);
-
-    // If neither form exists, return error
-    if (!volunteerForm && !executiveForm) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          message: "No forms found. Please submit your DJ application forms first." 
-        },
-        { status: 404 }
-      );
-    }
-
-    // If only one form exists, show what we have
-    if (!volunteerForm || !executiveForm) {
-      const missingForm = !volunteerForm ? 'Volunteer' : 'Executive Legal';
-      console.warn(`${missingForm} form is missing for user ${userId}`);
-      
+    // If contract agreement exists, return it as primary
+    if (contractAgreement) {
       return NextResponse.json(
         {
           success: true,
           data: {
-            volunteerForm: volunteerForm || null,
-            executiveForm: executiveForm || null,
-            overallStatus: (volunteerForm?.status || executiveForm?.status || 'pending'),
-            warning: `${missingForm} form not found. Please complete all forms.`
+            formType: 'contract',
+            contractAgreement,
+            overallStatus: contractAgreement.status || 'pending',
+            rejectionReason: contractAgreement.rejectionReason || null
           }
         },
         { status: 200 }
       );
     }
 
-    // Both forms exist
+    // Fallback to legacy forms
+    if (volunteerForm || executiveForm) {
+      const formStatus = executiveForm?.status || volunteerForm?.status || 'pending';
+      return NextResponse.json(
+        {
+          success: true,
+          data: {
+            formType: 'legacy',
+            volunteerForm: volunteerForm || null,
+            executiveForm: executiveForm || null,
+            overallStatus: formStatus,
+            rejectionReason: executiveForm?.rejectionReason || volunteerForm?.rejectionReason || null
+          }
+        },
+        { status: 200 }
+      );
+    }
+
+    // No forms found
     return NextResponse.json(
       {
-        success: true,
-        data: {
-          volunteerForm,
-          executiveForm,
-          overallStatus: volunteerForm.status === executiveForm.status ? volunteerForm.status : 'pending'
-        }
+        success: false,
+        message: "No forms found. Please submit your DJ application forms first."
       },
-      { status: 200 }
+      { status: 404 }
     );
   } catch (error) {
     console.error("Error fetching form status:", error);

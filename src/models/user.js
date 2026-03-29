@@ -38,7 +38,8 @@ const userSchema = new mongoose.Schema({
     role: {type: String,default: undefined},
     jwt: {type: String,default: undefined},
     volunteerForm: {type: mongoose.Schema.Types.ObjectId,ref: 'volunteerForm',default: undefined},
-    executiveLegalForm: {type: mongoose.Schema.Types.ObjectId,ref: 'executiveLegalForm',default: undefined}
+    executiveLegalForm: {type: mongoose.Schema.Types.ObjectId,ref: 'executiveLegalForm',default: undefined},
+    contractAgreement: {type: mongoose.Schema.Types.ObjectId,ref: 'ContractAgreement',default: undefined}
 },{timestamps: true});
 
 

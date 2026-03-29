@@ -48,12 +48,18 @@ export const POST = connectDB(auth(async function (req) {
       { new: true }
     );
 
-    if (!volunteerForm || !executiveForm) {
-      return NextResponse.json(
-        { success: false, message: "Forms not found for this user" },
-        { status: 404 }
-      );
-    }
+    const contractAgreement = await djFormsModels.ContractAgreement.findOneAndUpdate(
+      { user: userId },
+      { status: "approved", rejectionReason: undefined },
+      { new: true }
+    );
+
+    // if (!volunteerForm || !executiveForm) {
+    //   return NextResponse.json(
+    //     { success: false, message: "Forms not found for this user" },
+    //     { status: 404 }
+    //   );
+    // }
 
     // Send approval email
     try {

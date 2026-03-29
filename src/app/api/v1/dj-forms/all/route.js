@@ -23,37 +23,67 @@ export const GET = connectDB(auth(async function (req) {
     const limit = parseInt(url.searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
 
-    // Build query
+    // Build query for status filtering
     const query = {};
     if (status && status !== 'all') {
       query.status = status;
     }
 
-    // Fetch all volunteer forms with user details
-    const volunteerForms = await djFormsModels.VolunteerForm.find(query)
+    // ---- Fetch NEW contract agreements ----
+    const contractAgreements = await djFormsModels.ContractAgreement.find(query)
       .populate('user', 'name email isDJ createdAt')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+      .sort({ createdAt: -1 });
 
-    // Get total count for pagination
-    const totalCount = await djFormsModels.VolunteerForm.countDocuments(query);
+    const contractForms = contractAgreements.map((contract) => ({
+      _id: contract._id,
+      user: contract.user,
+      formType: 'contract',
+      status: contract.status || 'pending',
+      submittedAt: contract.createdAt,
+      rejectionReason: contract.rejectionReason,
+      contractAgreement: {
+        contractorName: contract.contractorName,
+        contractorSignatureUrl: contract.contractorSignatureUrl,
+        signedDate: contract.signedDate,
+        agreementVersion: contract.agreementVersion
+      }
+    }));
 
-    // Fetch corresponding executive forms
-    const formsWithDetails = await Promise.all(
-      volunteerForms.map(async (volunteerForm) => {
-        const executiveForm = await djFormsModels.ExecutiveLegalForm.findOne({ 
-          user: volunteerForm.user._id 
+    // ---- Fetch LEGACY volunteer forms ----
+    const volunteerForms = await djFormsModels.VolunteerForm.find()
+      .populate('user', 'name email isDJ createdAt')
+      .sort({ createdAt: -1 });
+
+    // Only include legacy forms for users who DON'T have a contract agreement
+    const contractUserIds = contractAgreements.map(c => c.user?._id?.toString());
+
+    const legacyFormsRaw = volunteerForms.filter(
+      vf => !contractUserIds.includes(vf.user?._id?.toString())
+    );
+
+    const legacyForms = await Promise.all(
+      legacyFormsRaw.map(async (volunteerForm) => {
+        const executiveForm = await djFormsModels.ExecutiveLegalForm.findOne({
+          user: volunteerForm.user._id
         });
+
+        // Use executive form status if available, otherwise default to pending
+        const formStatus = executiveForm?.status || 'pending';
+
+        // If filtering by status and this one doesn't match, skip
+        if (status && status !== 'all' && formStatus !== status) {
+          return null;
+        }
 
         return {
           _id: volunteerForm._id,
           user: volunteerForm.user,
+          formType: 'legacy',
           volunteerFormId: volunteerForm._id,
           executiveFormId: executiveForm?._id,
-          status: volunteerForm.status,
+          status: formStatus,
           submittedAt: volunteerForm.createdAt,
-          rejectionReason: volunteerForm.rejectionReason,
+          rejectionReason: executiveForm?.rejectionReason,
           volunteerForm: {
             roleInterestedIn: volunteerForm.roleInterestedIn,
             skills: volunteerForm.skills,
@@ -64,11 +94,22 @@ export const GET = connectDB(auth(async function (req) {
       })
     );
 
+    // Filter out nulls (skipped due to status filter)
+    const filteredLegacy = legacyForms.filter(Boolean);
+
+    // Combine and sort by date
+    const allForms = [...contractForms, ...filteredLegacy]
+      .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+
+    // Apply pagination
+    const totalCount = allForms.length;
+    const paginatedForms = allForms.slice(skip, skip + limit);
+
     return NextResponse.json(
       {
         success: true,
         data: {
-          forms: formsWithDetails,
+          forms: paginatedForms,
           pagination: {
             currentPage: page,
             totalPages: Math.ceil(totalCount / limit),

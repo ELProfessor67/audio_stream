@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import axios, { getAdapter } from 'axios';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import axios from 'axios';
 import Image from 'next/image';
-import { FaArrowUpRightFromSquare } from 'react-icons/fa6';
-import Link from 'next/link';
 import { MdDelete } from 'react-icons/md'
 import { showMessage, showError, clearMessage, clearError } from '@/utils/showAlert';
 import { useDispatch, useSelector } from 'react-redux';
@@ -23,10 +21,8 @@ function RenderPlayList({ playlist }) {
         e.dataTransfer.setData("type", "song");
     }
 
-
-
     return (
-        <div >
+        <div>
             <p onClick={() => setOpen(prev => !prev)} className='text-black/90 rounded-md hover:bg-gray-100 transition-all p-1 px-2 cursor-pointer flex items-center gap-2' draggable onDragStart={handlePlaylistDragStart}>
                 <img src={playlist.cover} width={20} height={20} className='rounded-md' />
                 {playlist.title}
@@ -35,7 +31,7 @@ function RenderPlayList({ playlist }) {
                 <div className='flex flex-col gap-2 pl-5' >
                     {
                         playlist?.songs?.map((song) => (
-                            <p className='text-black/80 rounded-md hover:bg-gray-100 transition-all p-1 px-2 cursor-pointer flex items-center gap-2' draggable onDragStart={(e) => handleSongDragStart(e, song)}>
+                            <p key={song._id} className='text-black/80 rounded-md hover:bg-gray-100 transition-all p-1 px-2 cursor-pointer flex items-center gap-2' draggable onDragStart={(e) => handleSongDragStart(e, song)}>
                                 <span className='text-blue-300'>{<GiLoveSong />}</span>
                                 {song.title}
                             </p>
@@ -50,6 +46,9 @@ function RenderPlayList({ playlist }) {
 export default function Page() {
     const [playlists, setPlaylists] = useState([]);
     const [autoDJList, setAutoDjList] = useState([]);
+    const [dropIndicatorIndex, setDropIndicatorIndex] = useState(null); // which position to show indicator
+    const [isDragOver, setIsDragOver] = useState(false);
+    const listRef = useRef(null);
     const { user } = useSelector(store => store.user);
 
     const getPlaylist = useCallback(async () => {
@@ -66,7 +65,7 @@ export default function Page() {
         try {
             const { data } = await axios.get('/api/v1/auto-dj-list');
             const items = data?.autoDJList.songs.map((song) => ({
-                data:song.data,
+                data: song.data,
                 index: song.index,
                 cover: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.cover}`,
                 album: song.album,
@@ -81,7 +80,7 @@ export default function Page() {
 
     const updateSong = useCallback(async (songs) => {
         try {
-            const res = await axios.post('/api/v1/auto-dj-list', { songs });
+            await axios.post('/api/v1/auto-dj-list', { songs });
         } catch (error) {
             console.log('Getting Error While Doing Update', error.message);
         }
@@ -93,38 +92,86 @@ export default function Page() {
     }, []);
 
 
+    // Calculate which index to insert at, based on mouse Y position over the list
+    const getDropIndex = useCallback((e) => {
+        if (!listRef.current) return autoDJList.length;
+
+        const listItems = listRef.current.querySelectorAll('[data-dj-item]');
+        if (listItems.length === 0) return 0;
+
+        for (let i = 0; i < listItems.length; i++) {
+            const rect = listItems[i].getBoundingClientRect();
+            const midY = rect.top + rect.height / 2;
+            if (e.clientY < midY) {
+                return i; // insert before this item
+            }
+        }
+        return listItems.length; // insert at end
+    }, [autoDJList.length]);
+
+
+    const handleDragOver = useCallback((e) => {
+        e.preventDefault();
+        // Only activate for external (playlist panel) drags
+        const type = e.dataTransfer.types.includes('type') ? null : null; // we can't read data during dragover
+        setIsDragOver(true);
+        const idx = getDropIndex(e);
+        setDropIndicatorIndex(idx);
+    }, [getDropIndex]);
+
+    const handleDragLeave = useCallback((e) => {
+        // Only clear if leaving the container entirely
+        if (!listRef.current?.contains(e.relatedTarget)) {
+            setIsDragOver(false);
+            setDropIndicatorIndex(null);
+        }
+    }, []);
+
+
     const handleDrop = async (e) => {
+        setIsDragOver(false);
+        setDropIndicatorIndex(null);
         try {
             const type = e.dataTransfer.getData('type');
-            if (type == 'playlist') {
-                const id = e.dataTransfer.getData('id');
-                return
+            if (type === 'playlist') {
+                return;
             } else {
-                const data = e.dataTransfer.getData('data');
-                const song = JSON.parse(data);
+                const rawData = e.dataTransfer.getData('data');
+                if (!rawData) return;
+                const song = JSON.parse(rawData);
+
+                // Figure out where to insert
+                const insertAt = getDropIndex(e);
+
                 const newSong = {
                     data: song,
                     cover: song.cover,
-                    index: autoDJList.length,
+                    index: insertAt,
                     artist: song.artist,
                     album: song.album
-                }
+                };
 
-                const songs = [...autoDJList, newSong]
-                setAutoDjList(songs);
-                const items = songs.map((song, index) => ({
-                    data: song.data._id,
-                    cover: new URL(song.cover).pathname,
-                    index,
-                    artist: song.artist,
-                    album: song.album
+                // Insert at specific position
+                const updated = [...autoDJList];
+                updated.splice(insertAt, 0, newSong);
+
+                // Re-index
+                const reindexed = updated.map((s, i) => ({ ...s, index: i }));
+                setAutoDjList(reindexed);
+
+                const items = reindexed.map((s, i) => ({
+                    data: s.data._id,
+                    cover: new URL(s.cover).pathname,
+                    index: i,
+                    artist: s.artist,
+                    album: s.album
                 }));
                 updateSong(items);
             }
         } catch (error) {
             console.log(`Getting Error During Drop`, error.message)
         }
-    }
+    };
 
 
     function handleOnDragEnd(result) {
@@ -148,13 +195,12 @@ export default function Page() {
             album: song.album
         }))
         updateSong(items);
-
     }
 
 
     const handleDelete = async (index) => {
         try {
-            let items = autoDJList.filter((s,i) => i != index);
+            let items = autoDJList.filter((s, i) => i != index);
             setAutoDjList(items);
 
             items = items.map((song, index) => ({
@@ -167,9 +213,10 @@ export default function Page() {
 
             updateSong(items);
         } catch (error) {
-            console.log('Getting Error During Delete',error.message)
+            console.log('Getting Error During Delete', error.message)
         }
     }
+
     return (
         <>
             <section className="w-full py-5 px-4 reletive">
@@ -178,42 +225,122 @@ export default function Page() {
                 </div>
 
                 <div className='grid grid-cols-[2fr_1fr] relative h-[80vh]' >
-                    <div className='p-2' onDragOver={(e) => e.preventDefault()} onDrop={handleDrop}>
+                    {/* ---- AUTO DJ LIST (left panel) ---- */}
+                    <div
+                        className="p-2 relative"
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                    >
                         <DragDropContext onDragEnd={handleOnDragEnd}>
                             <Droppable droppableId="characters">
                                 {(provided) => (
-                                    <div {...provided.droppableProps} ref={provided.innerRef}>
-                                        {
-                                            autoDJList && autoDJList?.map((data, index) => (
+                                    <div {...provided.droppableProps} ref={(el) => { provided.innerRef(el); listRef.current = el; }}>
+
+                                        {/* Empty-list hint */}
+                                        {autoDJList.length === 0 && (
+                                            <div className="flex flex-col items-center justify-center h-48 text-gray-400 gap-2">
+                                                <GiLoveSong size={40} />
+                                                <p className="text-sm">Drag songs here to build your Auto DJ list</p>
+                                            </div>
+                                        )}
+
+                                        {autoDJList && autoDJList?.map((data, index) => (
+                                            <>
+                                                {/* Animated space slot ABOVE this item */}
+                                                <div
+                                                    style={{
+                                                        height: isDragOver && dropIndicatorIndex === index ? '72px' : '0px',
+                                                        opacity: isDragOver && dropIndicatorIndex === index ? 1 : 0,
+                                                        overflow: 'hidden',
+                                                        transition: 'height 0.18s cubic-bezier(0.4,0,0.2,1), opacity 0.15s ease',
+                                                        marginBottom: isDragOver && dropIndicatorIndex === index ? '6px' : '0px',
+                                                    }}
+                                                >
+                                                    <div style={{
+                                                        height: '64px',
+                                                        border: '2px dashed #93c5fd',
+                                                        borderRadius: '8px',
+                                                        background: 'rgba(219,234,254,0.45)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '8px',
+                                                        color: '#3b82f6',
+                                                        fontSize: '13px',
+                                                        fontWeight: 500,
+                                                    }}>
+                                                        <GiLoveSong size={18} />
+                                                        Drop here
+                                                    </div>
+                                                </div>
+
                                                 <Draggable key={data?.data?._id.toString()} draggableId={data?.data?._id.toString()} index={index}>
                                                     {(provided) => (
-                                                        <div className={`flex justify-between items-center my-6 rounded-md`} ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
+                                                        <div
+                                                            data-dj-item={index}
+                                                            className={`flex justify-between items-center my-6 rounded-md`}
+                                                            ref={provided.innerRef}
+                                                            {...provided.draggableProps}
+                                                            {...provided.dragHandleProps}
+                                                        >
                                                             <div className="flex items-center gap-4">
                                                                 <span className="text-black text-2xl">{data?.index + 1}</span>
                                                                 <Image src={data?.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
                                                                 <div>
                                                                     <h2 className="text-xl text-black">{data?.data?.title?.slice(0, 40)}</h2>
                                                                     <p className="para"> ~ {data?.artist} - {data?.album}</p>
-
                                                                 </div>
                                                             </div>
                                                             <div>
-                                                                <button className="p-2 rounded-full text-red-400 hover:text-white hover:bg-red-400 mr-4"><MdDelete size={20} onClick={() => handleDelete(index)}/></button>
+                                                                <button className="p-2 rounded-full text-red-400 hover:text-white hover:bg-red-400 mr-4"><MdDelete size={20} onClick={() => handleDelete(index)} /></button>
                                                             </div>
                                                         </div>
                                                     )}
                                                 </Draggable>
-                                            ))
-                                        }
+                                            </>
+                                        ))}
+
+                                        {/* Animated space slot at END of list */}
+                                        <div
+                                            style={{
+                                                height: isDragOver && dropIndicatorIndex === autoDJList.length ? '72px' : '0px',
+                                                opacity: isDragOver && dropIndicatorIndex === autoDJList.length ? 1 : 0,
+                                                overflow: 'hidden',
+                                                transition: 'height 0.18s cubic-bezier(0.4,0,0.2,1), opacity 0.15s ease',
+                                                marginBottom: isDragOver && dropIndicatorIndex === autoDJList.length ? '6px' : '0px',
+                                            }}
+                                        >
+                                            <div style={{
+                                                height: '64px',
+                                                border: '2px dashed #93c5fd',
+                                                borderRadius: '8px',
+                                                background: 'rgba(219,234,254,0.45)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '8px',
+                                                color: '#3b82f6',
+                                                fontSize: '13px',
+                                                fontWeight: 500,
+                                            }}>
+                                                <GiLoveSong size={18} />
+                                                Drop here
+                                            </div>
+                                        </div>
+
+                                        {provided.placeholder}
                                     </div>
                                 )}
                             </Droppable>
                         </DragDropContext>
                     </div>
+
+                    {/* ---- PLAYLIST PANEL (right panel) ---- */}
                     <div className='p-2 bg-gray-100' >
                         {
                             playlists.length != 0 && playlists?.map((data) => (
-                                <RenderPlayList playlist={data} />
+                                <RenderPlayList key={data._id} playlist={data} />
                             ))
                         }
                     </div>

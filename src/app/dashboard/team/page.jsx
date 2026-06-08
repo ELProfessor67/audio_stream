@@ -50,6 +50,7 @@ export default function page() {
 				<table className="w-full text-sm text-left">
 					<thead className="text-sx text-white uppercase bg-indigo-500">
 						<tr>
+							<th scope='col' className="px-6 py-3">Photo</th>
 							<th scope='col' className="px-6 py-3">Name</th>
 							<th scope='col' className="px-6 py-3">Timezone</th>
 							<th scope='col' className="px-6 py-3">phone</th>
@@ -180,7 +181,15 @@ const calculateNextSession = (djDays, startTime) => {
 	return ''
 };
 
-const TableRow = ({ name, email, djPermissions, _id, djStartTime, djEndTime, deleteTeam, djDate, djTimeInDays, djDays, rawTime,timezone,phone }) => {
+// Build a 1-2 letter initials string from a full name
+function getInitials(fullName) {
+	if (!fullName) return '?';
+	const parts = fullName.trim().split(/\s+/);
+	if (parts.length === 1) return parts[0][0].toUpperCase();
+	return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+const TableRow = ({ name, email, djPermissions, _id, djStartTime, djEndTime, deleteTeam, djDate, djTimeInDays, djDays, rawTime, timezone, phone, djProfilePic }) => {
 	const [currentStatus, setCurrectStatus] = useState('No Calculated');
 	const timeRef = useRef();
 
@@ -215,6 +224,23 @@ const TableRow = ({ name, email, djPermissions, _id, djStartTime, djEndTime, del
 
 	return (
 		<tr className="bg-gray-50 font-midium border-b text-sm">
+			{/* Profile picture / initials avatar */}
+			<td className="px-6 py-4">
+				{djProfilePic ? (
+					<img
+						src={`${process.env.NEXT_PUBLIC_SOCKET_URL}${djProfilePic}`}
+						alt={name}
+						className="w-10 h-10 rounded-full object-cover border-2 border-indigo-300 shadow-sm"
+					/>
+				) : (
+					<div
+						className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-semibold text-sm border-2 border-indigo-300 shadow-sm select-none"
+						title={name}
+					>
+						{getInitials(name)}
+					</div>
+				)}
+			</td>
 			<td className="px-6 py-4 whitespace-nowarp">{name}</td>
 			<td className="px-6 py-4 whitespace-nowarp">{timezone}</td>
 			<td className="px-6 py-4 whitespace-nowarp">{phone}</td>

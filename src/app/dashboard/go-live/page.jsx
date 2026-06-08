@@ -1511,7 +1511,7 @@ export default function () {
 
 							</div>
 							<div className="py-2 rounded-b-md flex justify-around items-center shadow-md">
-								<h3 className="text-black text-xl text-center">{participantCount}
+								<h3 className="text-black text-xl text-center">{participantCount < 1000 ? "1000" : participantCount}
 									<br />
 									Listeners
 								</h3>

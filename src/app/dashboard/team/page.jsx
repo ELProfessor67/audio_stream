@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { showMessage, showError, clearMessage, clearError } from '@/utils/showAlert';
 import { useDispatch } from 'react-redux';
 
-export default function page() {
+export default function Page() {
 
 	const [teams, setTeams] = useState([]);
 	// console.log(teams)
@@ -52,6 +52,7 @@ export default function page() {
 						<tr>
 							<th scope='col' className="px-6 py-3">Photo</th>
 							<th scope='col' className="px-6 py-3">Name</th>
+							<th scope='col' className="px-6 py-3">Event Name</th>
 							<th scope='col' className="px-6 py-3">Timezone</th>
 							<th scope='col' className="px-6 py-3">phone</th>
 							<th scope='col' className="px-6 py-3">Email</th>
@@ -62,7 +63,7 @@ export default function page() {
 					</thead>
 
 					<tbody>
-						{teams?.map(data => <TableRow {...data} deleteTeam={deleteTeam} />)}
+						{teams?.map(data => <TableRow key={data._id} {...data} deleteTeam={deleteTeam} />)}
 					</tbody>
 				</table>
 			</div>
@@ -189,7 +190,7 @@ function getInitials(fullName) {
 	return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-const TableRow = ({ name, email, djPermissions, _id, djStartTime, djEndTime, deleteTeam, djDate, djTimeInDays, djDays, rawTime, timezone, phone, djProfilePic }) => {
+const TableRow = ({ name, email, djPermissions, _id, djStartTime, djEndTime, deleteTeam, djDate, djTimeInDays, djDays, rawTime, timezone, phone, djProfilePic, djEventName }) => {
 	const [currentStatus, setCurrectStatus] = useState('No Calculated');
 	const timeRef = useRef();
 
@@ -242,6 +243,7 @@ const TableRow = ({ name, email, djPermissions, _id, djStartTime, djEndTime, del
 				)}
 			</td>
 			<td className="px-6 py-4 whitespace-nowarp">{name}</td>
+			<td className="px-6 py-4 whitespace-nowarp">{djEventName || `${name} special`}</td>
 			<td className="px-6 py-4 whitespace-nowarp">{timezone}</td>
 			<td className="px-6 py-4 whitespace-nowarp">{phone}</td>
 			<td className="px-6 py-4 whitespace-nowarp">{email}</td>

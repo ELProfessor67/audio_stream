@@ -36,10 +36,11 @@ const options = [
     { label: "Saturday", value: 6 }
 ];
 
-const page = () => {
+const Page = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [djEventName, setDjEventName] = useState('');
     const [open, setOpen] = useState(false);
     const [selectPermission, setSelectedPermission] = useState(['songs', 'schedules', 'live', 'dashboard', 'requests', 'ads', 'add_song']);
     const [starttime, setStarttime] = useState();
@@ -135,12 +136,14 @@ const page = () => {
                 phone,
                 profilePicBase64: profilePicBase64 || undefined,
                 profilePicExt: profilePicExt || undefined,
+                djEventName
             };
 
             const { data } = await axios.post('/api/v1/dj', payload);
             setName('');
             setEmail('');
             setPassword('');
+            setDjEventName('');
             setSelectedPermission([]);
             setStarttime('');
             setEndtime('');
@@ -213,6 +216,14 @@ const page = () => {
                             <div className='flex items-center relative py-2 px-1 border-gray-400 border-2 hover:border-indigo-500 rounded-md'>
                                 <MdOutlineSubtitles size={20} className='text-gray-400' />
                                 <input type='text' value={name} onChange={(e) => setName(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter dj name' id='name' name='name' required />
+                            </div>
+                        </div>
+
+                        <div className='input-group flex flex-col gap-1 mb-6'>
+                            <label htmlFor="djEventName" className='text-black text-lg'>Event Name</label>
+                            <div className='flex items-center relative py-2 px-1 border-gray-400 border-2 hover:border-indigo-500 rounded-md'>
+                                <MdOutlineSubtitles size={20} className='text-gray-400' />
+                                <input type='text' value={djEventName} onChange={(e) => setDjEventName(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter event name' id='djEventName' name='djEventName' required />
                             </div>
                         </div>
 
@@ -368,4 +379,4 @@ const page = () => {
     )
 }
 
-export default page
+export default Page

@@ -7,7 +7,7 @@ import axios from "axios";
 
 export const POST = connectDB(auth(async function (req) {
     try {
-        const { name, email, password, permissions, starttime, endtime, djDate, djTimeInDays, djDays, rawTime, timezone, phone, profilePicBase64, profilePicExt } = await req.json();
+        const { name, email, password, permissions, starttime, endtime, djDate, djTimeInDays, djDays, rawTime, timezone, phone, profilePicBase64, profilePicExt, djEventName } = await req.json();
 
         if (!name || !email || !password || !permissions || permissions?.length == 0)
             return NextResponse.json({ success: false, message: 'all fields are required' }, { status: 401 });
@@ -52,7 +52,8 @@ export const POST = connectDB(auth(async function (req) {
             djEndTime: endtime,
             djDate, djTimeInDays, djDays, rawTime,
             phone,
-            djProfilePic
+            djProfilePic,
+            djEventName
         };
 
         const user = await userModel.create(userData);

@@ -51,9 +51,10 @@ function convertToUTC(timeString) {
 }
 
 
-const page = ({ params }) => {
+const Page = ({ params }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [djEventName, setDjEventName] = useState('');
     const [open, setOpen] = useState(false);
     const [selectPermission, setSelectedPermission] = useState(['live']);
     const [starttime, setStarttime] = useState();
@@ -88,7 +89,7 @@ const page = ({ params }) => {
         try {
             let djDays = [];
             selectedDays.forEach((data) => djDays.push(data.value));
-            const { data } = await axios.put(`/api/v1/dj/${params.id}`, { password, name, email, permissions: selectPermission, starttime: convertToUTC(starttime), endtime: convertToUTC(endtime), djDate, djTimeInDays: timeInDays, djDays, rawTime: `${starttime}|${endtime}`,timezone,phone });
+            const { data } = await axios.put(`/api/v1/dj/${params.id}`, { password, name, email, permissions: selectPermission, starttime: convertToUTC(starttime), endtime: convertToUTC(endtime), djDate, djTimeInDays: timeInDays, djDays, rawTime: `${starttime}|${endtime}`,timezone,phone,djEventName });
             await dispatch(showMessage(data.message));
             await dispatch(clearMessage());
             console.log(data)
@@ -107,6 +108,7 @@ const page = ({ params }) => {
                 const [start, end] = data.team?.rawTime.split('|');
                 setName(data?.team.name);
                 setEmail(data?.team?.email);
+                setDjEventName(data?.team?.djEventName || '');
                 setSelectedPermission(data?.team.djPermissions);
                 setStarttime(start);
                 setEndtime(end);
@@ -141,6 +143,14 @@ const page = ({ params }) => {
                             <div className='flex items-center relative  py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                                 <MdOutlineSubtitles size={20} className='text-gray-400' />
                                 <input type='text' value={name} onChange={(e) => setName(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter dj name' id='name' name='name' required />
+                            </div>
+                        </div>
+
+                        <div className='input-group flex flex-col gap-1 mb-6'>
+                            <label for="djEventName" className='text-black text-lg'>Event Name</label>
+                            <div className='flex items-center relative py-2 px-1 border-gray-400 border-2 hover:border-indigo-500 rounded-md'>
+                                <MdOutlineSubtitles size={20} className='text-gray-400' />
+                                <input type='text' value={djEventName} onChange={(e) => setDjEventName(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter event name' id='djEventName' name='djEventName' required />
                             </div>
                         </div>
 
@@ -296,7 +306,7 @@ const page = ({ params }) => {
             <Dialog open={open} onClose={() => setOpen(false)} bottomSave={handlebottomSave}>
                 {
                     permissions && permissions.map((permission) => (
-                        <div className="flex justify-between items-center my-6">
+                        <div key={permission} className="flex justify-between items-center my-6">
                             <div className="flex items-center gap-4">
 
                                 <h2 className="text-xl text-black">{permission}</h2>
@@ -313,4 +323,4 @@ const page = ({ params }) => {
     )
 }
 
-export default page
+export default Page

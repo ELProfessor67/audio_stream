@@ -39,7 +39,7 @@ export const GET = connectDB(async function (req) {
         // Fetch every DJ across all owners
         const djs = await userModel
             .find({ isDJ: true })
-            .select("name djProfilePic djStartTime djEndTime djDate djTimeInDays djDays rawTime timezone");
+            .select("name djProfilePic djStartTime djEndTime djDate djTimeInDays djDays rawTime timezone djEventName");
 
         const socketBase = process.env.NEXT_PUBLIC_SOCKET_URL || "";
 
@@ -73,6 +73,7 @@ export const GET = connectDB(async function (req) {
                 startTime:     dj.rawTime?.split("|")[0] || dj.djStartTime || null,
                 endTime:       dj.rawTime?.split("|")[1] || dj.djEndTime   || null,
                 timezone:      dj.timezone || null,
+                eventName:     dj.djEventName || `${dj.name} special`,
                 days,                           // ← which days this DJ appears
             };
 

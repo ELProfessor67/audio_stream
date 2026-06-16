@@ -93,6 +93,7 @@ export default function page({ params }) {
 	const recordedChunks = useRef([]);
 	const downloadLink = useRef();
 	const [error, setError] = useState('');
+	const [redirectCountdown, setRedirectCountdown] = useState(null);
 	// console.log('isPlay from components side', isPlay)
 	const { roomActive, handleRequestSong, isLive, autodj, messageList, handleSendMessage, callAdmin, cutCall, nextSong } = useSocketUser(params.streamId, audioRef, name, isPlay, setIsPlay, message, setMessage, setCallStatus, location, true);
 	// const [more,setMore] = useState(false);
@@ -211,6 +212,24 @@ export default function page({ params }) {
 			handleCall();
 		}
 	}, [isLive])
+
+	useEffect(() => {
+		if (callStatus === 'complete') {
+			setRedirectCountdown(5);
+		}
+	}, [callStatus]);
+
+	useEffect(() => {
+		if (redirectCountdown === null) return;
+		if (redirectCountdown === 0) {
+			window.location.href = 'https://hgcradio.org/';
+			return;
+		}
+		const timer = setTimeout(() => {
+			setRedirectCountdown(prev => prev - 1);
+		}, 1000);
+		return () => clearTimeout(timer);
+	}, [redirectCountdown]);
 
 	return (
 		<section className="flex justify-center items-center h-[100vh] w-full px-4 bg-[#1a1d22]">
@@ -364,8 +383,10 @@ export default function page({ params }) {
 					}
 					{
 						callStatus == 'complete' &&
-						<h3 className='text-lg text-white'>Call Complete</h3>
-
+						<div className='flex flex-col items-center gap-1'>
+							<h3 className='text-lg text-white'>Call Complete</h3>
+							<p className='text-sm text-white/70'>Redirecting in <span className='text-white font-bold'>{redirectCountdown}s</span>...</p>
+						</div>
 					}
 					{
 						callStatus == 'rejected' || callStatus == 'complete' ?

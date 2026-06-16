@@ -6,6 +6,7 @@ import UserProvider from '@/components/UserProvider'
 import { ToastContainer } from 'react-toastify';
 import MessageProvider from '@/components/MessageProvider'
 import 'react-toastify/dist/ReactToastify.css';
+import AIChatbot from '@/components/AIChatbot';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -51,6 +52,7 @@ export default function RootLayout({ children }) {
           pauseOnHover
           theme="light"
         />
+        <AIChatbot />
       </body>
     </html>
   )

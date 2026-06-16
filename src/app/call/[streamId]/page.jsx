@@ -78,9 +78,9 @@ export default function page({ params }) {
 	const [message, setMessage] = useState('');
 	const [name, setName] = useState('');
 	const [location, setLocation] = useState('');
-	const [gedetailOpen,setGetDetailsOpne] = useState(false);
+	const [gedetailOpen, setGetDetailsOpne] = useState(false);
 	const [callOpen, setCallOpen] = useState(false);
-	const [permissionReset,setPermissionReset] = useState(false);
+	const [permissionReset, setPermissionReset] = useState(false);
 	// null,processing,accepted,rejected
 	const [callStatus, setCallStatus] = useState(null);
 	// const [soundOff,setSoundOff] = useState(false);
@@ -94,7 +94,7 @@ export default function page({ params }) {
 	const downloadLink = useRef();
 	const [error, setError] = useState('');
 	// console.log('isPlay from components side', isPlay)
-	const { roomActive, handleRequestSong, isLive, autodj, messageList, handleSendMessage, callAdmin, cutCall,nextSong } = useSocketUser(params.streamId, audioRef, name, isPlay, setIsPlay, message, setMessage, setCallStatus,location,true);
+	const { roomActive, handleRequestSong, isLive, autodj, messageList, handleSendMessage, callAdmin, cutCall, nextSong } = useSocketUser(params.streamId, audioRef, name, isPlay, setIsPlay, message, setMessage, setCallStatus, location, true);
 	// const [more,setMore] = useState(false);
 	const [rOpen, setROPen] = useState(false);
 	console.log(roomActive)
@@ -179,7 +179,7 @@ export default function page({ params }) {
 	}
 
 	const handleCall = async () => {
-		
+
 		setError('');
 		const audioPermissionStatus = await navigator.permissions.query({ name: 'microphone' });
 		// if (audioPermissionStatus.state === 'granted' || audioPermissionStatus.state === 'denied') {
@@ -187,15 +187,15 @@ export default function page({ params }) {
 		// 		return
 		// }
 
-		if(!name || !location){
+		if (!name || !location) {
 			setGetDetailsOpne(true);
 			return
-		}else{
+		} else {
 			setGetDetailsOpne(false);
 		}
 
 
-		if(!is18plus){
+		if (!is18plus) {
 			setError('You must be 18+ to call');
 			return
 		}
@@ -207,10 +207,10 @@ export default function page({ params }) {
 	}
 
 	useEffect(() => {
-		if(isLive){
+		if (isLive) {
 			handleCall();
 		}
-	},[isLive])
+	}, [isLive])
 
 	return (
 		<section className="flex justify-center items-center h-[100vh] w-full px-4 bg-[#1a1d22]">
@@ -238,12 +238,12 @@ export default function page({ params }) {
 						{
 							nextSong?.title &&
 							<>
-							<h4 className='text-lg'>Next song :  <span className='text-gray-500'>{nextSong?.title}</span></h4>
-							{
-								isLive ? 
-								<h4>{nextSong?.user?.name}</h4>
-								: <h4>Auto DJ</h4>
-							}
+								<h4 className='text-lg'>Next song :  <span className='text-gray-500'>{nextSong?.title}</span></h4>
+								{
+									isLive ?
+										<h4>{nextSong?.user?.name}</h4>
+										: <h4>Auto DJ</h4>
+								}
 							</>
 						}
 					</div>
@@ -270,11 +270,32 @@ export default function page({ params }) {
 				</div>
 			</div>
 			<audio ref={audioRef} controls className="w-full bg-none hidden" id="audio"></audio>
-			
-			<div className=" shadow-md rounded-md border  flex justify-center items-center border-[#1a1d22]">
-				<button className="bg-[#f00000] text-xs border-none py-2 px-4 rounded-md outline-none text-white disabled:cursor-[not-allowed] disabled:bg-[#f000008e] cursor-pointer disabled:text-gray-200 mr-2" disabled={!isLive} title="live chat" onClick={handleCall}>Click To Call</button>
+
+			<div className="shadow-md rounded-md border flex justify-center items-center border-[#1a1d22] min-h-[2.5rem]">
+				{!isLive ? (
+					<div className="flex items-center gap-2 px-4 py-2 bg-[#f00000]">
+						<div style={{
+							width: '18px',
+							height: '18px',
+							border: '2px solid white',
+							borderTop: '2px solid #f00000',
+							borderRadius: '50%',
+							animation: 'spin 0.8s linear infinite',
+						}} />
+						<span style={{ color: 'white', fontSize: '12px', opacity: 0.8 }}>Waiting for live...</span>
+						<style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+					</div>
+				) : (
+					<button
+						className="bg-[#f00000] text-xs border-none py-2 px-4 rounded-md outline-none text-white cursor-pointer mr-2"
+						title="live chat"
+						onClick={handleCall}
+					>
+						Click To Call
+					</button>
+				)}
 			</div>
-			
+
 			<Dialog open={rOpen} onClose={() => setROPen(false)} name={name} setName={setName}>
 				{
 					songs && songs.map((data) => (
@@ -299,12 +320,12 @@ export default function page({ params }) {
 					<h2 className='text-center mb-8 text-2xl text-gray-700'>Reset Permission</h2>
 					<ol className='text-lg flex text-gray-600 flex-col gap-3 list-decimal'>
 						<li>1. Click On i button</li>
-						<li><img src='/images/1.png' className='w-[20rem]'/></li>
+						<li><img src='/images/1.png' className='w-[20rem]' /></li>
 						<li>2. Click on the reset permission</li>
-						<li><img src='/images/2.png' className='w-[20rem]'/></li>
+						<li><img src='/images/2.png' className='w-[20rem]' /></li>
 
 						<li>3. click on reload button"</li>
-						<li><img src='/images/3.png' className='w-[20rem]'/></li>
+						<li><img src='/images/3.png' className='w-[20rem]' /></li>
 					</ol>
 				</div>
 			</Dialog>
@@ -316,7 +337,7 @@ export default function page({ params }) {
 				}
 			</ChatBox>
 
-			<CallComponents open={callOpen} onClose={() => setCallOpen(false)} name={name} setName={setName}>
+			<CallComponents open={callOpen} onClose={() => { cutCall(); setCallOpen(false) }} name={name} setName={setName}>
 				<div className='w-full h-full flex flex-col gap-5 justify-center items-center'>
 					<h2 className='text-3xl text-white'>{name && toTitleCase(name)}</h2>
 					{
@@ -357,37 +378,37 @@ export default function page({ params }) {
 
 
 			<CallComponents open={gedetailOpen} onClose={() => setGetDetailsOpne(false)}>
-					<div>
-						<div className='input-group flex flex-col gap-1 mb-6'>
-							<label for="password" className='text-white text-lg'>Name</label>
-							<div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-[#f00000] rounded-md'>
-								<FaUser size={20} className='text-gray-400'/>
-								<input type='text' value={name} onChange={(e) => setName(e.target.value)} className='w-[95%] bg-transparent outline-none ml-1' placeholder='Enter your name' id='password' name='password' required/>
-							</div>   
-						</div>
-						<div className='input-group flex flex-col gap-1 mb-6'>
-							<label for="password" className='text-white text-lg'>Location</label>
-							<div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-[#f00000] rounded-md'>
-								<FaLocationDot size={20} className='text-gray-400'/>
-								<input type='text' value={location} onChange={(e) => setLocation(e.target.value)} className='w-[95%] bg-transparent outline-none ml-1' placeholder='Enter your localtion' id='password' name='password' required/>
-							</div>   
-						</div>
-
-					    {/* add checkbox to check user 18+ or not */}
-						<div className='flex items-center gap-2 mb-6'>
-							<input type='checkbox' id='18plus' name='18plus' onChange={(e) => setIs18plus(e.target.checked)} />
-							<label for='18plus' className='text-white text-lg'>I am 18+</label>
-						</div>
-
-						{
-							error &&
-							<div className='text-red-500 text-lg mb-6'>{error}</div>
-						}
-
-						<div className='flex justify-center items-center'>
-							<button type='submit' onClick={handleCall} className='py-2 px-4 rounded-md bg-[#f00000] text-white text-lg hover:bg-[#f00000] transition-al disabled:opacity-40' disabled={!name || !location}>Call Now</button>
+				<div>
+					<div className='input-group flex flex-col gap-1 mb-6'>
+						<label for="password" className='text-white text-lg'>Name</label>
+						<div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-[#f00000] rounded-md'>
+							<FaUser size={20} className='text-gray-400' />
+							<input type='text' value={name} onChange={(e) => setName(e.target.value)} className='w-[95%] bg-transparent outline-none ml-1 text-white' placeholder='Enter your name' id='password' name='password' required />
 						</div>
 					</div>
+					<div className='input-group flex flex-col gap-1 mb-6'>
+						<label for="password" className='text-white text-lg'>Location</label>
+						<div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-[#f00000] rounded-md'>
+							<FaLocationDot size={20} className='text-gray-400' />
+							<input type='text' value={location} onChange={(e) => setLocation(e.target.value)} className='w-[95%] bg-transparent outline-none ml-1 text-white' placeholder='Enter your localtion' id='password' name='password' required />
+						</div>
+					</div>
+
+					{/* add checkbox to check user 18+ or not */}
+					<div className='flex items-center gap-2 mb-6'>
+						<input type='checkbox' id='18plus' name='18plus' onChange={(e) => setIs18plus(e.target.checked)} />
+						<label for='18plus' className='text-white text-lg'>I am 18+</label>
+					</div>
+
+					{
+						error &&
+						<div className='text-red-500 text-lg mb-6'>{error}</div>
+					}
+
+					<div className='flex justify-center items-center'>
+						<button type='submit' onClick={handleCall} className='py-2 px-4 rounded-md bg-[#f00000] text-white text-lg hover:bg-[#f00000] transition-al disabled:opacity-40' disabled={!name || !location}>Call Now</button>
+					</div>
+				</div>
 			</CallComponents>
 		</section>
 	);

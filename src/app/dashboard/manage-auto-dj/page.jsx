@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import axios from 'axios';
 import Image from 'next/image';
 import { MdDelete } from 'react-icons/md'
@@ -65,6 +65,7 @@ export default function Page() {
         try {
             const { data } = await axios.get('/api/v1/auto-dj-list');
             const items = data?.autoDJList.songs.map((song) => ({
+                uiId: Math.random().toString(36).substr(2, 9) + Date.now().toString(36),
                 data: song.data,
                 index: song.index,
                 cover: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.cover}`,
@@ -131,6 +132,7 @@ export default function Page() {
     const handleDrop = async (e) => {
         setIsDragOver(false);
         setDropIndicatorIndex(null);
+        console.log("helllooo", e)
         try {
             const type = e.dataTransfer.getData('type');
             if (type === 'playlist') {
@@ -144,6 +146,7 @@ export default function Page() {
                 const insertAt = getDropIndex(e);
 
                 const newSong = {
+                    uiId: Math.random().toString(36).substr(2, 9) + Date.now().toString(36),
                     data: song,
                     cover: song.cover,
                     index: insertAt,
@@ -219,7 +222,7 @@ export default function Page() {
 
     return (
         <>
-            <section className="w-full py-5 px-4 reletive">
+            <section className="w-full py-5 px-4 reletive overflow-hidden">
                 <div className="flex justify-center items-center">
                     <h1 className='main-heading my-10'>Manage Auto DJ</h1>
                 </div>
@@ -227,7 +230,7 @@ export default function Page() {
                 <div className='grid grid-cols-[2fr_1fr] relative h-[80vh]' >
                     {/* ---- AUTO DJ LIST (left panel) ---- */}
                     <div
-                        className="p-2 relative"
+                        className="p-2 relative h-[89vh] overflow-y-auto"
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
@@ -246,7 +249,7 @@ export default function Page() {
                                         )}
 
                                         {autoDJList && autoDJList?.map((data, index) => (
-                                            <>
+                                            <Fragment key={data?.uiId}>
                                                 {/* Animated space slot ABOVE this item */}
                                                 <div
                                                     style={{
@@ -275,7 +278,7 @@ export default function Page() {
                                                     </div>
                                                 </div>
 
-                                                <Draggable key={data?.data?._id.toString()} draggableId={data?.data?._id.toString()} index={index}>
+                                                <Draggable draggableId={data?.uiId} index={index}>
                                                     {(provided) => (
                                                         <div
                                                             data-dj-item={index}
@@ -298,7 +301,7 @@ export default function Page() {
                                                         </div>
                                                     )}
                                                 </Draggable>
-                                            </>
+                                            </Fragment>
                                         ))}
 
                                         {/* Animated space slot at END of list */}
@@ -337,7 +340,7 @@ export default function Page() {
                     </div>
 
                     {/* ---- PLAYLIST PANEL (right panel) ---- */}
-                    <div className='p-2 bg-gray-100' >
+                    <div className='p-2 bg-gray-100 h-[89vh] overflow-y-auto' >
                         {
                             playlists.length != 0 && playlists?.map((data) => (
                                 <RenderPlayList key={data._id} playlist={data} />

@@ -60,7 +60,7 @@ export async function GET(request) {
 
 function createParticipantToken(userInfo, roomName) {
   const at = new AccessToken(API_KEY, API_SECRET, userInfo);
-  at.ttl = '5m';
+  at.ttl = '24h';
   const grant = {
     room: roomName,
     roomJoin: true,

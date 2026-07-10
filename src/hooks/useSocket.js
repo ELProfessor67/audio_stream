@@ -5,7 +5,24 @@ import Peer from 'simple-peer';
 import axios from 'axios';
 import { data } from 'autoprefixer';
 import hark from 'hark';
-import { Track } from 'livekit-client';
+import { Track, AudioPresets } from 'livekit-client';
+
+
+// Publish options tuned for music: enable RED (redundant encoding) so listeners
+// recover from packet loss without audible gaps, disable DTX (music has no true
+// silence to suppress), and use a high-quality music codec preset for bitrate.
+const MUSIC_PUBLISH_OPTIONS = {
+	red: true,
+	dtx: false,
+	audioPreset: AudioPresets.musicHighQuality,
+};
+
+// Mic (voice) can keep DTX on but still benefits from RED for loss recovery.
+const MIC_PUBLISH_OPTIONS = {
+	red: true,
+	dtx: true,
+	audioPreset: AudioPresets.speech,
+};
 
 
 
@@ -265,7 +282,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 					console.warn(`⚠️ No sender found for ${name}, falling back to unpublish/publish`);
 					await roomRef.current.localParticipant.unpublishTrack(publication.track);
 					await roomRef.current.localParticipant.publishTrack(track, {
-						red: false,
+						...MUSIC_PUBLISH_OPTIONS,
 						source: Track.Source.Unknown,
 						name: name
 					});
@@ -273,7 +290,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			} else {
 				// First time publishing this track
 				await roomRef.current.localParticipant.publishTrack(track, {
-					red: false,
+					...MUSIC_PUBLISH_OPTIONS,
 					source: Track.Source.Unknown,
 					name: name
 				});
@@ -284,7 +301,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			// Last resort fallback
 			try {
 				await roomRef.current.localParticipant.publishTrack(track, {
-					red: false,
+					...MUSIC_PUBLISH_OPTIONS,
 					source: Track.Source.Unknown,
 					name: name
 				});
@@ -1068,22 +1085,16 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		try {
 			let { songStream, changeCurrentTime } = await getSongStream(url, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setsduration);
 			changeCurrentTimeRef.current = changeCurrentTime;
-			
 
 			console.log(songStream,"songStream")
 
-			// FIX: Reuse master AudioContext instead of creating another new one
-			const gaudioContext = getMasterAudioContext();
-			const gsong = gaudioContext.createMediaStreamSource(songStream);
-			const gdest = gaudioContext.createMediaStreamDestination();
-			const gsongGainNode = gaudioContext.createGain();
-
-			gsong.connect(gsongGainNode);
-			gsongGainNode.connect(gdest);
-			gainNodeStreamRef.current = gsongGainNode;
-
-			songStreamRef.current = gdest.stream;
-			songStream = gdest.stream;
+			// FIX: Publish the song's MediaStreamDestination directly.
+			// The previous code piped this stream through a SECOND
+			// MediaStreamSource -> gain -> MediaStreamDestination inside the same
+			// AudioContext. Chaining two MediaStream boundaries adds an extra
+			// resampling/clock-drift stage that produces intermittent dropouts
+			// (the "song breaking again and again" symptom). One destination is enough.
+			songStreamRef.current = songStream;
 
 			setSongStreamLoading(false);
 			songStreamLoadingRef.current = false;
@@ -1115,11 +1126,9 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	}
 
 	const changeValume = (value) => {
-		if (gainNodeRef.current?.gain && gainNodeStreamRef.current?.gain) {
-			
-			// gainNodeRef.current.gain.value = value;
-			// gainNodeStreamRef.current.gain.value = value;
-			// offAutoLevelingRef.current();
+		// Volume is applied on the HTMLMediaElement, which scales the signal
+		// entering the Web Audio graph (both local playback and the published stream).
+		if (songSourceRef.current) {
 			songSourceRef.current.volume = value;
 		}
 	}
@@ -1155,18 +1164,9 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			let { songStream, changeCurrentTime } = await getSongStream(url, filterGainNodeRef, filterSourceRef, volume, filtterAudioContextRef, fprogress, filterprogressCallback, setfduration, true);
 			filterchangeCurrentTimeRef.current = changeCurrentTime;
 
-			// FIX: Reuse master AudioContext instead of creating another new one
-			const gaudioContext = getMasterAudioContext();
-			const gsong = gaudioContext.createMediaStreamSource(songStream);
-			const gdest = gaudioContext.createMediaStreamDestination();
-			const gsongGainNode = gaudioContext.createGain();
-
-			gsong.connect(gsongGainNode);
-			gsongGainNode.connect(gdest);
-			filterGainStreamNodeRef.current = gsongGainNode;
-
-			filterStreamRef.current = gdest.stream;
-			songStream = gdest.stream;
+			// FIX: Publish the filter's MediaStreamDestination directly (see playSong).
+			// Removing the redundant second MediaStream hop prevents intermittent dropouts.
+			filterStreamRef.current = songStream;
 
 			setFilterStreamLoading(false);
 			filterStreamLoadingRef.current = false;
@@ -1188,9 +1188,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	}
 
 	const changeFilterValume = (value) => {
-		if (filterGainNodeRef.current?.gain && filterGainStreamNodeRef.current?.gain) {
-			// filterGainNodeRef.current.gain.value = value;
-			// filterGainStreamNodeRef.current.gain.value = value;
+		if (filterSourceRef.current) {
 			filterSourceRef.current.volume = value;
 		}
 	}
@@ -1458,7 +1456,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 		//publishing the stream
 		roomRef.current.localParticipant.publishTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'),{
-			red: false,
+			...MIC_PUBLISH_OPTIONS,
 			source: Track.Source.Microphone
 		});
 

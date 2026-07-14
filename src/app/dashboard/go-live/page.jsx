@@ -752,23 +752,23 @@ export default function () {
 
 
 	async function handleSelectedSong(data, index) {
+		const songs = selectPlayListSong?.songs || [];
+		const sindex = typeof index === 'number'
+			? index
+			: songs.findIndex((song) => song._id?.toString() === data._id?.toString());
+
+		const computedNext = sindex < 0 || songs.length - 1 <= sindex
+			? songs[0]
+			: songs[sindex + 1];
+
 		setSeletedSong(data);
 		setOpen(false);
 		setSongPlaying(true);
 		setProgress(0);
-		playSong(data.audio, volume);
+		setNextSong(computedNext);
+		playSong(data.audio, volume, { currentSong: data, nextSong: computedNext });
 		setUserChangeVolume(false);
-		// setQue(prev => [data,...prev]);
 		setHistory(data);
-		if (selectPlayListSong.songs.length - 1 <= index) {
-			console.log(selectPlayListSong.songs[0])
-			setNextSong(selectPlayListSong.songs[0]);
-		} else {
-			console.log(selectPlayListSong.songs[index + 1])
-			setNextSong(selectPlayListSong.songs[index + 1]);
-		}
-
-
 	}
 
 	const handleSongPlay = () => {
@@ -862,15 +862,8 @@ export default function () {
 			return
 		}
 
-		console.log(sindex)
 		const song = selectPlayListSong?.songs[sindex - 1];
-		handleSelectedSong(song);
-
-		if (selectPlayListSong.songs.length - 1 <= sindex) {
-			setNextSong(selectPlayListSong.songs[0])
-		} else {
-			setNextSong(selectPlayListSong.songs[sindex + 1])
-		}
+		handleSelectedSong(song, sindex - 1);
 	}
 
 	function handleForward() {
@@ -878,15 +871,8 @@ export default function () {
 		console.log(sindex, selectPlayListSong?.songs?.length - 1)
 		if (sindex >= selectPlayListSong?.songs?.length - 1) return
 
-
-		console.log(sindex)
 		const song = selectPlayListSong?.songs[sindex + 1];
-		handleSelectedSong(song);
-		if (selectPlayListSong.songs.length - 1 <= sindex + 1) {
-			setNextSong(selectPlayListSong.songs[0])
-		} else {
-			setNextSong(selectPlayListSong.songs[sindex + 2])
-		}
+		handleSelectedSong(song, sindex + 1);
 	}
 
 	useEffect(() => {

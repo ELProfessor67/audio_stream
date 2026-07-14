@@ -205,6 +205,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	const masterAudioContextRef = useRef(null);
 	const songObjectUrlRef = useRef(null);
 	const filterObjectUrlRef = useRef(null);
+	const playSongGenerationRef = useRef(0);
 
 
 
@@ -761,7 +762,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 								}
 							} else {
 								const song = selectPlayListSongRef.current?.songs[sindex + 1];
-								handleSelectedSong(song, sindex);
+								handleSelectedSong(song, sindex + 1);
 							}
 						}
 					}
@@ -1063,17 +1064,34 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		}
 	}
 
-	async function playSong(url, volume) {
+	function broadcastSongToListeners(currentSong, nextSong) {
+		if (!currentSong) return;
+
+		selectedSongRef.current = currentSong;
+		if (nextSong) {
+			nextSongRef.current = nextSong;
+		}
+		nextSongRef.current.user = user;
+
+		socketRef.current?.emit('next-song', {
+			roomId: user?._id?.toString(),
+			nextSong: nextSongRef.current,
+			currentSong: selectedSongRef.current,
+		});
+	}
+
+	async function playSong(url, volume, songMeta = null) {
 		console.log(url);
 
-		breakLookRef.current = false;
-		await sleep(500); // Reduced from 2000ms — less delay between songs
-		
-		// FIX: Use ref instead of state to avoid stale closure
-		if (songStreamLoadingRef.current) {
-			console.log('stream loading true — skipping')
-			return
+		// Each new selection gets a generation id so an in-flight load can be
+		// cancelled when the DJ picks another song from the queue mid-load.
+		const generation = ++playSongGenerationRef.current;
+
+		if (songMeta?.currentSong) {
+			broadcastSongToListeners(songMeta.currentSong, songMeta.nextSong);
 		}
+
+		breakLookRef.current = false;
 
 		if (songSourceRef.current?.pause) {
 			songSourceRef.current.pause();
@@ -1084,16 +1102,16 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 		try {
 			let { songStream, changeCurrentTime } = await getSongStream(url, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setsduration);
+
+			// A newer song was selected while this one was still loading.
+			if (generation !== playSongGenerationRef.current) {
+				return;
+			}
+
 			changeCurrentTimeRef.current = changeCurrentTime;
 
 			console.log(songStream,"songStream")
 
-			// FIX: Publish the song's MediaStreamDestination directly.
-			// The previous code piped this stream through a SECOND
-			// MediaStreamSource -> gain -> MediaStreamDestination inside the same
-			// AudioContext. Chaining two MediaStream boundaries adds an extra
-			// resampling/clock-drift stage that produces intermittent dropouts
-			// (the "song breaking again and again" symptom). One destination is enough.
 			songStreamRef.current = songStream;
 
 			setSongStreamLoading(false);
@@ -1101,14 +1119,11 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 		    replaceTrack(songStream.getAudioTracks()[0],'song');
 
-			nextSongRef.current.user = user;
-			console.info('sss', nextSongRef.current, selectedSongRef.current)
-
-			socketRef.current?.emit("next-song", { roomId: user?._id.toString(), nextSong: nextSongRef.current, currentSong: selectedSongRef.current });
-
 		} catch (err) {
-			setSongStreamLoading(false);
-			songStreamLoadingRef.current = false;
+			if (generation === playSongGenerationRef.current) {
+				setSongStreamLoading(false);
+				songStreamLoadingRef.current = false;
+			}
 			console.error('error : ', err.message)
 		}
 	}

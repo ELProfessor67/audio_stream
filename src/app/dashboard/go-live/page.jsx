@@ -36,6 +36,7 @@ import RenamePlaylistComponents from '@/components/RenamePlaylistComponents';
 // import VolumePopup from '@/components/VolumePopup';
 // import VolumePopupsDeck from '@/components/VolumePopupsDeck';
 import AutoAdjustByBase from '@/components/AutoAdjustByBase';
+import DeckProgressBar from '@/components/DeckProgressBar';
 import { useLive } from '@/context/LiveContext';
 
 function addOneMinute(hours, minutes) {
@@ -1706,11 +1707,13 @@ export default function () {
 											</div>
 
 											<div className="w-[100%] flex flex-col reletive px-3 py-2">
-												<input type="range" className="w-[100%]" value={progress} onChange={(e) => handleProgressChange("song", e.target.value)} step={1} min={0} max={sduration} />
-												<div className="w-[100%] flex items-center justify-between">
-													<time className="text-black text-xs">{Math.floor(remaining / 60)}:{Math.floor(remaining % 60)}</time>
-													<time className="text-black text-xs">{Math.floor(sduration / 60)}:{Math.floor(sduration % 60)}</time>
-												</div>
+												<DeckProgressBar
+													progress={progress}
+													duration={sduration}
+													loading={songStreamloading}
+													songKey={selectedSong?._id || selectedSong?.title}
+													onSeek={(value) => handleProgressChange('song', value)}
+												/>
 											</div>
 										</div>
 

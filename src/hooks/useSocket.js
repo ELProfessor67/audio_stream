@@ -8,20 +8,41 @@ import hark from 'hark';
 import { Track, AudioPresets } from 'livekit-client';
 
 
-// Publish options tuned for music: enable RED (redundant encoding) so listeners
-// recover from packet loss without audible gaps, disable DTX (music has no true
-// silence to suppress), and use a high-quality music codec preset for bitrate.
-const MUSIC_PUBLISH_OPTIONS = {
+// Track names used for the adaptive (per-listener network) music streams.
+export const SONG_HD_TRACK = 'song-hd';
+export const SONG_LO_TRACK = 'song-lo';
+
+// HD music: 128 kbps stereo + RED. For listeners with good/excellent network.
+const MUSIC_HD_PUBLISH_OPTIONS = {
 	red: true,
 	dtx: false,
-	audioPreset: AudioPresets.musicHighQuality,
+	forceStereo: true,
+	audioPreset: AudioPresets.musicHighQualityStereo,
 };
 
-// Mic (voice) can keep DTX on but still benefits from RED for loss recovery.
+// Low music: 48 kbps mono + RED. For listeners on weak/poor network.
+const MUSIC_LO_PUBLISH_OPTIONS = {
+	red: true,
+	dtx: false,
+	forceStereo: false,
+	audioPreset: AudioPresets.music,
+};
+
+// Filter/FX: single quality is fine (short clips). Reuse HD preset.
+const MUSIC_PUBLISH_OPTIONS = MUSIC_HD_PUBLISH_OPTIONS;
+
+// Mic (voice): DTX on to save bandwidth during pauses, RED for loss recovery.
 const MIC_PUBLISH_OPTIONS = {
 	red: true,
 	dtx: true,
-	audioPreset: AudioPresets.speech,
+	audioPreset: AudioPresets.musicHighQuality,
+};
+
+// Map a track name to its publish options.
+const publishOptionsForTrack = (name) => {
+	if (name === SONG_HD_TRACK) return MUSIC_HD_PUBLISH_OPTIONS;
+	if (name === SONG_LO_TRACK) return MUSIC_LO_PUBLISH_OPTIONS;
+	return MUSIC_PUBLISH_OPTIONS;
 };
 
 
@@ -263,6 +284,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
     const replaceTrack = async (track, name) => {
+		const options = publishOptionsForTrack(name);
 		try {
 			const publications = Array.from(
 				roomRef.current.localParticipant.trackPublications.values()
@@ -283,7 +305,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 					console.warn(`⚠️ No sender found for ${name}, falling back to unpublish/publish`);
 					await roomRef.current.localParticipant.unpublishTrack(publication.track);
 					await roomRef.current.localParticipant.publishTrack(track, {
-						...MUSIC_PUBLISH_OPTIONS,
+						...options,
 						source: Track.Source.Unknown,
 						name: name
 					});
@@ -291,7 +313,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			} else {
 				// First time publishing this track
 				await roomRef.current.localParticipant.publishTrack(track, {
-					...MUSIC_PUBLISH_OPTIONS,
+					...options,
 					source: Track.Source.Unknown,
 					name: name
 				});
@@ -302,7 +324,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			// Last resort fallback
 			try {
 				await roomRef.current.localParticipant.publishTrack(track, {
-					...MUSIC_PUBLISH_OPTIONS,
+					...options,
 					source: Track.Source.Unknown,
 					name: name
 				});
@@ -696,12 +718,22 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 				
 				// Create stream destination for LiveKit
 				const streamDestination = audioContext.createMediaStreamDestination();
+
+				// For songs (not filter FX), create a SECOND destination that carries
+				// the exact same audio. It is published as a separate low-bitrate track
+				// so listeners on weak networks can auto-switch to it.
+				const streamDestinationLow = !isFilter
+					? audioContext.createMediaStreamDestination()
+					: null;
 				
 				// Audio routing: source -> analyser -> gain -> destination + streamDestination
 				source.connect(analyser);
 				analyser.connect(gainNode);
 				gainNode.connect(audioContext.destination); // Local playback
-				gainNode.connect(streamDestination); // LiveKit stream
+				gainNode.connect(streamDestination); // LiveKit stream (HD)
+				if (streamDestinationLow) {
+					gainNode.connect(streamDestinationLow); // LiveKit stream (Low)
+				}
 
 				songSourceRef.current = audio;
 				audioContextRef.current = audioContext;
@@ -773,7 +805,11 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 				}
 				
 				audio.play();
-				resolve({ songStream: streamDestination.stream, changeCurrentTime });
+				resolve({
+					songStream: streamDestination.stream,
+					songStreamLow: streamDestinationLow ? streamDestinationLow.stream : null,
+					changeCurrentTime,
+				});
 			}, { once: true }); // { once: true } prevents duplicate event firing
 		});
 	}
@@ -1101,7 +1137,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		songStreamLoadingRef.current = true;
 
 		try {
-			let { songStream, changeCurrentTime } = await getSongStream(url, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setsduration);
+			let { songStream, songStreamLow, changeCurrentTime } = await getSongStream(url, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setsduration);
 
 			// A newer song was selected while this one was still loading.
 			if (generation !== playSongGenerationRef.current) {
@@ -1117,7 +1153,12 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			setSongStreamLoading(false);
 			songStreamLoadingRef.current = false;
 
-		    replaceTrack(songStream.getAudioTracks()[0],'song');
+			// Publish HD and Low variants of the same music so listeners can
+			// auto-pick based on their network quality (per-listener adaptive).
+			replaceTrack(songStream.getAudioTracks()[0], SONG_HD_TRACK);
+			if (songStreamLow) {
+				replaceTrack(songStreamLow.getAudioTracks()[0], SONG_LO_TRACK);
+			}
 
 		} catch (err) {
 			if (generation === playSongGenerationRef.current) {

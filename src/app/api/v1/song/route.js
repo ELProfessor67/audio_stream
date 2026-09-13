@@ -7,6 +7,7 @@ import {writeFileSync,unlink} from 'fs';
 import path from 'path';
 import playlistModel from "@/models/playlist";
 import axios from 'axios';
+import { resolveMedia, withResolvedMedia } from "@/utils/mediaUrl";
 
 export const POST = connectDB(auth(async function (req){
     try{
@@ -54,8 +55,8 @@ export const POST = connectDB(auth(async function (req){
         let song = await songModel.create({title,description,artist,size,type,audio: `/upload/songs/${audioFileName}`,cover:`/upload/cover/${coverFileName}`,owner: req.user._id,duration,album});
 
         song = JSON.parse(JSON.stringify(song));
-        song.cover = `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.cover}`
-        song.audio = `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.audio}`
+        song.cover = resolveMedia(song.cover)
+        song.audio = resolveMedia(song.audio)
         console.log('4')
         if(isUploadfromlive){
             const p = await playlistModel.findOne({title: playlisttitle});
@@ -71,13 +72,18 @@ export const POST = connectDB(auth(async function (req){
 
 export const GET = connectDB(auth(async function (req){
     const {_id} = req.user;
-    let songs = await songModel.find({owner: _id}).populate('owner');
+
+    // Tracks from albums approved on HGC Radio are owned by the admin account,
+    // so DJs need the admin library included to find them in Go Live search.
+    const owners = [_id];
+    if(req.user.isDJ && req.user.djOwner && String(req.user.djOwner) !== String(_id)){
+        owners.push(req.user.djOwner);
+    }
+
+    let songs = await songModel.find({owner: {$in: owners}}).populate('owner');
     
     songs = songs.filter(song => !song.isAds)
-    songs = songs.map((song) => {
-        song = JSON.parse(JSON.stringify(song));
-        return {...song,audio: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.audio}`,cover: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.cover}`}
-    });
+    songs = songs.map((song) => withResolvedMedia(JSON.parse(JSON.stringify(song))));
 
     return NextResponse.json({success: true,songs});
 }));

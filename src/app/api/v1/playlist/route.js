@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import playlistModel from "@/models/playlist";
 import { auth } from "@/middleswares/auth";
 import axios from "axios";
+import { resolveMedia, withResolvedMedia } from "@/utils/mediaUrl";
 
 export const POST = connectDB(auth(async function (req){
     let {title,description,songs,isTemp,album,artist,cover,coverEx} = await req.json();
@@ -38,56 +39,36 @@ export const POST = connectDB(auth(async function (req){
 export const GET = connectDB(auth(async function (req){
     const {_id} = req.user;
     let playlists = await playlistModel.find({owner: _id}).populate('owner').populate('songs');
-    console.log("inside....",playlists)
-    if(req.user.isDJ && req.user.djPermissions.includes('playlists')){
-        let adminplaylists = await playlistModel.find({owner: req.user.djOwner}).populate('owner').populate('songs');
-        adminplaylists.forEach(p => {
-            playlists.push(p)
+
+    // Every DJ also gets the admin library. Albums approved on HGC Radio are
+    // synced onto the admin account, so this is what makes an approved album
+    // visible in the DJ panel and in Go Live for all DJs.
+    if(req.user.isDJ && req.user.djOwner && String(req.user.djOwner) !== String(_id)){
+        const adminplaylists = await playlistModel.find({owner: req.user.djOwner}).populate('owner').populate('songs');
+        const seen = new Set(playlists.map((p) => String(p._id)));
+        adminplaylists.forEach((p) => {
+            if(!seen.has(String(p._id))){
+                seen.add(String(p._id));
+                playlists.push(p);
+            }
         })
-        
     }
-    console.log("inside....",playlists[0].songs)
+
     playlists = playlists.filter((ele) => !ele.isTemp);
-
     playlists = JSON.parse(JSON.stringify(playlists));
+
     playlists.forEach((playlist,index) => {
-        playlists[index].songs = playlists[index].songs.map((song) => {
-            return {...song,audio: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.audio}`,cover: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.cover}`}
-        });
-    })
-    
-    //add album and artist
-    let playListCopy = JSON.parse(JSON.stringify(playlists));
-    playListCopy.forEach((p,index) => {
-        if(p.cover){
-            p.cover = `${process.env.NEXT_PUBLIC_SOCKET_URL}${p.cover}`
-        }else{
-            p.cover = `${process.env.NEXT_PUBLIC_SOCKET_URL}/upload/cover/default.jpg`
-        }
-        playListCopy[index].songs = playListCopy[index].songs.map((song) => {
-            if(p.artist){
-                song.artist = p.artist;
-            }else
-            {
-                song.artist = "Unkown";
-            }
-
-            if(p.album){
-                song.album = p.album;
-            }else
-            {
-                song.album = "Unkown";
-            }
-            song.cover = p.cover;
-           
-
-            
-            return song;
-        })
-        
+        const cover = resolveMedia(playlist.cover || '/upload/cover/default.jpg');
+        playlists[index].cover = cover;
+        playlists[index].songs = (playlist.songs || []).map((song) => ({
+            ...withResolvedMedia(song),
+            artist: playlist.artist || 'Unkown',
+            album: playlist.album || 'Unkown',
+            cover,
+        }));
     })
 
-    return NextResponse.json({success: true,playlists: playListCopy});
+    return NextResponse.json({success: true,playlists});
 }));
 
 

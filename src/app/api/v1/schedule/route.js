@@ -6,6 +6,7 @@ import scheduleModel from "@/models/schedule";
 import userModel from "@/models/user";
 import { auth } from "@/middleswares/auth";
 import axios from 'axios';
+import { withResolvedMedia } from "@/utils/mediaUrl";
 
 export const POST = connectDB(auth(async function (req){
     let {day,songs,role} = await req.json();
@@ -27,9 +28,7 @@ export const GET = connectDB(auth(async function (req){
     let schedules = await scheduleModel.find({owner: _id}).populate('owner').populate('songs');
     schedules = JSON.parse(JSON.stringify(schedules));
     schedules.forEach((playlist,index) => {
-        schedules[index].songs = schedules[index].songs.map((song) => {
-            return {...song,audio: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.audio}`,cover: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.cover}`}
-        });
+        schedules[index].songs = schedules[index].songs.map(withResolvedMedia);
     })
     
     return NextResponse.json({success: true,schedules});

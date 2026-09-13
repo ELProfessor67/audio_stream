@@ -8,6 +8,7 @@ import { showMessage, showError, clearMessage, clearError } from '@/utils/showAl
 import { useDispatch, useSelector } from 'react-redux';
 import { GiLoveSong } from 'react-icons/gi';
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
+import { resolveMedia } from '@/utils/mediaUrl';
 
 
 function RenderPlayList({ playlist }) {
@@ -68,7 +69,7 @@ export default function Page() {
                 uiId: Math.random().toString(36).substr(2, 9) + Date.now().toString(36),
                 data: song.data,
                 index: song.index,
-                cover: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.cover}`,
+                cover: resolveMedia(song.cover),
                 album: song.album,
                 artist: song.artist
 

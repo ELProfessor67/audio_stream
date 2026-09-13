@@ -3,6 +3,7 @@ import connectDB from "@/db/connectDB";
 import { NextResponse } from "next/server";
 import playlistModel from "@/models/playlist";
 import { auth } from "@/middleswares/auth";
+import { withResolvedMedia } from "@/utils/mediaUrl";
 
 
 export const GET = connectDB(auth(async function (req){
@@ -11,9 +12,7 @@ export const GET = connectDB(auth(async function (req){
     
      let playlist = await playlistModel.findById(playlistId).populate('owner').populate('songs');
      playlist = JSON.parse(JSON.stringify(playlist));
-        playlist.songs = playlist.songs.map((song) => {
-            return {...song,audio: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.audio}`,cover: `${process.env.NEXT_PUBLIC_SOCKET_URL}${song.cover}`}
-        });
+        playlist.songs = playlist.songs.map(withResolvedMedia);
     return NextResponse.json({success: true,playlist});
 }));
 

@@ -39,7 +39,8 @@ export const POST = connectDB(auth(async function (req){
 
 export const GET = connectDB(auth(async function (req){
     const {_id} = req.user;
-    let playlists = await playlistModel.find({owner: _id}).populate('owner').populate('songs');
+    // let playlists = await playlistModel.find({owner: _id}).populate('owner').populate('songs');
+    let playlists = await playlistModel.find().populate('owner').populate('songs');
 
     const seen = new Set(playlists.map((p) => String(p._id)));
     const merge = (extra) => extra.forEach((p) => {

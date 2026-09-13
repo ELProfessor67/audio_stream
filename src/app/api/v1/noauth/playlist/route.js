@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import axios from "axios";
 import { isAbsoluteUrl, resolveMedia, withResolvedMedia } from "@/utils/mediaUrl";
 import { findStationOwner } from "@/utils/stationOwner";
+import { HGC_SOURCE } from "@/utils/hgcLibrary";
 
 const DEFAULT_COVER = "/upload/cover/default.jpg";
 
@@ -91,6 +92,7 @@ export const POST = connectDB(async function (req) {
             existingPlaylist.description = description;
             existingPlaylist.owner = ownerUser._id;
             existingPlaylist.isTemp = isTemp === true;
+            existingPlaylist.source = HGC_SOURCE;
             if (artist) existingPlaylist.artist = artist;
             if (album) existingPlaylist.album = album;
             if (cover) existingPlaylist.cover = coverPath;
@@ -119,6 +121,7 @@ export const POST = connectDB(async function (req) {
             artist,
             album,
             cover: coverPath,
+            source: HGC_SOURCE,
         });
         await playlistDoc.save();
 

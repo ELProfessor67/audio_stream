@@ -8,6 +8,7 @@ import path from 'path';
 import playlistModel from "@/models/playlist";
 import axios from 'axios';
 import { resolveMedia, withResolvedMedia } from "@/utils/mediaUrl";
+import { HGC_SOURCE } from "@/utils/hgcLibrary";
 
 export const POST = connectDB(auth(async function (req){
     try{
@@ -73,14 +74,20 @@ export const POST = connectDB(auth(async function (req){
 export const GET = connectDB(auth(async function (req){
     const {_id} = req.user;
 
-    // Tracks from albums approved on HGC Radio are owned by the admin account,
-    // so DJs need the admin library included to find them in Go Live search.
     const owners = [_id];
     if(req.user.isDJ && req.user.djOwner && String(req.user.djOwner) !== String(_id)){
         owners.push(req.user.djOwner);
     }
 
-    let songs = await songModel.find({owner: {$in: owners}}).populate('owner');
+    // Tracks from HGC Radio albums are matched through their playlist instead of
+    // by owner, so every DJ finds them in Go Live search even when the album was
+    // synced onto a different account.
+    const sharedPlaylists = await playlistModel.find({source: HGC_SOURCE}).select('songs');
+    const sharedSongIds = sharedPlaylists.flatMap((playlist) => playlist.songs || []);
+
+    let songs = await songModel.find({
+        $or: [{owner: {$in: owners}},{_id: {$in: sharedSongIds}}]
+    }).populate('owner');
     
     songs = songs.filter(song => !song.isAds)
     songs = songs.map((song) => withResolvedMedia(JSON.parse(JSON.stringify(song))));

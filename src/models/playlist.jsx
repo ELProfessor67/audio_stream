@@ -11,6 +11,9 @@ const playlistSchems = new mongoose.Schema({
     artist: {type: String,trim: true},
     album: {type: String,trim: true},
     cover: {type: String,default: null},
+    // 'hgc' marks a playlist synced in from HGC Radio. Those are shared with the
+    // whole station, so visibility no longer depends on which account owns them.
+    source: {type: String,default: null,index: true},
 },{timestamps: true});
 
 

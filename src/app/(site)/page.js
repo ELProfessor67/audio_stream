@@ -72,7 +72,7 @@ const page = () => {
                 </div>
                 <form className='p-3 px-6' onSubmit={handleSubmit}>
                     <div className='input-group flex flex-col gap-1 mb-6'>
-                        <label for="email" className='text-black text-lg'>{type} Email</label>
+                        <label htmlFor="email" className='text-black text-lg'>{type} Email</label>
                         <div className='flex items-center relative  py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                             <MdAlternateEmail size={20} className='text-gray-400'/>
                             <input type='email' value={email} onChange={(e) => setEmail(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your email' id='email' name='email' required/>
@@ -80,7 +80,7 @@ const page = () => {
                     </div>
 
                     <div className='input-group flex flex-col gap-1 mb-2'>
-                        <label for="password" className='text-black text-lg'>{type} Password</label>
+                        <label htmlFor="password" className='text-black text-lg'>{type} Password</label>
                         <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                             <MdKey size={20} className='text-gray-400'/>
                             <input type='password' value={password} onChange={(e) => setPassword(e.target.value)} className='w-[95%] outline-none ml-1' placeholder='Enter your password' id='password' name='password' required/>

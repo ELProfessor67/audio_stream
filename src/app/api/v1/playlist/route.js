@@ -5,6 +5,7 @@ import playlistModel from "@/models/playlist";
 import { auth } from "@/middleswares/auth";
 import axios from "axios";
 import { resolveMedia, withResolvedMedia } from "@/utils/mediaUrl";
+import { HGC_SOURCE } from "@/utils/hgcLibrary";
 
 export const POST = connectDB(auth(async function (req){
     let {title,description,songs,isTemp,album,artist,cover,coverEx} = await req.json();
@@ -40,19 +41,22 @@ export const GET = connectDB(auth(async function (req){
     const {_id} = req.user;
     let playlists = await playlistModel.find({owner: _id}).populate('owner').populate('songs');
 
-    // Every DJ also gets the admin library. Albums approved on HGC Radio are
-    // synced onto the admin account, so this is what makes an approved album
-    // visible in the DJ panel and in Go Live for all DJs.
+    const seen = new Set(playlists.map((p) => String(p._id)));
+    const merge = (extra) => extra.forEach((p) => {
+        if(!seen.has(String(p._id))){
+            seen.add(String(p._id));
+            playlists.push(p);
+        }
+    });
+
+    // A DJ broadcasts out of the station admin's library, not their own.
     if(req.user.isDJ && req.user.djOwner && String(req.user.djOwner) !== String(_id)){
-        const adminplaylists = await playlistModel.find({owner: req.user.djOwner}).populate('owner').populate('songs');
-        const seen = new Set(playlists.map((p) => String(p._id)));
-        adminplaylists.forEach((p) => {
-            if(!seen.has(String(p._id))){
-                seen.add(String(p._id));
-                playlists.push(p);
-            }
-        })
+        merge(await playlistModel.find({owner: req.user.djOwner}).populate('owner').populate('songs'));
     }
+
+    // Albums approved on HGC Radio belong to the station, so every DJ and the
+    // owner gets them no matter which account they were synced onto.
+    merge(await playlistModel.find({source: HGC_SOURCE}).populate('owner').populate('songs'));
 
     playlists = playlists.filter((ele) => !ele.isTemp);
     playlists = JSON.parse(JSON.stringify(playlists));

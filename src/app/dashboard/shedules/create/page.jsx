@@ -303,7 +303,7 @@ const page = () => {
                     selectedPlaylist && selectedPlaylist.map((data) => (
                         <div className="flex justify-between items-center my-6">
                             <div className="flex items-center gap-4">
-                                <Image src={data.cover} width={200} height={200} alt="cover" className="h-[6rem] w-28 object-conver rounded" />
+                                <Image src={data.cover} width={200} height={200} alt="cover" className="h-[6rem] w-28 object-cover shrink-0 rounded" />
                                 <h2 className="text-xl text-black">{data?.title}</h2>
                             </div>
 
@@ -329,7 +329,7 @@ const page = () => {
                                                     <div className={`flex justify-between items-center my-6 rounded-md`} ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
                                                         <div className="flex items-center gap-4">
                                                             <span className="text-black text-2xl">{index + 1}</span>
-                                                            <Image src={mappedSongs[_id]?.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
+                                                            <Image src={mappedSongs[_id]?.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-cover shrink-0 rounded" />
                                                             <div>
                                                                 <h2 className="text-xl text-black">{mappedSongs[_id]?.title?.slice(0, 40)}</h2>
                                                                 <p className="para"> ~ {mappedSongs[_id]?.artist} - {mappedSongs[_id]?.album}</p>

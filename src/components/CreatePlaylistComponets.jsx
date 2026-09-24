@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { showMessage, showError, clearMessage, clearError } from '@/utils/showAlert';
 import axios from 'axios';
 import { FaUserAlt } from 'react-icons/fa';
+import { fileToSquareCover, COVER_SIZE } from '@/utils/coverImage';
 
 const CreatePlaylistComponets = ({ createPlaylistOpen, setCreatePlaylistOpen, allsongs, getPlaylist }) => {
     const [title, setTitle] = useState('');
@@ -49,19 +50,17 @@ const CreatePlaylistComponets = ({ createPlaylistOpen, setCreatePlaylistOpen, al
 
     }
 
-    const handlePhotoChange = (e) => {
-        const [file] = e.target.files;
-        const reader = new FileReader();
-
-        reader.onload = () => {
-            if(reader.readyState == 2){
-                setPhoto(reader.result);
-                const ext = file.name.split('.')[1];
-                setCoverEx(ext);
-            }
+    const handlePhotoChange = async (e) => {
+        const [file] = e.target.files || [];
+        if (!file) return;
+        try {
+            const { base64, ext } = await fileToSquareCover(file);
+            setPhoto(base64);
+            setCoverEx(ext);
+        } catch (err) {
+            await dispatch(showError(err.message));
+            await dispatch(clearError());
         }
-        reader.readAsDataURL(file)
-
     }
 
 
@@ -112,7 +111,10 @@ const CreatePlaylistComponets = ({ createPlaylistOpen, setCreatePlaylistOpen, al
                             </div>
 
                             <div className='input-group flex flex-col gap-1 mb-6'>
-                                <label for="title" className='text-black text-lg'>Cover Photo</label>
+                                <label for="cover" className='text-black text-lg'>
+                                    Cover Photo
+                                    <span className='text-gray-400 text-sm ml-2'>(cropped to {COVER_SIZE}&times;{COVER_SIZE})</span>
+                                </label>
                                 <div className='flex items-center relative  py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                                     <MdImage size={20} className='text-gray-400' />
                                     <input type='file' accept='image/*' onChange={handlePhotoChange} className='w-[95%] outline-none ml-1'  id='cover' name='cover' required />
@@ -122,7 +124,7 @@ const CreatePlaylistComponets = ({ createPlaylistOpen, setCreatePlaylistOpen, al
                             {
                                 photo &&
                                 <div className='flex items-center justify-center mb-5'>
-                                    <img src={photo} className='w-[10rem] h-[5rem] rounded-lg'/>
+                                    <img src={photo} alt='playlist cover' className='w-[8rem] h-[8rem] rounded-lg object-cover bg-gray-100'/>
                                 </div>
                             }
 
@@ -140,7 +142,7 @@ const CreatePlaylistComponets = ({ createPlaylistOpen, setCreatePlaylistOpen, al
                     allsongs && allsongs.map((data) => (
                         <div className="flex justify-between items-center my-6">
                             <div className="flex items-center gap-4">
-                                <Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
+                                <Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-cover shrink-0 rounded" />
                                 <h2 className="text-xl text-black">{data?.title}</h2>
                             </div>
 

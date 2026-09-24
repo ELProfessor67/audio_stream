@@ -320,7 +320,7 @@ export default function page({ params }) {
 					songs && songs.map((data) => (
 						<div className="flex justify-between items-center my-6">
 							<div className="flex items-center gap-4">
-								<Image src={data.cover} width={200} height={200} alt="cover" className="h-[4rem] w-[4rem] object-conver rounded" />
+								<Image src={data.cover} width={200} height={200} alt="cover" className="h-[4rem] w-[4rem] object-cover shrink-0 rounded" />
 								<h2 className="text-xl text-black">{data?.title}</h2>
 							</div>
 

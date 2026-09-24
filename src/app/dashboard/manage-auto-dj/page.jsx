@@ -290,7 +290,7 @@ export default function Page() {
                                                         >
                                                             <div className="flex items-center gap-4">
                                                                 <span className="text-black text-2xl">{data?.index + 1}</span>
-                                                                <Image src={data?.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
+                                                                <Image src={data?.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-cover shrink-0 rounded" />
                                                                 <div>
                                                                     <h2 className="text-xl text-black">{data?.data?.title?.slice(0, 40)}</h2>
                                                                     <p className="para"> ~ {data?.artist} - {data?.album}</p>

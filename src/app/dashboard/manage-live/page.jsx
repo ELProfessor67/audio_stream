@@ -58,7 +58,7 @@ export default function Page(){
 		      	{playlists.length != 0 ?  playlists.map(data => (
 		      		<div className="flex justify-between items-center my-2 py-1 border-b border-gray-100">
 	        			<div className="flex items-center gap-4">
-	                            <Image src={data?.songs[0]?.cover} width={200} height={200} alt="cover" className="h-[8rem] w-32 object-conver rounded"/> 
+	                            <Image src={data?.songs[0]?.cover} width={200} height={200} alt="cover" className="h-[8rem] w-32 object-cover shrink-0 rounded"/> 
 	                            <div className="">
 	                            	<h2 className="text-xl text-black">{data?.title}</h2>
 	                            	<p className="para">{data?.description}</p>

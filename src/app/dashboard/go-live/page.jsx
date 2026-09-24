@@ -21,10 +21,10 @@ import { MdDelete, MdAdd } from 'react-icons/md'
 import ChatBox from '@/components/ChatBox';
 import Message from '@/components/Message';
 import { MdCall } from "react-icons/md";
-import { FaFolder, FaFolderOpen } from "react-icons/fa";
-import { GiLoveSong } from "react-icons/gi";
 import CreatePlaylistComponets from '@/components/CreatePlaylistComponets';
 import EditPlaylistComponets from '@/components/EditPlaylistComponets';
+import FolderComponents from '@/components/FolderComponents';
+import PlaylistTree from '@/components/PlaylistTree';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
 
@@ -248,7 +248,8 @@ const TimeRemaining = ({ setLeftSecond, user, setActive, ownerLeft, start, setSt
 
 
 
-const CustomContextMenu = ({ xPos, yPos, clickedData, handleDelete, setCreatePlaylistOpen, setEditPlaylistOpen, setRenameOpen }) => {
+const CustomContextMenu = ({ xPos, yPos, clickedData, handleDelete, setCreatePlaylistOpen, setEditPlaylistOpen, setRenameOpen, openCreateFolder, openEditFolder }) => {
+	const item = 'iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer';
 	return (
 		<>
 			{
@@ -269,19 +270,24 @@ const CustomContextMenu = ({ xPos, yPos, clickedData, handleDelete, setCreatePla
 						{
 							clickedData?.type != "empty" &&
 							<>
-								<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => handleDelete(clickedData)}>Delete</li>
+								<li className={item} onClick={() => handleDelete(clickedData)}>Delete</li>
 								{
 									clickedData?.type == "playlist" &&
 									(
 										<>
-											<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={setEditPlaylistOpen}>Add New Song</li>
-											<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => setRenameOpen(true)}>Edit Folder</li>
+											<li className={item} onClick={setEditPlaylistOpen}>Add New Song</li>
+											<li className={item} onClick={() => setRenameOpen(true)}>Edit Playlist</li>
+											<li className={item} onClick={() => openCreateFolder(clickedData._id)}>Create Folder Inside</li>
 										</>
 									)
 								}
+								{
+									clickedData?.type == "folder" &&
+									<li className={item} onClick={() => openEditFolder(clickedData)}>Edit Folder</li>
+								}
 							</>
 						}
-						<li className='iscotext text-black/80 py-1 px-2 rounded-md hover:bg-gray-100 transition-all cursor-pointer' onClick={() => setCreatePlaylistOpen(true)}>Create Folder</li>
+						<li className={item} onClick={() => setCreatePlaylistOpen(true)}>Create Playlist</li>
 					</ul>
 				</div>
 			}
@@ -290,35 +296,6 @@ const CustomContextMenu = ({ xPos, yPos, clickedData, handleDelete, setCreatePla
 };
 
 
-
-function RenderPlayList({ playlist, onSongDragStart, onSongDrop, handleContextMenu }) {
-	const [open, setOpen] = useState(false);
-	const handleDragStart = (e) => {
-		e.dataTransfer.setData("id", playlist._id)
-		e.dataTransfer.setData("isPlaylist", true)
-	}
-	return (
-		<div onDragOver={(e) => e.preventDefault()} onDrop={(e) => onSongDrop(e, playlist._id)}>
-			<p onClick={() => setOpen(prev => !prev)} className='text-black/90 rounded-md hover:bg-gray-100 transition-all p-1 px-2 cursor-pointer flex items-center gap-2' onContextMenu={(e) => handleContextMenu(e, { type: "playlist", _id: playlist._id, title: playlist.title, album: playlist.album, artist: playlist.artist })} draggable onDragStart={handleDragStart}>
-				{/* <span className='text-yellow-500'>{open ? <FaFolderOpen /> : <FaFolder />}</span> */}
-				<img src={playlist.cover} width={20} height={20} className='rounded-md' />
-				{playlist.title}
-			</p>
-			{open &&
-				<div className='flex flex-col gap-2 pl-5' >
-					{
-						playlist?.songs?.map((song) => (
-							<p className='text-black/80 rounded-md hover:bg-gray-100 transition-all p-1 px-2 cursor-pointer flex items-center gap-2' draggable onDragStart={(e) => onSongDragStart(e, song, playlist._id)} onContextMenu={(e) => handleContextMenu(e, { type: "song", _id: song._id, playlistId: playlist._id })}>
-								<span className='text-blue-300'>{<GiLoveSong />}</span>
-								{song.title}
-							</p>
-						))
-					}
-				</div>
-			}
-		</div>
-	)
-}
 
 function organizeHistoryByDate(history) {
 	const organizedHistory = {};
@@ -528,6 +505,8 @@ export default function () {
 	const [duration, setDuration] = useState(0);
 	const [isaddInQue, setisaddInQue] = useState(false);
 	const [renameOpen, setRenameOpen] = useState(false);
+	const [folderOpen, setFolderOpen] = useState(false);
+	const [folderTarget, setFolderTarget] = useState({ playlistId: null, folder: null });
 	const [showTitle, setShowTitle] = useState(false);
 	const [userChangeVolume, setUserChangeVolume] = useState(false);
 	const [leftSecond, setLeftSecond] = useState(null);
@@ -1179,27 +1158,57 @@ export default function () {
 
 
 
-	const onSongDragStart = (e, song, playlistId) => {
-		console.log('start')
+	const onSongDragStart = (e, song, playlistId, folderId) => {
 		e.dataTransfer.setData("song", JSON.stringify(song));
 		e.dataTransfer.setData("playlistId", playlistId);
+		e.dataTransfer.setData("folderId", folderId || "");
 	}
 
-	const onSongDrop = async (e, targetPlaylistId) => {
-		const sourceId = e.dataTransfer.getData("playlistId")
-		const song = JSON.parse(e.dataTransfer.getData("song"));
-		const sourcePlaylist = allplaylists.find(playlist => playlist._id.toString() === sourceId);
-		const targetPlaylist = allplaylists.find(playlist => playlist._id.toString() === targetPlaylistId.toString());
+	// Handles a drop onto a playlist row (folderId null) or onto a folder row.
+	// The payload is either a single song or a whole folder being relocated.
+	const onSongDrop = async (e, targetPlaylistId, targetFolderId = null) => {
+		if (e.dataTransfer.getData("isPlaylist") === "true") return;
 
-		const sourceSeletdSongs = sourcePlaylist.songs.map(song => song._id).filter(id => id.toString() != song._id);
-		const targetSeletdSongs = targetPlaylist.songs.map(song => song._id);
-		targetSeletdSongs.push(song._id)
+		const sourcePlaylistId = e.dataTransfer.getData("playlistId");
+		if (!sourcePlaylistId) return;
 
+		const isFolder = e.dataTransfer.getData("isFolder") === "true";
 
-		await Promise.all([axios.post(`/api/v1/playlist/${sourceId}`, { songs: sourceSeletdSongs }), axios.post(`/api/v1/playlist/${targetPlaylistId}`, { songs: targetSeletdSongs })]);
-		const { data: all } = await axios.get('/api/v1/playlist');
-		setAllPlaylists(all?.playlists);
+		try {
+			if (isFolder) {
+				const folderId = e.dataTransfer.getData("folderId");
+				// A folder can only be dropped on a playlist, never inside another folder.
+				if (targetFolderId || sourcePlaylistId === String(targetPlaylistId)) return;
+				await axios.post('/api/v1/playlist/move', {
+					type: 'folder',
+					folderId,
+					sourcePlaylistId,
+					targetPlaylistId,
+				});
+			} else {
+				const raw = e.dataTransfer.getData("song");
+				if (!raw) return;
+				const song = JSON.parse(raw);
+				const sourceFolderId = e.dataTransfer.getData("folderId") || null;
 
+				const unchanged = sourcePlaylistId === String(targetPlaylistId)
+					&& String(sourceFolderId || '') === String(targetFolderId || '');
+				if (unchanged) return;
+
+				await axios.post('/api/v1/playlist/move', {
+					type: 'song',
+					songId: song._id,
+					sourcePlaylistId,
+					sourceFolderId,
+					targetPlaylistId,
+					targetFolderId,
+				});
+			}
+
+			await getPlaylist();
+		} catch (err) {
+			toast.error(err?.response?.data?.message || err.message);
+		}
 	}
 
 
@@ -1220,26 +1229,44 @@ export default function () {
 
 
 	const handleDelete = async (data) => {
-
-		if (data.type == "song") {
-			const sourcePlaylist = allplaylists.find(playlist => playlist._id.toString() === data.playlistId);
-			const sourceSeletdSongs = sourcePlaylist.songs.map(song => song._id).filter(id => id != data._id);
-			await axios.post(`/api/v1/playlist/${data.playlistId}`, { songs: sourceSeletdSongs })
-		} else {
-			await axios.delete(`/api/v1/playlist?id=${data._id}`);
+		try {
+			if (data.type == "song") {
+				const sourcePlaylist = allplaylists.find(playlist => playlist._id.toString() === data.playlistId);
+				const sourceSeletdSongs = sourcePlaylist.songs.map(song => song._id).filter(id => id != data._id);
+				await axios.post(`/api/v1/playlist/${data.playlistId}`, { songs: sourceSeletdSongs })
+			} else if (data.type == "folder") {
+				// Non-destructive by default: the tracks stay in the playlist and
+				// reappear at its root once the folder is gone.
+				const alsoSongs = window.confirm(
+					"Delete the songs inside this folder too?\n\nOK = delete folder and its songs\nCancel = keep the songs in the playlist"
+				);
+				await axios.delete(`/api/v1/playlist/${data.playlistId}/folder?folderId=${data._id}&removeSongs=${alsoSongs}`);
+			} else {
+				await axios.delete(`/api/v1/playlist?id=${data._id}`);
+			}
+			await getPlaylist();
+		} catch (err) {
+			toast.error(err?.response?.data?.message || err.message);
 		}
-		const { data: all } = await axios.get('/api/v1/playlist');
-		setAllPlaylists(all?.playlists);
 	}
 
 	const handleSongDropOnPlaylintList = (e) => {
-		const isPlaylist = e.dataTransfer.getData("isPlaylist");
+		const isPlaylist = e.dataTransfer.getData("isPlaylist") === "true";
 		if (isPlaylist) {
 			const confirm = window.confirm("Are you sure you want to add the complete playlist?")
 			if (!confirm) return
 			const id = e.dataTransfer.getData("id");
 			const sourcePlaylist = allplaylists.find(playlist => playlist._id.toString() === id);
 			setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs, ...sourcePlaylist.songs] })
+			return
+		}
+
+		const isFolder = e.dataTransfer.getData("isFolder") === "true";
+		if (isFolder) {
+			const confirm = window.confirm("Are you sure you want to add the complete folder?")
+			if (!confirm) return
+			const songs = JSON.parse(e.dataTransfer.getData("songs") || "[]");
+			setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs, ...songs] })
 			return
 		}
 
@@ -1251,6 +1278,16 @@ export default function () {
 	const getPlaylist = async () => {
 		const { data: all } = await axios.get('/api/v1/playlist');
 		setAllPlaylists(all?.playlists);
+	}
+
+	const openCreateFolder = (playlistId) => {
+		setFolderTarget({ playlistId, folder: null });
+		setFolderOpen(true);
+	}
+
+	const openEditFolder = (data) => {
+		setFolderTarget({ playlistId: data.playlistId, folder: { _id: data._id, name: data.name, cover: data.cover, songs: data.songs } });
+		setFolderOpen(true);
 	}
 
 
@@ -1598,7 +1635,7 @@ export default function () {
 								{effectsong?.map(data => (
 									<div className="flex justify-between items-center my-6">
 										<div className="flex items-center gap-4">
-											<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
+											<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-cover shrink-0 rounded" />
 											<h2 className="text-xl text-black">{data?.title}</h2>
 										</div>
 
@@ -1620,7 +1657,7 @@ export default function () {
 							<div className="p-2 overflow-y-auto h-[80%] flex flex-col gap-3" onContextMenu={(e) => handleContextMenu(e, {type: "empty"})}>
 								{
 									allplaylists.length != 0 && allplaylists?.map((data) => (
-										<RenderPlayList playlist={data} onSongDragStart={onSongDragStart} onSongDrop={onSongDrop} handleContextMenu={handleContextMenu}/>
+										<PlaylistTree key={data._id} playlist={data} onSongDragStart={onSongDragStart} onSongDrop={onSongDrop} handleContextMenu={handleContextMenu}/>
 									))
 								}
 							</div>
@@ -1639,7 +1676,7 @@ export default function () {
 											<h4 className="text-sm text-gray-300">{data?.name} requested</h4>
 											<div className="flex justify-between items-center my-2">
 												<div className="flex items-center gap-4">
-													<Image src={data?.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
+													<Image src={data?.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-cover shrink-0 rounded" />
 													<h2 className="text-black">{data?.title?.slice(0, 20)}</h2>
 												</div>
 
@@ -1811,7 +1848,7 @@ export default function () {
 																<div className={`flex justify-between items-center my-6 rounded-md ${data._id.toString() === nextSong?._id?.toString() ? "bg-yellow-200" : ''}`} ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
 																	<div className="flex items-center gap-4">
 																		{/* <span className="text-black text-2xl">{index + 1}</span> */}
-																		<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
+																		<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-cover shrink-0 rounded" />
 																		<div>
 																			<h2 className="text-xl text-black">{data?.title?.slice(0, 40)}</h2>
 																			<p className="para"> ~ {data?.artist} - {data?.album}</p>
@@ -1846,7 +1883,7 @@ export default function () {
 											<h4 className="text-sm text-gray-300">{data?.name} requested</h4>
 											<div className="flex justify-between items-center my-2">
 												<div className="flex items-center gap-4">
-													<Image src={data?.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
+													<Image src={data?.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-cover shrink-0 rounded" />
 													<h2 className="text-black">{data?.title?.slice(0, 20)}</h2>
 												</div>
 
@@ -2016,7 +2053,7 @@ export default function () {
 								{effectsong?.map(data => (
 									<div className="flex justify-between items-center my-6">
 										<div className="flex items-center gap-4">
-											<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
+											<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-cover shrink-0 rounded" />
 											<h2 className="text-xl text-black">{data?.title}</h2>
 										</div>
 
@@ -2051,7 +2088,7 @@ export default function () {
 							<div className="p-2 overflow-y-auto h-[75%] flex flex-col gap-3" onContextMenu={(e) => handleContextMenu(e, { type: "empty" })}>
 								{
 									allplaylists.length != 0 && allplaylists?.map((data) => (
-										<RenderPlayList playlist={data} onSongDragStart={onSongDragStart} onSongDrop={onSongDrop} handleContextMenu={handleContextMenu} />
+										<PlaylistTree key={data._id} playlist={data} onSongDragStart={onSongDragStart} onSongDrop={onSongDrop} handleContextMenu={handleContextMenu} />
 									))
 								}
 							</div>
@@ -2109,7 +2146,7 @@ export default function () {
 													<div className={`flex justify-between items-center my-6 rounded-md ${data._id.toString() === nextSong?._id?.toString() ? "bg-yellow-200" : ''}`} ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
 														<div className="flex items-center gap-4">
 															<span className="text-black text-2xl">{index + 1}</span>
-															<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
+															<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-cover shrink-0 rounded" />
 															<h2 className="text-xl text-black">{data?.title?.slice(0, 40)}</h2>
 														</div>
 														<div>
@@ -2150,7 +2187,7 @@ export default function () {
 						query && filtersongs && filtersongs.map((data) => (
 							<div className="flex justify-between items-center my-6">
 								<div className="flex items-center gap-4">
-									<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
+									<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-cover shrink-0 rounded" />
 									<div className='flex flex-col gap-0'>
 										<h2 className="text-xl text-black">{data?.title}</h2>
 										<p className="para">~ {data?.artist}</p>
@@ -2174,7 +2211,7 @@ export default function () {
 						filterSearch && filterSearch.map((data) => (
 							<div className="flex justify-between items-center my-6">
 								<div className="flex items-center gap-4">
-									<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-conver rounded" />
+									<Image src={data.cover} width={200} height={200} alt="cover" className="h-[3rem] w-[3rem] object-cover shrink-0 rounded" />
 									<h2 className="text-xl text-black">{data?.title}</h2>
 								</div>
 
@@ -2250,6 +2287,7 @@ export default function () {
 				<CreatePlaylistComponets createPlaylistOpen={createPlaylistOpen} setCreatePlaylistOpen={setCreatePlaylistOpen} allsongs={allsongs} getPlaylist={getPlaylist} />
 				<EditPlaylistComponets createPlaylistOpen={editPlaylistOpen} setCreatePlaylistOpen={setEditPlaylistOpen} _id={clickedData?._id} allsongs={allsongs} getPlaylist={getPlaylist} allplaylists={allplaylists} />
 				<RenamePlaylistComponents createPlaylistOpen={renameOpen} setCreatePlaylistOpen={setRenameOpen} _id={clickedData?._id} title={clickedData?.title} album={clickedData?.album} artist={clickedData?.artist} allsongs={allsongs} getPlaylist={getPlaylist} allplaylists={allplaylists} />
+				<FolderComponents open={folderOpen} setOpen={setFolderOpen} playlistId={folderTarget.playlistId} folder={folderTarget.folder} allsongs={allsongs} getPlaylist={getPlaylist} />
 
 
 			</section>
@@ -2273,7 +2311,7 @@ export default function () {
 
 
 			{contextMenuPosition && (
-				<CustomContextMenu xPos={contextMenuPosition.x} yPos={contextMenuPosition.y} setRenameOpen={setRenameOpen} clickedData={clickedData} handleDelete={handleDelete} setCreatePlaylistOpen={setCreatePlaylistOpen} setEditPlaylistOpen={setEditPlaylistOpen} />
+				<CustomContextMenu xPos={contextMenuPosition.x} yPos={contextMenuPosition.y} setRenameOpen={setRenameOpen} clickedData={clickedData} handleDelete={handleDelete} setCreatePlaylistOpen={setCreatePlaylistOpen} setEditPlaylistOpen={setEditPlaylistOpen} openCreateFolder={openCreateFolder} openEditFolder={openEditFolder} />
 			)}
 		</>
 	);

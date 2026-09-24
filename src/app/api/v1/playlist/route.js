@@ -65,11 +65,24 @@ export const GET = connectDB(auth(async function (req){
     playlists.forEach((playlist,index) => {
         const cover = resolveMedia(playlist.cover || '/upload/cover/default.jpg');
         playlists[index].cover = cover;
+
+        const folders = (playlist.folders || []).map((folder) => ({
+            ...folder,
+            cover: resolveMedia(folder.cover || playlist.cover || '/upload/cover/default.jpg'),
+            songs: (folder.songs || []).map(String),
+        }));
+        playlists[index].folders = folders;
+
+        // A track shown under a folder is presented with that folder's artwork,
+        // the same way a loose track inherits the playlist's artwork.
+        const coverBySong = new Map();
+        folders.forEach((folder) => folder.songs.forEach((id) => coverBySong.set(id, folder.cover)));
+
         playlists[index].songs = (playlist.songs || []).map((song) => ({
             ...withResolvedMedia(song),
             artist: playlist.artist || 'Unkown',
             album: playlist.album || 'Unkown',
-            cover,
+            cover: coverBySong.get(String(song._id)) || cover,
         }));
     })
 

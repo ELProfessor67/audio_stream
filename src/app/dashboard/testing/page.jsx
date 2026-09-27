@@ -276,13 +276,13 @@ const CustomContextMenu = ({ xPos, yPos, clickedData, handleDelete, setCreatePla
 										<>
 											<li className={item} onClick={setEditPlaylistOpen}>Add New Song</li>
 											<li className={item} onClick={() => setRenameOpen(true)}>Edit Playlist</li>
-											<li className={item} onClick={() => openCreateFolder(clickedData._id)}>Create Folder Inside</li>
+											<li className={item} onClick={() => openCreateFolder(clickedData._id)}>Create Album Inside</li>
 										</>
 									)
 								}
 								{
 									clickedData?.type == "folder" &&
-									<li className={item} onClick={() => openEditFolder(clickedData)}>Edit Folder</li>
+									<li className={item} onClick={() => openEditFolder(clickedData)}>Edit Album</li>
 								}
 							</>
 						}

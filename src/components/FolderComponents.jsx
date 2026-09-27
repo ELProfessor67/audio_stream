@@ -90,7 +90,7 @@ const FolderComponents = ({ open, setOpen, playlistId, folder, allsongs, getPlay
 
                 <form className='w-full px-6' onSubmit={handleSubmit}>
                     <div className='input-group flex flex-col gap-1 mb-5'>
-                        <label htmlFor='folder-name' className='text-black text-lg'>Folder Name</label>
+                        <label htmlFor='folder-name' className='text-black text-lg'>Album Name</label>
                         <div className='flex items-center py-2 px-1 border-gray-400 border-2 hover:border-indigo-500 rounded-md'>
                             <MdOutlineSubtitles size={20} className='text-gray-400' />
                             <input
@@ -99,7 +99,7 @@ const FolderComponents = ({ open, setOpen, playlistId, folder, allsongs, getPlay
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 className='w-[95%] outline-none ml-1'
-                                placeholder='Enter folder name'
+                                placeholder='Enter album name'
                                 required
                             />
                         </div>

@@ -5,7 +5,8 @@ import Peer from 'simple-peer';
 import axios from 'axios';
 import { data } from 'autoprefixer';
 import hark from 'hark';
-import { Track } from 'livekit-client';
+import { toast } from 'react-toastify';
+import { Track, RoomEvent } from 'livekit-client';
 
 
 
@@ -205,6 +206,154 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		setRecordingReady(true);
 	}, [])
 
+
+
+	const [isRecording, setIsRecording] = useState(false);
+	const sessionRecorderRef = useRef(null);
+	const recContextRef = useRef(null);
+	const recDestRef = useRef(null);
+	const recInputsRef = useRef({});
+	const recChunksRef = useRef([]);
+
+	const remoteKey = (publication, participant) => `remote-${participant.identity}-${publication.trackSid}`;
+
+	function feedRemoteTrack(track, publication, participant) {
+		if (track?.kind !== 'audio' || !track.mediaStreamTrack) return;
+		feedRecorder(remoteKey(publication, participant), new MediaStream([track.mediaStreamTrack]));
+	}
+
+	function feedExistingRemoteTracks() {
+		const room = roomRef.current;
+		if (!room?.remoteParticipants) return;
+		room.remoteParticipants.forEach(participant => {
+			participant.trackPublications.forEach(publication => {
+				if (publication.track) feedRemoteTrack(publication.track, publication, participant);
+			});
+		});
+	}
+
+	useEffect(() => {
+		const room = roomRef?.current;
+		if (!room) return;
+		const onSubscribed = (track, publication, participant) => feedRemoteTrack(track, publication, participant);
+		const onUnsubscribed = (track, publication, participant) => feedRecorder(remoteKey(publication, participant), null);
+		room.on(RoomEvent.TrackSubscribed, onSubscribed);
+		room.on(RoomEvent.TrackUnsubscribed, onUnsubscribed);
+		return () => {
+			room.off(RoomEvent.TrackSubscribed, onSubscribed);
+			room.off(RoomEvent.TrackUnsubscribed, onUnsubscribed);
+		};
+	}, [roomRef?.current]);
+
+	useEffect(() => {
+		return () => { stopSessionRecording(); };
+	}, []);
+
+	function feedRecorder(key, stream) {
+		if (!recContextRef.current) return;
+		const old = recInputsRef.current[key];
+		if (old) {
+			try { old.disconnect(); } catch (e) { /* already gone */ }
+			delete recInputsRef.current[key];
+		}
+		if (!stream || stream.getAudioTracks().length === 0) return;
+		const source = recContextRef.current.createMediaStreamSource(stream);
+		source.connect(recDestRef.current);
+		recInputsRef.current[key] = source;
+	}
+
+	function pickRecordingType() {
+		const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+		return types.find(t => window.MediaRecorder?.isTypeSupported?.(t)) || '';
+	}
+
+	async function startSessionRecording() {
+		if (sessionRecorderRef.current) return;
+
+		const ctx = new (window.AudioContext || window.webkitAudioContext)();
+		if (ctx.state === 'suspended') await ctx.resume();
+		recContextRef.current = ctx;
+		recDestRef.current = ctx.createMediaStreamDestination();
+		recInputsRef.current = {};
+
+		feedRecorder('mic', localStreamRef.current);
+		feedRecorder('song', songStreamRef.current);
+		feedRecorder('filter', filterStreamRef.current);
+		feedExistingRemoteTracks();
+
+		const mimeType = pickRecordingType();
+		let recorder;
+		try {
+			recorder = new MediaRecorder(recDestRef.current.stream, {
+				...(mimeType ? { mimeType } : {}),
+				audioBitsPerSecond: 128000,
+			});
+			recChunksRef.current = [];
+			recorder.ondataavailable = (e) => {
+				if (e.data && e.data.size > 0) recChunksRef.current.push(e.data);
+			};
+			recorder.onstop = () => finishSessionRecording(recorder);
+			recorder.onerror = (e) => console.error('recording error', e.error || e);
+			recorder.start(1000);
+		} catch (err) {
+			teardownRecordingGraph();
+			throw err;
+		}
+		sessionRecorderRef.current = recorder;
+		setIsRecording(true);
+	}
+
+	function teardownRecordingGraph() {
+		Object.values(recInputsRef.current).forEach(node => {
+			try { node.disconnect(); } catch (e) { /* ignore */ }
+		});
+		recInputsRef.current = {};
+		recContextRef.current?.close().catch(() => { /* already closed */ });
+		recContextRef.current = null;
+		recDestRef.current = null;
+	}
+
+	function finishSessionRecording(recorder) {
+		if (sessionRecorderRef.current === recorder) sessionRecorderRef.current = null;
+
+		const type = recorder.mimeType || 'audio/webm';
+		const blob = new Blob(recChunksRef.current, { type });
+		recChunksRef.current = [];
+		teardownRecordingGraph();
+		setIsRecording(false);
+
+		if (blob.size > 0) {
+			const ext = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
+			const d = new Date();
+			const pad = n => String(n).padStart(2, '0');
+			const stamp = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}`;
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `testing-session_${stamp}.${ext}`;
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+			setTimeout(() => URL.revokeObjectURL(url), 60000);
+		}
+		recorder.onstopResolve?.();
+	}
+
+	function stopSessionRecording() {
+		const recorder = sessionRecorderRef.current;
+		if (!recorder) return Promise.resolve();
+
+		return new Promise((resolve) => {
+			recorder.onstopResolve = resolve;
+			if (recorder.state === 'inactive') {
+				// Already stopped by the browser (error) but not yet finished.
+				finishSessionRecording(recorder);
+			} else {
+				recorder.stop();
+			}
+		});
+	}
+
 	useEffect(() => {
 		chatOpenRef.current = chatOpen;
 	}, [chatOpen])
@@ -237,11 +386,11 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 
-    const replaceTrack = async (track, name) => {
+	const replaceTrack = async (track, name) => {
 		const publications = Array.from(
 			roomRef.current.localParticipant.trackPublications.values()
 		);
-		const publication =  publications.find(
+		const publication = publications.find(
 			pub => pub.trackName === name
 		);
 		if (publication) {
@@ -293,17 +442,23 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 	function getSongStream(songUrl, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setduration, isFilter = false) {
-		const url = songUrl.replace(process.env.NEXT_PUBLIC_SOCKET_URL,'');
-		
+		const url = songUrl.replace(process.env.NEXT_PUBLIC_SOCKET_URL, '');
+
 		// const url = "/audio/audip.mp3";
 		return new Promise((resolve, reject) => {
-			const audio = new Audio(url);
-			
+			const audio = new Audio();
+			audio.crossOrigin = 'anonymous';
+			audio.src = url;
+
 			audio.muted = false;
+			audio.addEventListener('error', () => {
+				reject(new Error(`could not load ${url} (${audio.error?.message || audio.error?.code || 'unknown error'})`));
+			}, { once: true });
 			audio.addEventListener('canplaythrough', () => {
 				//create audio context first
 				const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-				
+				if (audioContext.state === 'suspended') audioContext.resume();
+
 				// Create source from audio element directly (better for seeking)
 				let source;
 				try {
@@ -312,43 +467,43 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 					console.error('Error creating media element source:', error);
 					return reject(error);
 				}
-				
+
 				//create gain node
 				const gainNode = audioContext.createGain();
 				// gainNode.gain.value = volume;
 				gainNodeRef.current = gainNode;
-				
+
 				//create analyser
 				const analyser = audioContext.createAnalyser();
 				analyser.smoothingTimeConstant = 0.8;
 				analyser.fftSize = 1024;
-				
+
 				//create stream destination for WebRTC
 				const streamDestination = audioContext.createMediaStreamDestination();
-				
+
 				// Audio routing: source -> analyser -> gain -> streamDestination
 				// source -> gain -> destination (for local playback)
 				source.connect(analyser);
 				analyser.connect(gainNode);
-				// gainNode.connect(audioContext.destination); // Local playback
+				gainNode.connect(audioContext.destination); // Local playback, as on Go Live
 				gainNode.connect(streamDestination); // WebRTC stream
-				
+
 				songSourceRef.current = audio;
 				audioContextRef.current = audioContext;
 				setduration(Math.floor(audio.duration));
-				
-				if(isFilter) {
+
+				if (isFilter) {
 					filterAnalyserRef.current = analyser;
 				} else {
 					songAnalyserRef.current = analyser;
 				}
-				
+
 				//script processor
 				const scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
 				analyser.connect(scriptProcessor);
 				scriptProcessor.connect(audioContext.destination);
 				scriptProcessor.addEventListener('audioprocess', () => AudioProcessSongFilter(isFilter));
-				
+
 				audio.addEventListener('timeupdate', () => {
 					const currentTime = audio.currentTime;
 					const duration = audio.duration;
@@ -360,11 +515,11 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 					}
 					progressCallback(progress);
 				});
-				
+
 				audio.addEventListener('ended', () => {
 					console.log('audio ended');
-					if(isFilter) {
-						if(filterPlayingRef.current) {
+					if (isFilter) {
+						if (filterPlayingRef.current) {
 							console.log('next filter');
 							// pending auto play filter 
 						}
@@ -387,11 +542,11 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 						}
 					}
 				});
-				
+
 				const changeCurrentTime = (newTime) => {
 					audio.currentTime = newTime;
 				}
-				
+
 				audio.play();
 				resolve({ songStream: streamDestination.stream, changeCurrentTime });
 			});
@@ -671,12 +826,12 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		// console.info('progress',progress);
 	}
 
-	function handleProgressChange(type,value) {
-		
-		if(type == "song") {
+	function handleProgressChange(type, value) {
+
+		if (type == "song") {
 			changeCurrentTimeRef.current(value)
 		}
-		if(type == "filter") {
+		if (type == "filter") {
 			filterchangeCurrentTimeRef.current(value)
 		}
 	}
@@ -706,9 +861,10 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			let { songStream, changeCurrentTime } = await getSongStream(url, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setsduration);
 			changeCurrentTimeRef.current = changeCurrentTime;
 
-			console.log(songStream,"songStream")
+			console.log(songStream, "songStream")
 
 			const gaudioContext = new (window.AudioContext || window.webkitAudioContext)();
+			if (gaudioContext.state === 'suspended') gaudioContext.resume();
 			const gsong = gaudioContext.createMediaStreamSource(songStream);
 			const gdest = gaudioContext.createMediaStreamDestination();
 			const gsongGainNode = gaudioContext.createGain();
@@ -724,10 +880,11 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 			songStreamRef.current = gdest.stream;
 			songStream = gdest.stream;
+			feedRecorder('song', songStream);
 
 			setSongStreamLoading(false);
 
-		    replaceTrack(songStream.getAudioTracks()[0],'song');
+			replaceTrack(songStream.getAudioTracks()[0], 'song');
 
 			// const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 			// console.error('mic', typeof (localStreamRef.current), localStreamRef.current)
@@ -780,7 +937,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 			// await replaceTrack(combinedStream.getTracks()[0])
 
-			
+
 
 			nextSongRef.current.user = user;
 			console.info('sss', nextSongRef.current, selectedSongRef.current)
@@ -789,7 +946,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 		} catch (err) {
 			setSongStreamLoading(false);
-			console.error('error : ', err.message)
+			console.error('error : ', err.message); toast.error('Song could not play: ' + err.message)
 		}
 	}
 
@@ -807,7 +964,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 	const changeValume = (value) => {
 		if (gainNodeRef.current?.gain && gainNodeStreamRef.current?.gain) {
-			
+
 			// gainNodeRef.current.gain.value = value;
 			// gainNodeStreamRef.current.gain.value = value;
 			songSourceRef.current.volume = value;
@@ -845,6 +1002,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 			const gaudioContext = new (window.AudioContext || window.webkitAudioContext)();
+			if (gaudioContext.state === 'suspended') gaudioContext.resume();
 			const gsong = gaudioContext.createMediaStreamSource(songStream);
 			const gdest = gaudioContext.createMediaStreamDestination();
 			const gsongGainNode = gaudioContext.createGain();
@@ -860,11 +1018,12 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 			filterStreamRef.current = gdest.stream;
 			songStream = gdest.stream;
+			feedRecorder('filter', songStream);
 
 			setFilterStreamLoading(false);
 
 
-			replaceTrack(filterStreamRef.current.getAudioTracks()[0],'filter');
+			replaceTrack(filterStreamRef.current.getAudioTracks()[0], 'filter');
 
 
 			// filterStreamRef.current = songStream;
@@ -924,7 +1083,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 		} catch (err) {
 			setFilterStreamLoading(false);
-			console.error('error : ', err.message)
+			console.error('error : ', err.message); toast.error('Effect could not play: ' + err.message)
 		}
 	}
 
@@ -1005,7 +1164,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			setcallComing(false);
 		})
 
-		
+
 
 		return () => {
 			socketRef.current?.off('recieve-request-song');
@@ -1079,7 +1238,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		}
 	}, [])
 
-	const handleShare = async (id=null) => {
+	const handleShare = async (id = null) => {
 		const url = `${window.location.origin}/public/${user.originalId}`;
 		await navigator.clipboard.writeText(url);
 	}
@@ -1160,7 +1319,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		socketRef.current.emit('owner-join', { user: userTemp });
 		// localStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
 		const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-		
+
 
 
 		//when user speack
@@ -1192,6 +1351,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		micGainNode.gain.value = micVolume;
 		micGainNodeRef.current = micGainNode;
 		localStreamRef.current = dest.stream;
+		feedRecorder('mic', dest.stream);
 
 
 
@@ -1200,10 +1360,10 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		combinedStreamRef.current = localStreamRef.current
 		recordMediaRef.current.addTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'));
 
-		
+
 
 		//publishing the stream
-		roomRef.current.localParticipant.publishTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'),{
+		roomRef.current.localParticipant.publishTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'), {
 			red: true,
 			source: Track.Source.Microphone
 		});
@@ -1227,6 +1387,8 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	}
 
 	const ownerLeft = async () => {
+
+		await stopSessionRecording();
 
 		socketRef.current?.disconnect();
 		setMicOn(false);
@@ -1291,7 +1453,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 
-	return { socketRef, ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef: newUser, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef: mediaRecorderRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong }
+	return { socketRef, ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef: newUser, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef: mediaRecorderRef, recordReady, isRecording, startSessionRecording, stopSessionRecording, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong }
 }
 
 export default useSocket;

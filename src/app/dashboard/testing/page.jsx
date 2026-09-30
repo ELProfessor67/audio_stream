@@ -554,7 +554,7 @@ export default function () {
 	}
 
 	const { participantCount, roomRef } = useLive();
-	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd, handleWelcomeTonePlayed, handleEndTonePlayed, roomRef, setActive);
+	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, isRecording, startSessionRecording, stopSessionRecording, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd, handleWelcomeTonePlayed, handleEndTonePlayed, roomRef, setActive);
 
 	// console.info('voiceAcitce',voiceAcitce);
 
@@ -1016,44 +1016,16 @@ export default function () {
 	}
 
 
-	function startRecording() {
-		recordMediaRef.current.start();
-		recordMediaRef.current.ondataavailable = (e) => {
-			recordedChunks.current.push(e.data);
-		};
-
-		recordMediaRef.current.onstop = (e) => {
-			if (instanceRef.current) {
-				startRecording();
-				return
-			}
-			const blob = new Blob(recordedChunks.current, { type: "audio/ogg; codecs=opus" });
-			recordedChunks.current = [];
-			const url = URL.createObjectURL(blob);
-			downloadLink.current.href = url;
-			downloadLink.current.download = 'live_session.mp3';
-			downloadLink.current.click();
-
-		}
-	}
-
-
-
-	async function stopRecording() {
-		recordMediaRef.current.stop();
-	}
-
-	useEffect(() => {
-		instanceRef.current = record;
-	}, [record])
-
 	const handleRecord = async () => {
-		if (record) {
-			setRecord(false);
-			stopRecording();
+		if (isRecording) {
+			await stopSessionRecording();
 		} else {
-			await startRecording();
-			setRecord(true);
+			try {
+				await startSessionRecording();
+			} catch (err) {
+				console.error('recording failed to start', err);
+				dispatch(showError('Recording could not start in this browser'));
+			}
 		}
 	}
 
@@ -1265,26 +1237,31 @@ export default function () {
 
 	const handleSongDropOnPlaylintList = (e) => {
 		const isPlaylist = e.dataTransfer.getData("isPlaylist") === "true";
+		const isFolder = e.dataTransfer.getData("isFolder") === "true";
+		const playlistId = e.dataTransfer.getData("id");
+		const folderSongs = e.dataTransfer.getData("songs");
+		const rawSong = e.dataTransfer.getData("song");
+
 		if (isPlaylist) {
+			const sourcePlaylist = allplaylists.find(playlist => playlist._id.toString() === playlistId);
+			if (!sourcePlaylist) return toast.error("Could not find that playlist, please try again");
+			if (!sourcePlaylist.songs?.length) return toast.info(`"${sourcePlaylist.title}" has no songs to add`);
 			const confirm = window.confirm("Are you sure you want to add the complete playlist?")
 			if (!confirm) return
-			const id = e.dataTransfer.getData("id");
-			const sourcePlaylist = allplaylists.find(playlist => playlist._id.toString() === id);
-			setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs, ...sourcePlaylist.songs] })
+			setSelectPlayListSong(prev => ({ ...prev, songs: [...(prev?.songs || []), ...(sourcePlaylist.songs || [])] }))
 			return
 		}
 
-		const isFolder = e.dataTransfer.getData("isFolder") === "true";
 		if (isFolder) {
+			const songs = JSON.parse(folderSongs || "[]");
 			const confirm = window.confirm("Are you sure you want to add the complete folder?")
 			if (!confirm) return
-			const songs = JSON.parse(e.dataTransfer.getData("songs") || "[]");
-			setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs, ...songs] })
+			setSelectPlayListSong(prev => ({ ...prev, songs: [...(prev?.songs || []), ...songs] }))
 			return
 		}
 
-		const data = JSON.parse(e.dataTransfer.getData("song"));
-		handleAddPlaylist(data)
+		if (!rawSong) return;
+		handleAddPlaylist(JSON.parse(rawSong))
 	}
 
 
@@ -1553,14 +1530,14 @@ export default function () {
 									</div>
 								</div>
 
-								{/*<div className="flex justify-center mt-5">
+								<div className="flex justify-center mt-5">
 									<div className="flex flex-col items-center gap-3">
-										<button disabled={!recordReady} onClick={handleRecord} className="bg-indigo-600 disabled:opacity-50 outline-none border-none text-2xl py-2 px-4 rounded-md text-white" title="record live stream">
-											{record ? <Timer timerStart={record} /> : 'Record'}
+										<button disabled={!start} onClick={handleRecord} className={`${isRecording ? 'bg-red-600' : 'bg-indigo-600'} disabled:opacity-50 outline-none border-none text-2xl py-2 px-4 rounded-md text-white`} title={start ? (isRecording ? 'Stop and download the recording' : 'Record this testing session') : 'Start the session to record'}>
+											{isRecording ? <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-white animate-pulse"></span><Timer timerStart={isRecording} /></span> : 'Record'}
 										</button>
-
+										<span className="text-black text-sm">{isRecording ? 'Recording, click to stop and download' : 'Record session'}</span>
 									</div>
-								</div>*/}
+								</div>
 
 							</div>
 						</div>

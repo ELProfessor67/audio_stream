@@ -3,7 +3,7 @@ import './globals.css'
 import Header from '@/components/Header'
 import Provider from '@/redux/Provider'
 import UserProvider from '@/components/UserProvider'
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, Bounce } from 'react-toastify';
 import MessageProvider from '@/components/MessageProvider'
 import 'react-toastify/dist/ReactToastify.css';
 import AIChatbot from '@/components/AIChatbot';
@@ -25,22 +25,22 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }) {
-  
+
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/images/logo.svg" type="image/svg" size="32x32"/>
+        <link rel="icon" href="/images/logo.svg" type="image/svg" size="32x32" />
       </head>
       <body className={inter.className}>
         <Provider>
           <UserProvider>
             <MessageProvider>
-              <Header/>
+              <Header />
               {children}
             </MessageProvider>
           </UserProvider>
         </Provider>
-        <ToastContainer 
+        <ToastContainer
           position="bottom-center"
           autoClose={5000}
           hideProgressBar={false}
@@ -51,6 +51,10 @@ export default function RootLayout({ children }) {
           draggable
           pauseOnHover
           theme="light"
+          transition={Bounce}
+          draggablePercent={80}
+          draggableDirection="x"
+          role="alert"
         />
         <AIChatbot />
       </body>

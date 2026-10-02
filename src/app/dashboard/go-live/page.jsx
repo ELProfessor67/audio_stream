@@ -376,6 +376,23 @@ const daysObject = {
 	6: "Saturday"
 };
 
+function isWithinDjSlot(user) {
+	if (!user?.djStartTime || !user?.djEndTime) return false;
+	const now = new Date();
+	const [y, m, d] = (user?.djDate || '').split('-').map(Number);
+	const isDateToday = y === now.getUTCFullYear() && m === now.getUTCMonth() + 1 && d === now.getUTCDate();
+	if (!isDateToday && !user?.djDays?.includes(now.getUTCDay().toString())) return false;
+	const [sh, sm] = user.djStartTime.split(':').map(Number);
+	const [eh, em] = user.djEndTime.split(':').map(Number);
+	const current = now.getUTCHours() * 60 + now.getUTCMinutes();
+	return current >= sh * 60 + sm && current <= eh * 60 + em;
+}
+
+function formatClock(seconds) {
+	const s = Math.max(0, Math.floor(seconds || 0));
+	return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
 function convertUTCToLocalTime(utctime) {
 	if (!utctime) {
 		return
@@ -494,6 +511,10 @@ export default function () {
 	const [createPlaylistOpen, setCreatePlaylistOpen] = useState(false);
 	const [editPlaylistOpen, setEditPlaylistOpen] = useState(false);
 	const [active, setActive] = useState(false);
+	const [queueNotice, setQueueNotice] = useState('');
+	const queueNoticeTimerRef = useRef(null);
+	// Re-render every 15 s while Go Live is locked so the lock message follows the clock.
+	const [, setLockClockTick] = useState(0);
 	const [songOpen, setSongOpen] = useState(false);
 	const [songTitle, setSongTitle] = useState("")
 	const [songAlbum, setSognAlbum] = useState("Unkown")
@@ -555,6 +576,12 @@ export default function () {
 	}
 
 	const { participantCount, roomRef } = useLive();
+
+	useEffect(() => {
+		if (!user?.isDJ || active) return;
+		const tick = setInterval(() => setLockClockTick(n => n + 1), 15000);
+		return () => clearInterval(tick);
+	}, [user, active]);
 	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd, handleWelcomeTonePlayed, handleEndTonePlayed, roomRef, setActive);
 
 	// console.info('voiceAcitce',voiceAcitce);
@@ -1250,22 +1277,32 @@ export default function () {
 		}
 	}
 
+	// Short inline note in the queue box (a toast would crash on this react-toastify version).
+	const showQueueNotice = (text) => {
+		setQueueNotice(text);
+		clearTimeout(queueNoticeTimerRef.current);
+		queueNoticeTimerRef.current = setTimeout(() => setQueueNotice(''), 4000);
+	};
+
 	const handleSongDropOnPlaylintList = (e) => {
 		const isPlaylist = e.dataTransfer.getData("isPlaylist") === "true";
 		if (isPlaylist) {
-			const confirm = window.confirm("Are you sure you want to add the complete playlist?")
-			if (!confirm) return
 			const id = e.dataTransfer.getData("id");
 			const sourcePlaylist = allplaylists.find(playlist => playlist._id.toString() === id);
+			if (!sourcePlaylist) return showQueueNotice("Couldn't find that playlist, please try again.");
+			if (!sourcePlaylist.songs?.length) return showQueueNotice(`"${sourcePlaylist.title}" has no songs to add.`);
+			const confirm = window.confirm("Are you sure you want to add the complete playlist?")
+			if (!confirm) return
 			setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs, ...sourcePlaylist.songs] })
 			return
 		}
 
 		const isFolder = e.dataTransfer.getData("isFolder") === "true";
 		if (isFolder) {
+			const songs = JSON.parse(e.dataTransfer.getData("songs") || "[]");
+			if (!songs.length) return showQueueNotice("This folder has no songs to add.");
 			const confirm = window.confirm("Are you sure you want to add the complete folder?")
 			if (!confirm) return
-			const songs = JSON.parse(e.dataTransfer.getData("songs") || "[]");
 			setSelectPlayListSong({ ...selectPlayListSong, songs: [...selectPlayListSong.songs, ...songs] })
 			return
 		}
@@ -1412,11 +1449,11 @@ export default function () {
 								<div className='border-t-2 border-yellow-500 w-[21%] flex items-center justify-center'>
 									<h3 className='text-md text-yellow-500 cursor-pointer' onClick={() => handleMicVolumeChange({ target: { value: 2.5 } })}>medium</h3>
 								</div>
-								<div className='border-t-2 border-red-500 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-red-500 cursor-pointer' onClick={() => handleMicVolumeChange({ target: { value: 3.5 } })}>good</h3>
+								<div className='border-t-2 border-orange-500 w-[21%] flex items-center justify-center'>
+									<h3 className='text-md text-orange-500 cursor-pointer' onClick={() => handleMicVolumeChange({ target: { value: 3.5 } })}>high</h3>
 								</div>
-								<div className='border-t-2 border-red-900 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-red-900 cursor-pointer' onClick={() => handleMicVolumeChange({ target: { value: 5 } })}>high</h3>
+								<div className='border-t-2 border-red-600 w-[21%] flex items-center justify-center'>
+									<h3 className='text-md text-red-600 cursor-pointer' onClick={() => handleMicVolumeChange({ target: { value: 5 } })}>max</h3>
 								</div>
 							</div>
 
@@ -1448,11 +1485,11 @@ export default function () {
 								<div className='border-t-2 border-yellow-500 w-[21%] flex items-center justify-center'>
 									<h3 className='text-md text-yellow-500 cursor-pointer' onClick={() => handleVolumeChange({ target: { value: 0.5 } })}>medium</h3>
 								</div>
-								<div className='border-t-2 border-red-500 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-red-500 cursor-pointer' onClick={() => handleVolumeChange({ target: { value: 0.7 } })}>good</h3>
+								<div className='border-t-2 border-orange-500 w-[21%] flex items-center justify-center'>
+									<h3 className='text-md text-orange-500 cursor-pointer' onClick={() => handleVolumeChange({ target: { value: 0.7 } })}>high</h3>
 								</div>
-								<div className='border-t-2 border-red-900 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-red-900 cursor-pointer' onClick={() => handleVolumeChange({ target: { value: 1 } })}>high</h3>
+								<div className='border-t-2 border-red-600 w-[21%] flex items-center justify-center'>
+									<h3 className='text-md text-red-600 cursor-pointer' onClick={() => handleVolumeChange({ target: { value: 1 } })}>max</h3>
 								</div>
 							</div>
 
@@ -1485,11 +1522,11 @@ export default function () {
 								<div className='border-t-2 border-yellow-500 w-[21%] flex items-center justify-center'>
 									<h3 className='text-md text-yellow-500 cursor-pointer' onClick={() => handleFilterVolumeChange({ target: { value: 0.3 } })}>medium</h3>
 								</div>
-								<div className='border-t-2 border-red-500 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-red-500 cursor-pointer' onClick={() => handleFilterVolumeChange({ target: { value: 0.35 } })}>good</h3>
+								<div className='border-t-2 border-orange-500 w-[21%] flex items-center justify-center'>
+									<h3 className='text-md text-orange-500 cursor-pointer' onClick={() => handleFilterVolumeChange({ target: { value: 0.35 } })}>high</h3>
 								</div>
-								<div className='border-t-2 border-red-900 w-[21%] flex items-center justify-center'>
-									<h3 className='text-md text-red-900 cursor-pointer' onClick={() => handleFilterVolumeChange({ target: { value: 0.5 } })}>high</h3>
+								<div className='border-t-2 border-red-600 w-[21%] flex items-center justify-center'>
+									<h3 className='text-md text-red-600 cursor-pointer' onClick={() => handleFilterVolumeChange({ target: { value: 0.5 } })}>max</h3>
 								</div>
 							</div>
 
@@ -1499,8 +1536,8 @@ export default function () {
 					</div>
 				</div>
 
-				<div className="w-full flex">
-					<div className="side-box flex-1 p-2 reletive">
+				<div className="w-full flex gap-3 px-2">
+					<div className="side-box flex-1 min-w-0 py-2 relative">
 						<div className="w-full">
 							<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between">
 								<div>
@@ -1565,6 +1602,18 @@ export default function () {
 									}
 
 									<span className="text-black text-2xl">{start ? 'ON' : "OFF"}</span>
+									{
+										user?.isDJ && !active && !start &&
+										<p className="text-xs text-gray-600 text-center max-w-[15rem] cursor-default">
+											{
+												!user?.welcomeTone
+													? 'Go Live is locked: upload a welcome tone first. The station unlocks Go Live by playing it when your slot starts.'
+													: isWithinDjSlot(user)
+														? 'Your slot has started. Go Live unlocks when the station plays your welcome tone. If you added the tone after your slot began, it unlocks from your next slot.'
+														: `Go Live unlocks when your slot starts (${convertUTCToLocalTime(user?.djStartTime)} – ${convertUTCToLocalTime(user?.djEndTime)}).`
+											}
+										</p>
+									}
 								</div>
 							</div>
 						</div>
@@ -1694,22 +1743,22 @@ export default function () {
 
 					</div>
 
-					<div className="side-box-right w-[30rem] p-2 reletive">
+					<div className="side-box-right flex-1 min-w-0 py-2 relative">
 						{selectedSong?.title &&
 							<div className="w-full mb-5">
 								<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
 									<div>
 										<h2 className="text-white text-xl text-left">Deck A</h2>
 										<div className='flex items-center gap-3'>
-											<h6 className='text-white text-sm'>Remainning</h6>
-											<time className="text-white text-sm">{Math.floor(remaining / 60)}:{Math.floor(remaining % 60)}</time>
+											<h6 className='text-white text-sm'>Remaining</h6>
+											<time className="text-white text-sm">{formatClock(remaining)}</time>
 										</div>
 									</div>
 
 									<div className='flex flex-col gap-3'>
 										<div className='flex items-center'>
 											<input type='checkbox' onChange={(e) => setContinuePlay(prev => !prev)} checked={continuePlay} />
-											<p className='text-white text-sm ml-2'>Continous Play</p>
+											<p className='text-white text-sm ml-2'>Continuous Play</p>
 										</div>
 										<div className='flex items-center'>
 											<input type='checkbox' checked={repeatPlaylist} onChange={() => setRepeatPlaylist(prev => !prev)} />
@@ -1822,6 +1871,14 @@ export default function () {
 							</div>
 
 							<div className="rounded-b-md shadow-md p-3 px-0 h-[19.3rem] overflow-x-auto" onDragOver={(e) => e.preventDefault()} onDrop={handleSongDropOnPlaylintList}>
+								{
+									queueNotice &&
+									<p className="mx-3 mb-2 px-3 py-2 rounded-md bg-amber-50 text-amber-800 text-sm">{queueNotice}</p>
+								}
+								{
+									!selectPlayListSong?.songs?.length && !queueNotice &&
+									<p className="h-full flex items-center justify-center text-center text-gray-400 px-6">Drag a playlist, folder or song here to add it to the queue.</p>
+								}
 								{/* {playlists.map(data => (
 									<div className={`${selectPlayListSong?._id?.toString() === data._id.toString() ? 'bg-gray-100' : ''} px-3 flex justify-between items-center my-2 py-1 border-b border-gray-100`}>
 										<div className="flex items-center gap-4">
@@ -1939,15 +1996,15 @@ export default function () {
 					</div>
 
 
-					<div className="side-box-right w-[30rem] p-2 reletive">
+					<div className="side-box-right flex-1 min-w-0 py-2 relative">
 						{selectedFilter?.title &&
 							<div className="w-full mb-5">
 								<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
 									<div>
 										<h2 className="text-white text-xl text-left">Deck B</h2>
 										<div className='flex items-center gap-3'>
-											<h6 className='text-white text-sm'>Remainning</h6>
-											<time className="text-white text-sm">{Math.floor(fremaining / 60)}:{Math.floor(fremaining % 60)}</time>
+											<h6 className='text-white text-sm'>Remaining</h6>
+											<time className="text-white text-sm">{formatClock(fremaining)}</time>
 										</div>
 									</div>
 
@@ -1980,8 +2037,8 @@ export default function () {
 											<div className="w-[100%] flex flex-col reletive px-3 py-2">
 												<input type="range" className="w-[100%]" value={fprogress} step={1} min={0} max={fduration} onChange={(e) => handleProgressChange("filter", e.target.value)} />
 												<div className="w-[100%] flex items-center justify-between">
-													<time className="text-black text-xs">{Math.floor(fremaining / 60)}:{Math.floor(fremaining % 60)}</time>
-													<time className="text-black text-xs">{Math.floor(fduration / 60)}:{Math.floor(fduration % 60)}</time>
+													<time className="text-black text-xs">{formatClock(fremaining)}</time>
+													<time className="text-black text-xs">{formatClock(fduration)}</time>
 												</div>
 											</div>
 										</div>
@@ -2096,7 +2153,7 @@ export default function () {
 						</div>
 
 
-						<div className="w-full mt-6">
+						<div className="w-full mt-5">
 							<div className="bg-indigo-600 p-3 rounded-t-md flex justify-between reletive items-center">
 								<h2 className="text-white text-xl text-center">Listeners Calls</h2>
 

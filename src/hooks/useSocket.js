@@ -17,7 +17,7 @@ const MUSIC_HD_PUBLISH_OPTIONS = {
 	red: true,
 	dtx: false,
 	forceStereo: true,
-	audioPreset: AudioPresets.musicHighQualityStereo,
+	audioPreset: { ...AudioPresets.musicHighQualityStereo, priority: 'high' },
 };
 
 // Low music: 48 kbps mono + RED. For listeners on weak/poor network.
@@ -25,17 +25,18 @@ const MUSIC_LO_PUBLISH_OPTIONS = {
 	red: true,
 	dtx: false,
 	forceStereo: false,
-	audioPreset: AudioPresets.music,
+	audioPreset: { ...AudioPresets.music, priority: 'high' },
 };
 
 // Filter/FX: single quality is fine (short clips). Reuse HD preset.
 const MUSIC_PUBLISH_OPTIONS = MUSIC_HD_PUBLISH_OPTIONS;
 
-// Mic (voice): DTX on to save bandwidth during pauses, RED for loss recovery.
+// Mic (voice): DTX off. DTX lets the browser jitter buffer grow during
+// pauses and the DJ's voice then lags behind the music.
 const MIC_PUBLISH_OPTIONS = {
 	red: true,
-	dtx: true,
-	audioPreset: AudioPresets.musicHighQuality,
+	dtx: false,
+	audioPreset: { ...AudioPresets.musicHighQuality, priority: 'high' },
 };
 
 // Map a track name to its publish options.
@@ -227,6 +228,18 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	const songObjectUrlRef = useRef(null);
 	const filterObjectUrlRef = useRef(null);
 	const playSongGenerationRef = useRef(0);
+	// One MediaStreamDestination per bus for the whole show. Replacing the
+	// WebRTC track on every song resets the listener jitter buffer and the
+	// delay grows (the stream falls further behind live).
+	const songOutputRef = useRef(null);
+	const filterOutputRef = useRef(null);
+	const songNodesRef = useRef(null);
+	const filterNodesRef = useRef(null);
+	const songAudioIdRef = useRef(0);
+	const filterAudioIdRef = useRef(0);
+	const songTracksPublishedRef = useRef(false);
+	const filterTrackPublishedRef = useRef(false);
+	const micAudioContextRef = useRef(null);
 
 
 
@@ -346,6 +359,8 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		} else {
 			analyser = songAnalyserRef.current
 		}
+
+		if (!analyser) return;
 
 		if (isFilter && !filterPlayingRef.current) {
 			setFilterBase(0)
@@ -651,10 +666,21 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	}
 	}
 
-	// Helper: get or create the single master AudioContext for the session
+	function createLowLatencyContext() {
+		const Ctx = window.AudioContext || window.webkitAudioContext;
+		try {
+			return new Ctx({ latencyHint: 'interactive', sampleRate: 48000 });
+		} catch (e) {
+			return new Ctx({ latencyHint: 'interactive' });
+		}
+	}
+
+	// Helper: get or create the single master AudioContext for the session.
+	// 48 kHz matches Opus/WebRTC so the browser does not resample, and
+	// interactive latency keeps the capture quantum small (~128 samples).
 	function getMasterAudioContext() {
 		if (!masterAudioContextRef.current || masterAudioContextRef.current.state === 'closed') {
-			masterAudioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+			masterAudioContextRef.current = createLowLatencyContext();
 			console.log('🎵 Created master AudioContext');
 		}
 		// Resume if suspended (browser autoplay policy)
@@ -664,153 +690,199 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		return masterAudioContextRef.current;
 	}
 
-	async function getSongStream(songUrl, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setduration, isFilter = false) {
+	// Persistent publish bus. Songs/filters only swap the source node;
+	// the MediaStreamTrack sent to LiveKit stays the same all session.
+	function getOrCreateOutput(isFilter) {
+		const slot = isFilter ? filterOutputRef : songOutputRef;
+		if (slot.current?.streamDestination) return slot.current;
+
+		const audioContext = getMasterAudioContext();
+		const gainNode = audioContext.createGain();
+		gainNode.gain.value = 1;
+		const streamDestination = audioContext.createMediaStreamDestination();
+		const streamDestinationLow = !isFilter
+			? audioContext.createMediaStreamDestination()
+			: null;
+
+		gainNode.connect(audioContext.destination);
+		gainNode.connect(streamDestination);
+		if (streamDestinationLow) gainNode.connect(streamDestinationLow);
+
+		slot.current = { audioContext, gainNode, streamDestination, streamDestinationLow };
+		return slot.current;
+	}
+
+	function stopLevelMeter(isFilter) {
+		const frameRef = isFilter ? filterAnimationFrameIdRef : songAnimationFrameIdRef;
+		if (frameRef.current) cancelAnimationFrame(frameRef.current);
+		frameRef.current = null;
+	}
+
+	function startLevelMeter(isFilter) {
+		stopLevelMeter(isFilter);
+		const frameRef = isFilter ? filterAnimationFrameIdRef : songAnimationFrameIdRef;
+		let last = 0;
+		const loop = (t) => {
+			frameRef.current = requestAnimationFrame(loop);
+			if (t - last < 100) return;
+			last = t;
+			AudioProcessSongFilter(isFilter);
+		};
+		frameRef.current = requestAnimationFrame(loop);
+	}
+
+	function disconnectActiveNodes(isFilter) {
+		const nodesRef = isFilter ? filterNodesRef : songNodesRef;
+		const nodes = nodesRef.current;
+		if (!nodes) return;
+		stopLevelMeter(isFilter);
+		try { nodes.source?.disconnect(); } catch (e) { /* already disconnected */ }
+		try { nodes.analyser?.disconnect(); } catch (e) { /* already disconnected */ }
+		nodesRef.current = null;
+	}
+
+	async function getSongStream(songUrl, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setduration, isFilter = false, generation = null) {
 		let url = songUrl.replace(process.env.NEXT_PUBLIC_SOCKET_URL,'');
 		url = await getObjectUrlFromAudio(url);
-		
-		// Clean up old audio element and object URL before creating new ones
-		if (isFilter) {
-			if (filterObjectUrlRef.current) {
-				URL.revokeObjectURL(filterObjectUrlRef.current);
-			}
-			filterObjectUrlRef.current = url;
-		} else {
-			if (songObjectUrlRef.current) {
-				URL.revokeObjectURL(songObjectUrlRef.current);
-			}
-			songObjectUrlRef.current = url;
+
+		// A newer song was picked while this file was still downloading.
+		if (!isFilter && generation != null && generation !== playSongGenerationRef.current) {
+			URL.revokeObjectURL(url);
+			throw new Error('stale song');
 		}
 
-		// Disconnect old source nodes to prevent audio graph leaks
-		if (songSourceRef.current) {
-			try {
-				if (songSourceRef.current.pause) songSourceRef.current.pause();
-				if (songSourceRef.current.src) songSourceRef.current.src = '';
-			} catch (e) { /* ignore cleanup errors */ }
-		}
+		const audioIdRef = isFilter ? filterAudioIdRef : songAudioIdRef;
+		const audioId = ++audioIdRef.current;
 
 		return new Promise((resolve, reject) => {
-			const audio = new Audio(url);
+			const audio = new Audio();
+			audio.preload = 'auto';
 			audio.muted = false;
 			audio.crossOrigin = 'anonymous';
-			
-			audio.addEventListener('canplaythrough', () => {
-				// REUSE the single master AudioContext instead of creating a new one per song
-				const audioContext = getMasterAudioContext();
-				
-				// Create source from audio element
+			audio.src = url;
+
+			const dropStale = () => {
+				try { audio.pause(); audio.src = ''; } catch (e) { /* ignore */ }
+				URL.revokeObjectURL(url);
+			};
+
+			audio.addEventListener('error', () => {
+				dropStale();
+				reject(new Error('audio failed to load'));
+			}, { once: true });
+
+			// canplay (not canplaythrough) — the file is already a local blob,
+			// so waiting for a full-buffer estimate only delays the live cut.
+			audio.addEventListener('canplay', () => {
+				if (audioId !== audioIdRef.current || (!isFilter && generation != null && generation !== playSongGenerationRef.current)) {
+					dropStale();
+					return reject(new Error('stale song'));
+				}
+
+				const output = getOrCreateOutput(isFilter);
+				const audioContext = output.audioContext;
+
 				let source;
 				try {
 					source = audioContext.createMediaElementSource(audio);
 				} catch (error) {
 					console.error('Error creating media element source:', error);
+					dropStale();
 					return reject(error);
 				}
-				
-				// Create gain node
-				const gainNode = audioContext.createGain();
-				gainNodeRef.current = gainNode;
-				
-				// Create analyser for visualization
+
 				const analyser = audioContext.createAnalyser();
 				analyser.smoothingTimeConstant = 0.8;
 				analyser.fftSize = 1024;
-				
-				// Create stream destination for LiveKit
-				const streamDestination = audioContext.createMediaStreamDestination();
 
-				// For songs (not filter FX), create a SECOND destination that carries
-				// the exact same audio. It is published as a separate low-bitrate track
-				// so listeners on weak networks can auto-switch to it.
-				const streamDestinationLow = !isFilter
-					? audioContext.createMediaStreamDestination()
-					: null;
-				
-				// Audio routing: source -> analyser -> gain -> destination + streamDestination
+				// Connect the new song first, then drop the old source, so the
+				// published MediaStreamTrack never goes silent between tracks.
 				source.connect(analyser);
-				analyser.connect(gainNode);
-				gainNode.connect(audioContext.destination); // Local playback
-				gainNode.connect(streamDestination); // LiveKit stream (HD)
-				if (streamDestinationLow) {
-					gainNode.connect(streamDestinationLow); // LiveKit stream (Low)
+				analyser.connect(output.gainNode);
+
+				const previousAudio = songSourceRef.current;
+				disconnectActiveNodes(isFilter);
+
+				if (previousAudio && previousAudio !== audio) {
+					try {
+						previousAudio.pause();
+						previousAudio.src = '';
+					} catch (e) { /* ignore */ }
 				}
+
+				const urlRef = isFilter ? filterObjectUrlRef : songObjectUrlRef;
+				if (urlRef.current && urlRef.current !== url) {
+					URL.revokeObjectURL(urlRef.current);
+				}
+				urlRef.current = url;
+
+				const nodesRef = isFilter ? filterNodesRef : songNodesRef;
+				nodesRef.current = { source, analyser };
 
 				songSourceRef.current = audio;
 				audioContextRef.current = audioContext;
-				setduration(Math.floor(audio.duration));
-				
-				if(isFilter) {
+				gainNodeRef.current = output.gainNode;
+				setduration(Math.floor(audio.duration) || 0);
+
+				if (isFilter) {
 					filterAnalyserRef.current = analyser;
 				} else {
 					songAnalyserRef.current = analyser;
 				}
-				
-				// FIX: ScriptProcessor only connects to a silent destination, NOT audioContext.destination
-				// Connecting to destination caused double audio output and echo/distortion
-				const scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
-				const silentDest = audioContext.createMediaStreamDestination(); // silent sink
-				analyser.connect(scriptProcessor);
-				scriptProcessor.connect(silentDest); // NOT audioContext.destination — prevents double audio
-				scriptProcessor.addEventListener('audioprocess', () => AudioProcessSongFilter(isFilter));
-				
+
+				// VU meter via rAF. ScriptProcessor blocked the audio thread and
+				// made the WebRTC jitter buffer grow (stream fell behind live).
+				startLevelMeter(isFilter);
+
 				audio.addEventListener('timeupdate', () => {
 					const currentTime = audio.currentTime;
 					const duration = audio.duration;
-					const progress = {
+					if (!duration) return;
+					progressCallback({
 						currentTime,
 						duration,
 						percentage: (currentTime / duration) * 100,
 						remainTime: duration - currentTime,
-					}
-					progressCallback(progress);
+					});
 				});
-				
-				audio.addEventListener('ended', () => {
-					console.log('audio ended');
-					// Clean up this song's audio graph nodes
-					try {
-						source.disconnect();
-						analyser.disconnect();
-						gainNode.disconnect();
-						scriptProcessor.disconnect();
-					} catch (e) { /* ignore disconnect errors */ }
 
-					if(isFilter) {
-						if(filterPlayingRef.current) {
+				audio.addEventListener('ended', () => {
+					if (audioId !== audioIdRef.current) return;
+					console.log('audio ended');
+					disconnectActiveNodes(isFilter);
+
+					if (isFilter) {
+						if (filterPlayingRef.current) {
 							console.log('next filter');
-							// pending auto play filter 
 						}
-					} else {
+					} else if (songPlayRef.current && continuePlayRef.current === true) {
 						console.log('song play ref', songPlayRef.current);
-						if (songPlayRef.current && !isFilter && continuePlayRef.current === true) {
-							const sindex = selectPlayListSongRef.current?.songs?.indexOf(selectedSongRef.current);
-							if (sindex >= selectPlayListSongRef.current?.songs?.length - 1) {
-								if (repeatPlaylistRef.current) {
-									setSongPlaying(false);
-									setProgress(0);
-								} else {
-									setSongPlaying(false);
-									setProgress(0)
-								}
-							} else {
-								const song = selectPlayListSongRef.current?.songs[sindex + 1];
-								handleSelectedSong(song, sindex + 1);
-							}
+						const sindex = selectPlayListSongRef.current?.songs?.indexOf(selectedSongRef.current);
+						if (sindex >= selectPlayListSongRef.current?.songs?.length - 1) {
+							setSongPlaying(false);
+							setProgress(0);
+						} else {
+							const song = selectPlayListSongRef.current?.songs[sindex + 1];
+							handleSelectedSong(song, sindex + 1);
 						}
 					}
 				});
-				
+
 				const changeCurrentTime = (newTime) => {
 					audio.currentTime = newTime;
-				}
-				
-				audio.play();
-				resolve({
-					songStream: streamDestination.stream,
-					songStreamLow: streamDestinationLow ? streamDestinationLow.stream : null,
-					changeCurrentTime,
+				};
+
+				audio.play().then(() => {
+					resolve({
+						songStream: output.streamDestination.stream,
+						songStreamLow: output.streamDestinationLow ? output.streamDestinationLow.stream : null,
+						changeCurrentTime,
+					});
+				}).catch((error) => {
+					console.error('Error playing audio:', error);
+					reject(error);
 				});
-			}, { once: true }); // { once: true } prevents duplicate event firing
+			}, { once: true });
 		});
 	}
 
@@ -1129,15 +1201,11 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 		breakLookRef.current = false;
 
-		if (songSourceRef.current?.pause) {
-			songSourceRef.current.pause();
-		}
-
 		setSongStreamLoading(true);
 		songStreamLoadingRef.current = true;
 
 		try {
-			let { songStream, songStreamLow, changeCurrentTime } = await getSongStream(url, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setsduration);
+			let { songStream, songStreamLow, changeCurrentTime } = await getSongStream(url, gainNodeRef, songSourceRef, volume, audioContextRef, progress, progressCallback, setsduration, false, generation);
 
 			// A newer song was selected while this one was still loading.
 			if (generation !== playSongGenerationRef.current) {
@@ -1153,11 +1221,19 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			setSongStreamLoading(false);
 			songStreamLoadingRef.current = false;
 
-			// Publish HD and Low variants of the same music so listeners can
-			// auto-pick based on their network quality (per-listener adaptive).
-			replaceTrack(songStream.getAudioTracks()[0], SONG_HD_TRACK);
-			if (songStreamLow) {
-				replaceTrack(songStreamLow.getAudioTracks()[0], SONG_LO_TRACK);
+			// Publish once. Later songs reuse the same MediaStreamTrack so
+			// listeners do not rebuffer or accumulate delay on every cut.
+			if (!songTracksPublishedRef.current) {
+				songTracksPublishedRef.current = true;
+				try {
+					await replaceTrack(songStream.getAudioTracks()[0], SONG_HD_TRACK);
+					if (songStreamLow) {
+						await replaceTrack(songStreamLow.getAudioTracks()[0], SONG_LO_TRACK);
+					}
+				} catch (publishError) {
+					songTracksPublishedRef.current = false;
+					throw publishError;
+				}
 			}
 
 		} catch (err) {
@@ -1209,10 +1285,6 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			return
 		}
 
-		if (filterSourceRef.current?.pause) {
-			filterSourceRef.current.pause();
-		}
-
 		setFilterStreamLoading(true);
 		filterStreamLoadingRef.current = true;
 
@@ -1227,7 +1299,15 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			setFilterStreamLoading(false);
 			filterStreamLoadingRef.current = false;
 
-			replaceTrack(filterStreamRef.current.getAudioTracks()[0],'filter');
+			if (!filterTrackPublishedRef.current) {
+				filterTrackPublishedRef.current = true;
+				try {
+					await replaceTrack(filterStreamRef.current.getAudioTracks()[0], 'filter');
+				} catch (publishError) {
+					filterTrackPublishedRef.current = false;
+					throw publishError;
+				}
+			}
 
 		} catch (err) {
 			setFilterStreamLoading(false);
@@ -1467,7 +1547,15 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 		socketRef.current.emit('owner-join', { user: userTemp });
 		// localStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
-		const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+		const stream = await navigator.mediaDevices.getUserMedia({
+			audio: {
+				echoCancellation: true,
+				noiseSuppression: true,
+				autoGainControl: true,
+				channelCount: 1,
+				latency: 0,
+			},
+		});
 		
 
 
@@ -1488,7 +1576,8 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		micStreamRef.current = stream;
 		setMicOn(true);
 
-		const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+		const audioContext = createLowLatencyContext();
+		micAudioContextRef.current = audioContext;
 		const mic = audioContext.createMediaStreamSource(stream);
 		const dest = audioContext.createMediaStreamDestination();
 		const micGainNode = audioContext.createGain();
@@ -1557,6 +1646,19 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			console.log('publication', publication)
 			roomRef.current.localParticipant.unpublishTrack(publication.track);
 		});
+
+		stopLevelMeter(false);
+		stopLevelMeter(true);
+		songOutputRef.current = null;
+		filterOutputRef.current = null;
+		songNodesRef.current = null;
+		filterNodesRef.current = null;
+		songTracksPublishedRef.current = false;
+		filterTrackPublishedRef.current = false;
+		if (micAudioContextRef.current && micAudioContextRef.current.state !== 'closed') {
+			try { micAudioContextRef.current.close(); } catch (e) { /* ignore */ }
+			micAudioContextRef.current = null;
+		}
 
 		// Clean up master AudioContext when leaving
 		if (masterAudioContextRef.current && masterAudioContextRef.current.state !== 'closed') {

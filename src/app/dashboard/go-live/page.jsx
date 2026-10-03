@@ -376,16 +376,31 @@ const daysObject = {
 	6: "Saturday"
 };
 
-function isWithinDjSlot(user) {
-	if (!user?.djStartTime || !user?.djEndTime) return false;
+function djSlotBounds(user) {
+	if (!user?.djStartTime || !user?.djEndTime) return null;
 	const now = new Date();
 	const [y, m, d] = (user?.djDate || '').split('-').map(Number);
 	const isDateToday = y === now.getUTCFullYear() && m === now.getUTCMonth() + 1 && d === now.getUTCDate();
-	if (!isDateToday && !user?.djDays?.includes(now.getUTCDay().toString())) return false;
+	if (!isDateToday && !user?.djDays?.includes(now.getUTCDay().toString())) return null;
 	const [sh, sm] = user.djStartTime.split(':').map(Number);
 	const [eh, em] = user.djEndTime.split(':').map(Number);
-	const current = now.getUTCHours() * 60 + now.getUTCMinutes();
-	return current >= sh * 60 + sm && current <= eh * 60 + em;
+	const start = sh * 3600 + sm * 60;
+	const end = eh * 3600 + em * 60;
+	if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
+	const current = now.getUTCHours() * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds();
+	return { current, start, end };
+}
+
+function isWithinDjSlot(user) {
+	const bounds = djSlotBounds(user);
+	if (!bounds) return false;
+	return bounds.current >= bounds.start && bounds.current < bounds.end;
+}
+
+function hasDjSlotEnded(user) {
+	const bounds = djSlotBounds(user);
+	if (!bounds) return false;
+	return bounds.current >= bounds.end;
 }
 
 function formatClock(seconds) {
@@ -584,6 +599,56 @@ export default function () {
 	}, [user, active]);
 	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd, handleWelcomeTonePlayed, handleEndTonePlayed, roomRef, setActive);
 
+	const liveStartRef = useRef(false);
+	const liveActiveRef = useRef(false);
+	const ownerLeftRef = useRef(ownerLeft);
+	const toldTimeUpRef = useRef(false);
+
+	useEffect(() => {
+		liveStartRef.current = start;
+	}, [start]);
+
+	useEffect(() => {
+		liveActiveRef.current = active;
+	}, [active]);
+
+	useEffect(() => {
+		ownerLeftRef.current = ownerLeft;
+	}, [ownerLeft]);
+
+	// Slot end locks Go Live. The countdown component that used to do this is not mounted.
+	useEffect(() => {
+		if (!user?.isDJ) return;
+
+		const lockAfterSlot = () => {
+			if (!hasDjSlotEnded(user)) {
+				toldTimeUpRef.current = false;
+				return;
+			}
+
+			const wasLive = liveStartRef.current;
+			const wasUnlocked = liveActiveRef.current;
+			if (!wasLive && !wasUnlocked) return;
+
+			liveActiveRef.current = false;
+			setActive(false);
+			if (wasLive) {
+				liveStartRef.current = false;
+				setTimerStart(false);
+				setStart(false);
+				ownerLeftRef.current?.();
+			}
+			if (!toldTimeUpRef.current) {
+				toldTimeUpRef.current = true;
+				toast.info('Your time is up');
+			}
+		};
+
+		lockAfterSlot();
+		const tick = setInterval(lockAfterSlot, 1000);
+		return () => clearInterval(tick);
+	}, [user]);
+
 	// console.info('voiceAcitce',voiceAcitce);
 
 
@@ -742,6 +807,11 @@ export default function () {
 
 	const handleStart = () => {
 		if (!start) {
+			if (user?.isDJ && hasDjSlotEnded(user)) {
+				setActive(false);
+				toast.info('Your time is up');
+				return;
+			}
 			setTimerStart(true);
 			setStart(true);
 			ownerJoin();

@@ -4,6 +4,7 @@ import useConnect from "@/hooks/useConnect";
 import { useSelector } from "react-redux";
 import { RoomEvent, Track } from "livekit-client";
 import { useParams } from "next/navigation";
+import { getTestRoomId } from "@/utils/testRoom";
 
 const LiveContext = createContext();
 
@@ -59,8 +60,11 @@ export const LiveProvider = ({ children, isAdmin = true, isCall = false }) => {
     }
 
     useEffect(() => {
-        if (isAdmin && user?.originalId) {
-            connect(user?.originalId?.toString());
+        // Station accounts have no originalId; they used to never connect here,
+        // so every song failed with LiveKit "not connected".
+        const testRoomId = getTestRoomId(user);
+        if (isAdmin && testRoomId) {
+            connect(testRoomId);
         }
 
         if (!isAdmin) {

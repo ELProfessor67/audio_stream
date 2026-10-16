@@ -1,10 +1,14 @@
 'use client';
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import useConnect from "@/hooks/useConnect";
 import { useSelector } from "react-redux";
 import { RoomEvent, Track } from "livekit-client";
 import { useParams } from "next/navigation";
 import { getTestRoomId } from "@/utils/testRoom";
+
+// Same name as SONG_LO_TRACK in hooks/useSocketTest.js. Not imported, so the
+// listener page does not bundle the whole broadcaster hook.
+const SONG_LO_TRACK = 'song-lo';
 
 const LiveContext = createContext();
 
@@ -31,13 +35,19 @@ export const LiveProvider = ({ children, isAdmin = true, isCall = false }) => {
 
         roomRef.current.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
             console.log('Track subscribed:', track.kind, participant.identity);
+            // The broadcaster publishes the song twice (song-hd and song-lo).
+            // Playing both doubles the song, so listen to song-hd only.
+            if (publication.trackName === SONG_LO_TRACK) {
+                publication.setSubscribed(false);
+                return;
+            }
             handleTrackSubscribed(track);
 
         });
 
         roomRef.current.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
             console.log('Track unsubscribed:', track.kind, participant.identity);
-            track.detach();
+            track.detach().forEach(el => el.remove());
 
 
             if (participant.identity == "admin" && track.source == Track.Source.Microphone) {
@@ -49,13 +59,21 @@ export const LiveProvider = ({ children, isAdmin = true, isCall = false }) => {
     }, [roomRef.current]);
 
 
+    // The TrackSubscribed handler is registered once, so it must read isPlaying
+    // through a ref. Reading the state there always saw the first-render false,
+    // and song tracks (published only when the DJ plays the first song) arrived
+    // after the listener pressed Play and were never started.
+    const isPlayingRef = useRef(isPlaying);
+    useEffect(() => {
+        isPlayingRef.current = isPlaying;
+    }, [isPlaying]);
+
     function handleTrackSubscribed(track) {
         const audioElement = document.createElement('audio');
-        // audioElement.autoplay = true;
         track.attach(audioElement);
         document.body.appendChild(audioElement);
-        if (isPlaying) {
-            audioElement.play();
+        if (isPlayingRef.current) {
+            audioElement.play()?.catch(() => { });
         }
     }
 

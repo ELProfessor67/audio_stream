@@ -9,22 +9,11 @@ import { useDispatch } from 'react-redux';
 import { BsCalendarDate, BsClock, BsMailbox, BsPhone } from 'react-icons/bs';
 import { FaAccessibleIcon } from 'react-icons/fa6';
 import timezones from 'timezones-list';
+import { convertToUTC } from '@/utils/djTime';
 import { MultiSelect } from "react-multi-select-component";
 import Select from "react-select";
 import { MdCameraAlt } from 'react-icons/md';
 
-function convertToUTC(timeString) {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    const localDate = new Date();
-    localDate.setHours(hours);
-    localDate.setMinutes(minutes);
-    const localOffsetMinutes = localDate.getTimezoneOffset();
-    const utcTimestamp = localDate.getTime() + (localOffsetMinutes * 60000);
-    const utcDate = new Date(utcTimestamp);
-    const utcHours = utcDate.getHours().toString().padStart(2, '0');
-    const utcMinutes = utcDate.getMinutes().toString().padStart(2, '0');
-    return `${utcHours}:${utcMinutes}`;
-}
 
 const options = [
     { label: "Sunday", value: 0 },
@@ -126,8 +115,8 @@ const Page = () => {
             const payload = {
                 name, email, password,
                 permissions: selectPermission,
-                starttime: starttime ? convertToUTC(starttime) : undefined,
-                endtime: endtime ? convertToUTC(endtime) : undefined,
+                starttime: starttime ? convertToUTC(starttime, timezone) : undefined,
+                endtime: endtime ? convertToUTC(endtime, timezone) : undefined,
                 djDate,
                 djTimeInDays: timeInDays,
                 djDays,
@@ -330,7 +319,7 @@ const Page = () => {
                                 </div>
 
                                 <div className='input-group flex flex-col gap-1 mb-6'>
-                                    <label htmlFor="starttime" className='text-black text-lg'>Live Start Time</label>
+                                    <label htmlFor="starttime" className='text-black text-lg'>Live Start Time <span className='text-sm text-gray-500'>(in DJ Timezone)</span></label>
                                     <div className='flex items-center relative py-2 px-1 border-gray-400 border-2 hover:border-indigo-500 rounded-md'>
                                         <BsClock size={20} className='text-gray-400' />
                                         <input type='time' value={starttime} onChange={(e) => setStarttime(e.target.value)} className='w-[95%] outline-none ml-1' id='starttime' name='starttime' required />
@@ -338,7 +327,7 @@ const Page = () => {
                                 </div>
 
                                 <div className='input-group flex flex-col gap-1 mb-6'>
-                                    <label htmlFor="endtime" className='text-black text-lg'>Live End Time</label>
+                                    <label htmlFor="endtime" className='text-black text-lg'>Live End Time <span className='text-sm text-gray-500'>(in DJ Timezone)</span></label>
                                     <div className='flex items-center relative py-2 px-1 border-gray-400 border-2 hover:border-indigo-500 rounded-md'>
                                         <BsClock size={20} className='text-gray-400' />
                                         <input type='time' value={endtime} onChange={(e) => setEndtime(e.target.value)} className='w-[95%] outline-none ml-1' id='endtime' name='endtime' required />

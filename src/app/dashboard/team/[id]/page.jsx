@@ -14,6 +14,7 @@ import { FaAccessibleIcon, FaLock } from 'react-icons/fa6';
 import { MultiSelect } from "react-multi-select-component";
 import { toast } from 'react-toastify';
 import timezones from 'timezones-list';
+import { convertToUTC } from '@/utils/djTime';
 import Select from "react-select";
 
 
@@ -28,27 +29,6 @@ const options = [
 ];
 
 
-function convertToUTC(timeString) {
-    // Split timeString into hours and minutes
-    const [hours, minutes] = timeString.split(':').map(Number);
-
-    // Create a new Date object with today's date and the input time in local time
-    const localDate = new Date();
-    localDate.setHours(hours);
-    localDate.setMinutes(minutes);
-
-    const localOffsetMinutes = localDate.getTimezoneOffset();
-
-    // Convert local time to UTC
-    const utcTimestamp = localDate.getTime() + (localOffsetMinutes * 60000); // Convert minutes to milliseconds
-    const utcDate = new Date(utcTimestamp);
-
-    // Format UTC time as 'HH:mm' string
-    const utcHours = utcDate.getHours().toString().padStart(2, '0');
-    const utcMinutes = utcDate.getMinutes().toString().padStart(2, '0');
-    const utcTimeString = `${utcHours}:${utcMinutes}`;
-    return utcTimeString;
-}
 
 
 const Page = ({ params }) => {
@@ -89,7 +69,7 @@ const Page = ({ params }) => {
         try {
             let djDays = [];
             selectedDays.forEach((data) => djDays.push(data.value));
-            const { data } = await axios.put(`/api/v1/dj/${params.id}`, { password, name, email, permissions: selectPermission, starttime: convertToUTC(starttime), endtime: convertToUTC(endtime), djDate, djTimeInDays: timeInDays, djDays, rawTime: `${starttime}|${endtime}`,timezone,phone,djEventName });
+            const { data } = await axios.put(`/api/v1/dj/${params.id}`, { password, name, email, permissions: selectPermission, starttime: convertToUTC(starttime, timezone), endtime: convertToUTC(endtime, timezone), djDate, djTimeInDays: timeInDays, djDays, rawTime: `${starttime}|${endtime}`,timezone,phone,djEventName });
             await dispatch(showMessage(data.message));
             await dispatch(clearMessage());
             console.log(data)
@@ -274,7 +254,7 @@ const Page = ({ params }) => {
                                     />
                                 </div>
                                 <div className='input-group flex flex-col gap-1 mb-6'>
-                                    <label for="starttime" className='text-black text-lg'>Live Start Time</label>
+                                    <label for="starttime" className='text-black text-lg'>Live Start Time <span className='text-sm text-gray-500'>(in DJ Timezone)</span></label>
                                     <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                                         <BsClock size={20} className='text-gray-400' />
                                         <input type='time' value={starttime} onChange={(e) => setStarttime(e.target.value)} className='w-[95%] outline-none ml-1' id='starttime' name='starttime' required />
@@ -282,7 +262,7 @@ const Page = ({ params }) => {
                                 </div>
 
                                 <div className='input-group flex flex-col gap-1 mb-6'>
-                                    <label for="endtime" className='text-black text-lg'>Live End Time</label>
+                                    <label for="endtime" className='text-black text-lg'>Live End Time <span className='text-sm text-gray-500'>(in DJ Timezone)</span></label>
                                     <div className='flex items-center relative py-2 px-1 border-gray-400  border-2 hover:border-indigo-500 rounded-md'>
                                         <BsClock size={20} className='text-gray-400' />
                                         <input type='time' value={endtime} onChange={(e) => setEndtime(e.target.value)} className='w-[95%] outline-none ml-1' id='endtime' name='endtime' required />

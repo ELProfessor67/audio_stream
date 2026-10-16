@@ -38,6 +38,7 @@ import RenamePlaylistComponents from '@/components/RenamePlaylistComponents';
 import AutoAdjustByBase from '@/components/AutoAdjustByBase';
 import DeckProgressBar from '@/components/DeckProgressBar';
 import { useLive } from '@/context/LiveContext';
+import { utcDayShift } from '@/utils/djTime';
 
 function addOneMinute(hours, minutes) {
 	// Split the time string into hours and minutes
@@ -376,32 +377,59 @@ const daysObject = {
 	6: "Saturday"
 };
 
-function djSlotBounds(user) {
-	if (!user?.djStartTime || !user?.djEndTime) return null;
-	const now = new Date();
-	const [y, m, d] = (user?.djDate || '').split('-').map(Number);
-	const isDateToday = y === now.getUTCFullYear() && m === now.getUTCMonth() + 1 && d === now.getUTCDate();
-	if (!isDateToday && !user?.djDays?.includes(now.getUTCDay().toString())) return null;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// The DJ's airings that started yesterday or today (UTC), as real instants.
+// A slot whose end is before its start (e.g. 23:00–01:00 UTC, a US evening
+// show) runs past midnight and ends the next day.
+// djDays / djDate are the days as the admin picked them, for the typed time.
+// The UTC start can fall a day off (Mon 8 PM New York = Tue 00:00 UTC), so a
+// UTC day counts when the day `shift` before it is a picked day.
+function djSlotOccurrences(user, now = Date.now()) {
+	if (!user?.djStartTime || !user?.djEndTime) return [];
 	const [sh, sm] = user.djStartTime.split(':').map(Number);
 	const [eh, em] = user.djEndTime.split(':').map(Number);
-	const start = sh * 3600 + sm * 60;
-	const end = eh * 3600 + em * 60;
-	if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
-	const current = now.getUTCHours() * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds();
-	return { current, start, end };
+	const startMs = (sh * 3600 + sm * 60) * 1000;
+	let endMs = (eh * 3600 + em * 60) * 1000;
+	if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs == startMs) return [];
+	if (endMs < startMs) endMs += DAY_MS;
+	const shift = utcDayShift(user?.rawTime?.split('|')[0], user.djStartTime);
+
+	const today = new Date(now);
+	const todayMidnight = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+	const occurrences = [];
+	for (const midnight of [todayMidnight - DAY_MS, todayMidnight]) {
+		const day = new Date(midnight - shift * DAY_MS);
+		const [y, m, d] = (user?.djDate || '').split('-').map(Number);
+		const isDate = y === day.getUTCFullYear() && m === day.getUTCMonth() + 1 && d === day.getUTCDate();
+		if (!isDate && !user?.djDays?.includes(day.getUTCDay().toString())) continue;
+		occurrences.push({ start: midnight + startMs, end: midnight + endMs });
+	}
+	return occurrences;
 }
 
 function isWithinDjSlot(user) {
-	const bounds = djSlotBounds(user);
-	if (!bounds) return false;
-	return bounds.current >= bounds.start && bounds.current < bounds.end;
+	const now = Date.now();
+	return djSlotOccurrences(user, now).some(o => now >= o.start && now < o.end);
 }
 
+// True after an airing that ended today (UTC) and before the next one starts.
 function hasDjSlotEnded(user) {
-	const bounds = djSlotBounds(user);
-	if (!bounds) return false;
-	return bounds.current >= bounds.end;
+	const now = Date.now();
+	const today = new Date(now);
+	const todayMidnight = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+	const occurrences = djSlotOccurrences(user, now);
+	if (occurrences.some(o => now >= o.start && now < o.end)) return false;
+	return occurrences.some(o => o.end <= now && o.end >= todayMidnight);
 }
+
+const BLOCKING_FORM_STATUSES = ['pending', 'rejected', 'terminated'];
+
+const FORM_BLOCK_MESSAGES = {
+	pending: 'Your form is still pending. Please contact the admin for approval of your form. You can go live once it is approved.',
+	rejected: 'Your form was not approved. Please contact the admin. You can go live once it is approved.',
+	terminated: 'Your DJ agreement has been terminated. Please contact the admin.',
+};
 
 function formatClock(seconds) {
 	const s = Math.max(0, Math.floor(seconds || 0));
@@ -553,6 +581,10 @@ export default function () {
 	const endingToneDurationRef = useRef(0);
 	const isPlayedRef = useRef(false);
 	const isEndedRef = useRef(false);
+	// Set when the station's ending tone closes the show. The station plays it
+	// before the slot's end time, so without this the slot clock would turn
+	// Go Live back on for the last few seconds.
+	const slotClosedRef = useRef(false);
 
 	const startFirstTimeRef = useRef(false);
 
@@ -583,6 +615,7 @@ export default function () {
 	}
 
 	const handleEndTonePlayed = () => {
+		slotClosedRef.current = true;
 		setTimerStart(false);
 		setStart(false);
 		setActive(false);
@@ -648,6 +681,54 @@ export default function () {
 		const tick = setInterval(lockAfterSlot, 1000);
 		return () => clearInterval(tick);
 	}, [user]);
+
+	// DJ form approval. 'none' = DJ never submitted forms (DJs the admin added
+	// directly) and is not blocked. A failed lookup (null) also does not block.
+	// Go Live stays off while the status is 'loading', so a pending DJ can't
+	// start in the moment before the answer arrives.
+	const [formStatus, setFormStatus] = useState('loading');
+	const formBlocked = user?.isDJ && BLOCKING_FORM_STATUSES.includes(formStatus);
+	const formChecking = user?.isDJ && formStatus === 'loading';
+
+	useEffect(() => {
+		if (!user?.isDJ) return;
+		let cancelled = false;
+		axios.get('/api/v1/dj-forms/status')
+			.then(({ data }) => { if (!cancelled) setFormStatus(data?.data?.overallStatus || 'pending'); })
+			.catch((err) => { if (!cancelled) setFormStatus(err?.response?.status === 404 ? 'none' : null); });
+		return () => { cancelled = true; };
+	}, [user]);
+
+	// Go Live unlocks from the slot clock. It used to wait for the station to
+	// play the welcome tone, so DJs without a tone could never go live.
+	useEffect(() => {
+		if (!user?.isDJ || formBlocked) return;
+
+		const unlockInSlot = () => {
+			if (!isWithinDjSlot(user)) {
+				slotClosedRef.current = false;
+				return;
+			}
+			if (!liveActiveRef.current && !slotClosedRef.current) {
+				liveActiveRef.current = true;
+				setActive(true);
+			}
+		};
+
+		unlockInSlot();
+		const tick = setInterval(unlockInSlot, 1000);
+		return () => clearInterval(tick);
+	}, [user, formBlocked]);
+
+	// Tones are optional: tell the DJ once, never block.
+	const missingTones = user?.isDJ ? [!user?.welcomeTone && 'welcome tone', !user?.endingTone && 'ending tone'].filter(Boolean) : [];
+	const toldMissingTonesRef = useRef(false);
+
+	useEffect(() => {
+		if (toldMissingTonesRef.current || formChecking || formBlocked || missingTones.length == 0) return;
+		toldMissingTonesRef.current = true;
+		toast.info(`Your ${missingTones.join(' and ')} ${missingTones.length > 1 ? 'are' : 'is'} not uploaded. You can still go live without ${missingTones.length > 1 ? 'them' : 'it'}.`);
+	}, [formChecking, formBlocked, missingTones.length]);
 
 	// console.info('voiceAcitce',voiceAcitce);
 
@@ -807,6 +888,11 @@ export default function () {
 
 	const handleStart = () => {
 		if (!start) {
+			if (formChecking) return;
+			if (formBlocked) {
+				toast.info(FORM_BLOCK_MESSAGES[formStatus]);
+				return;
+			}
 			if (user?.isDJ && hasDjSlotEnded(user)) {
 				setActive(false);
 				toast.info('Your time is up');
@@ -1647,7 +1733,7 @@ export default function () {
 									Listeners
 								</h3>
 								<div className="flex flex-col items-center gap-3 relative cursor-pointer" onMouseEnter={() => setShowTitle(true)} onMouseLeave={() => setShowTitle(false)}>
-									<button onClick={handleStart} className={`bg-none hover-button outline-none border-none disabled:opacity-20 ${start ? 'text-green-400' : 'text-red-600'}`} disabled={user?.isDJ && !active}><LuPower size={40} /></button>
+									<button onClick={handleStart} className={`bg-none hover-button outline-none border-none disabled:opacity-20 ${start ? 'text-green-400' : 'text-red-600'}`} disabled={user?.isDJ && (!active || formBlocked || formChecking)}><LuPower size={40} /></button>
 
 									{
 										showTitle &&
@@ -1673,15 +1759,22 @@ export default function () {
 
 									<span className="text-black text-2xl">{start ? 'ON' : "OFF"}</span>
 									{
-										user?.isDJ && !active && !start &&
+										formBlocked && !start &&
+										<p className="text-xs text-red-600 text-center max-w-[15rem] cursor-default">
+											{FORM_BLOCK_MESSAGES[formStatus]}{' '}
+											<Link href="/dashboard/my-form-status" className="underline">View form status</Link>
+										</p>
+									}
+									{
+										user?.isDJ && !formBlocked && !active && !start &&
 										<p className="text-xs text-gray-600 text-center max-w-[15rem] cursor-default">
-											{
-												!user?.welcomeTone
-													? 'Go Live is locked: upload a welcome tone first. The station unlocks Go Live by playing it when your slot starts.'
-													: isWithinDjSlot(user)
-														? 'Your slot has started. Go Live unlocks when the station plays your welcome tone. If you added the tone after your slot began, it unlocks from your next slot.'
-														: `Go Live unlocks when your slot starts (${convertUTCToLocalTime(user?.djStartTime)} – ${convertUTCToLocalTime(user?.djEndTime)}).`
-											}
+											{`Go Live unlocks when your slot starts (${convertUTCToLocalTime(user?.djStartTime)} – ${convertUTCToLocalTime(user?.djEndTime)}).`}
+										</p>
+									}
+									{
+										!formBlocked && missingTones.length > 0 && !start &&
+										<p className="text-xs text-amber-600 text-center max-w-[15rem] cursor-default">
+											{`No ${missingTones.join(' or ')} uploaded. You can still go live without ${missingTones.length > 1 ? 'them' : 'it'}.`}
 										</p>
 									}
 								</div>

@@ -1,6 +1,7 @@
 import connectDB from "@/db/connectDB";
 import { NextResponse } from "next/server";
 import userModel from "@/models/user";
+import { utcDayShift } from "@/utils/djTime";
 
 // CORS — allow any external website
 const CORS_HEADERS = {
@@ -22,6 +23,8 @@ const DAY_NAMES = {
     "5": "Friday",
     "6": "Saturday",
 };
+
+const DAY_INDEX = Object.fromEntries(Object.entries(DAY_NAMES).map(([i, name]) => [name, Number(i)]));
 
 // ---------------------------------------------------------------------------
 // GET /api/v1/schedule-public
@@ -67,11 +70,21 @@ export const GET = connectDB(async function (req) {
                 if (!isNaN(d)) days = [DAY_NAMES[String(d.getDay())]];
             }
 
+            // startTime/endTime are UTC (what the website and app expect).
+            // This used to send rawTime first: the time as typed, in the DJ's
+            // zone, which the site then read as UTC and shifted by hours.
+            // Days were picked for the typed time, so move them by however many
+            // days the UTC start lands from it (Mon 8 PM New York = Tue 00:00 UTC).
+            const shift = utcDayShift(dj.rawTime?.split("|")[0], dj.djStartTime);
+            if (shift) {
+                days = days.map((day) => DAY_NAMES[String((DAY_INDEX[day] + shift + 7) % 7)]);
+            }
+
             const entry = {
                 name:          dj.name,
                 profilePicUrl: dj.djProfilePic ? `${socketBase}${dj.djProfilePic}` : null,
-                startTime:     dj.rawTime?.split("|")[0] || dj.djStartTime || null,
-                endTime:       dj.rawTime?.split("|")[1] || dj.djEndTime   || null,
+                startTime:     dj.djStartTime || null,
+                endTime:       dj.djEndTime   || null,
                 timezone:      dj.timezone || null,
                 eventName:     dj.djEventName || `${dj.name} special`,
                 days,                           // ← which days this DJ appears

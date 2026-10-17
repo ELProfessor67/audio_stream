@@ -1732,12 +1732,15 @@ export default function () {
 									<br />
 									Listeners
 								</h3>
-								<div className="flex flex-col items-center gap-3 relative cursor-pointer" onMouseEnter={() => setShowTitle(true)} onMouseLeave={() => setShowTitle(false)}>
+								<div className="flex flex-col items-center gap-3">
+									{/* The hover box is anchored to the button, not the column: the notices
+									    below widen the column, which used to put the box over the button. */}
+									<div className="relative cursor-pointer" onMouseEnter={() => setShowTitle(true)} onMouseLeave={() => setShowTitle(false)}>
 									<button onClick={handleStart} className={`bg-none hover-button outline-none border-none disabled:opacity-20 ${start ? 'text-green-400' : 'text-red-600'}`} disabled={user?.isDJ && (!active || formBlocked || formChecking)}><LuPower size={40} /></button>
 
 									{
 										showTitle &&
-										<span className='block absolute top-0 left-[50px] w-[30rem] p-2 bg-white shadow-md rounded-md'>
+										<span className='block absolute top-0 left-[50px] w-[30rem] p-2 bg-white shadow-md rounded-md pointer-events-none z-10'>
 											{
 												user?.djTimeInDays ?
 													(
@@ -1756,6 +1759,7 @@ export default function () {
 											{/* {user?.djTimeInDays ? `${user?.djDays?.map((p, i) => `${i != 0 ? ' ,' : ' '} ${daysObject[p]} ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`)}` : `${user?.djDate} / ${convertUTCToLocalTime(user?.djStartTime)}-${convertUTCToLocalTime(user?.djEndTime)}`} */}
 										</span>
 									}
+									</div>
 
 									<span className="text-black text-2xl">{start ? 'ON' : "OFF"}</span>
 									{

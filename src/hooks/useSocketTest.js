@@ -175,6 +175,8 @@ const useSocketTest = (setSongPlaying, songPlaying, selectPlayListSong, selected
 	const [voiceComing, setVoiceComing] = useState(false);
 	const recordMediaRef = useRef();
 	const [continuePlay, setContinuePlay] = useState(true);
+	// True between ownerJoin and ownerLeft; see resumeSong.
+	const showLiveRef = useRef(false);
 	const [repeatPlaylist, setRepeatPlaylist] = useState(false);
 	const [messageList, setMessageList] = useState([]);
 	const [filterBase, setFilterBase] = useState(0);
@@ -1008,15 +1010,25 @@ const useSocketTest = (setSongPlaying, songPlaying, selectPlayListSong, selected
 						if (filterPlayingRef.current) {
 							console.log('next filter');
 						}
-					} else if (songPlayRef.current && continuePlayRef.current === true) {
-						console.log('song play ref', songPlayRef.current);
-						const sindex = selectPlayListSongRef.current?.songs?.indexOf(selectedSongRef.current);
-						if (sindex >= selectPlayListSongRef.current?.songs?.length - 1) {
+					} else if (songPlayRef.current) {
+						// Continuous Play off: stop after this song.
+						// On: play the next queued song; after the last one,
+						// start over only when Repeat Playlist is ticked.
+						const songs = selectPlayListSongRef.current?.songs || [];
+						const currentId = selectedSongRef.current?._id?.toString();
+						const sindex = songs.findIndex(song => song?._id?.toString() === currentId);
+						let nextIndex = -1;
+						if (continuePlayRef.current === true && songs.length > 0) {
+							if (sindex < 0) nextIndex = 0;
+							else if (sindex < songs.length - 1) nextIndex = sindex + 1;
+							else if (repeatPlaylistRef.current === true) nextIndex = 0;
+						}
+						if (nextIndex >= 0) {
+							handleSelectedSong(songs[nextIndex], nextIndex);
+						} else {
+							songPlayRef.current = false;
 							setSongPlaying(false);
 							setProgress(0);
-						} else {
-							const song = selectPlayListSongRef.current?.songs[sindex + 1];
-							handleSelectedSong(song, sindex + 1);
 						}
 					}
 				});
@@ -1406,9 +1418,18 @@ const useSocketTest = (setSongPlaying, songPlaying, selectPlayListSong, selected
 	}
 
 	const resumeSong = () => {
-		if (songSourceRef.current?.play) {
-			songSourceRef.current.play();
+		const audio = songSourceRef.current;
+		// A song that already ended has been unplugged from the broadcast,
+		// so play it again from the start instead of resuming the dead element.
+		if (!audio || audio.ended || !songNodesRef.current) {
+			if (!showLiveRef.current) return;
+			const song = selectedSongRef.current;
+			if (song?.audio) {
+				playSong(song.audio, volumeRef.current, { currentSong: song, nextSong: nextSongRef.current });
+			}
+			return;
 		}
+		audio.play();
 	}
 
 	const changeValume = (value) => {
@@ -1750,6 +1771,7 @@ const useSocketTest = (setSongPlaying, songPlaying, selectPlayListSong, selected
 
 		micStreamRef.current = stream;
 		setMicOn(true);
+		showLiveRef.current = true;
 
 		const audioContext = createLowLatencyContext();
 		micAudioContextRef.current = audioContext;
@@ -1806,6 +1828,7 @@ const useSocketTest = (setSongPlaying, songPlaying, selectPlayListSong, selected
 
 		socketRef.current?.disconnect();
 		setMicOn(false);
+		showLiveRef.current = false;
 		localStreamRef.current?.getTracks().forEach(track => track.enabled = false);
 
 

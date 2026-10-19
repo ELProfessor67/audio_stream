@@ -141,6 +141,13 @@ const socketInit = () => {
 
 const sleep = ms => new Promise(r => window.setTimeout(r, ms))
 
+// Auto Adjust (voice ducking). While the DJ speaks, the song bus drops to
+// DUCK_LEVEL of the deck volume and the mic gets MIC_BOOST. When the DJ goes
+// quiet for DUCK_RELEASE_MS, both return to the levels the DJ set.
+const DUCK_LEVEL = 0.3;
+const MIC_BOOST = 1.25;
+const DUCK_RELEASE_MS = 800;
+
 
 
 
@@ -171,6 +178,14 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	const [voiceComing, setVoiceComing] = useState(false);
 	const recordMediaRef = useRef();
 	const [continuePlay, setContinuePlay] = useState(true);
+	const [autoAdjust, setAutoAdjust] = useState(false);
+	const autoAdjustRef = useRef(false);
+	const micVolumeRef = useRef(micVolume);
+	const voiceSpeakingRef = useRef(false);
+	const duckReleaseTimerRef = useRef(null);
+	// True between ownerJoin and ownerLeft. Replaying a finished song publishes
+	// it to listeners, which must never happen after the show has ended.
+	const showLiveRef = useRef(false);
 	const [repeatPlaylist, setRepeatPlaylist] = useState(false);
 	const [messageList, setMessageList] = useState([]);
 	const [filterBase, setFilterBase] = useState(0);
@@ -257,6 +272,15 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	useEffect(() => {
 		repeatPlaylistRef.current = repeatPlaylist;
 	}, [repeatPlaylist])
+
+	useEffect(() => {
+		micVolumeRef.current = micVolume;
+	}, [micVolume])
+
+	useEffect(() => {
+		autoAdjustRef.current = autoAdjust;
+		applyVoiceDuck();
+	}, [autoAdjust])
 
 	useEffect(() => {
 		recordMediaRef.current = new MediaStream();
@@ -855,15 +879,25 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 						if (filterPlayingRef.current) {
 							console.log('next filter');
 						}
-					} else if (songPlayRef.current && continuePlayRef.current === true) {
-						console.log('song play ref', songPlayRef.current);
-						const sindex = selectPlayListSongRef.current?.songs?.indexOf(selectedSongRef.current);
-						if (sindex >= selectPlayListSongRef.current?.songs?.length - 1) {
+					} else if (songPlayRef.current) {
+						// Continuous Play off: stop after this song.
+						// On: play the next queued song; after the last one,
+						// start over only when Repeat Playlist is ticked.
+						const songs = selectPlayListSongRef.current?.songs || [];
+						const currentId = selectedSongRef.current?._id?.toString();
+						const sindex = songs.findIndex(song => song?._id?.toString() === currentId);
+						let nextIndex = -1;
+						if (continuePlayRef.current === true && songs.length > 0) {
+							if (sindex < 0) nextIndex = 0;
+							else if (sindex < songs.length - 1) nextIndex = sindex + 1;
+							else if (repeatPlaylistRef.current === true) nextIndex = 0;
+						}
+						if (nextIndex >= 0) {
+							handleSelectedSong(songs[nextIndex], nextIndex);
+						} else {
+							songPlayRef.current = false;
 							setSongPlaying(false);
 							setProgress(0);
-						} else {
-							const song = selectPlayListSongRef.current?.songs[sindex + 1];
-							handleSelectedSong(song, sindex + 1);
 						}
 					}
 				});
@@ -1252,9 +1286,61 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	}
 
 	const resumeSong = () => {
-		if (songSourceRef.current?.play) {
-			songSourceRef.current.play();
+		const audio = songSourceRef.current;
+		// A song that already ended has been unplugged from the broadcast,
+		// so play it again from the start instead of resuming the dead element.
+		if (!audio || audio.ended || !songNodesRef.current) {
+			if (!showLiveRef.current) return;
+			const song = selectedSongRef.current;
+			if (song?.audio) {
+				playSong(song.audio, volumeRef.current, { currentSong: song, nextSong: nextSongRef.current });
+			}
+			return;
 		}
+		audio.play();
+	}
+
+	// Duck the song and lift the mic while the DJ talks (Auto Adjust ticked).
+	function applyVoiceDuck() {
+		const duck = autoAdjustRef.current && micOnRef.current && voiceSpeakingRef.current;
+
+		const songBus = songOutputRef.current;
+		if (songBus?.gainNode && songBus.audioContext?.state !== 'closed') {
+			const gain = songBus.gainNode.gain;
+			const now = songBus.audioContext.currentTime;
+			gain.cancelScheduledValues(now);
+			gain.setValueAtTime(gain.value, now);
+			// Fast attack so the first words are heard, slow release so the song fades back.
+			gain.setTargetAtTime(duck ? DUCK_LEVEL : 1, now, duck ? 0.05 : 0.35);
+		}
+
+		const micGain = micGainNodeRef.current;
+		const micCtx = micAudioContextRef.current;
+		if (micGain && micCtx && micCtx.state !== 'closed') {
+			const target = Number(micVolumeRef.current) * (duck ? MIC_BOOST : 1);
+			const now = micCtx.currentTime;
+			micGain.gain.cancelScheduledValues(now);
+			micGain.gain.setValueAtTime(micGain.gain.value, now);
+			micGain.gain.setTargetAtTime(target, now, 0.05);
+		}
+	}
+
+	function handleVoiceActivity(speaking) {
+		if (duckReleaseTimerRef.current) {
+			clearTimeout(duckReleaseTimerRef.current);
+			duckReleaseTimerRef.current = null;
+		}
+		if (speaking) {
+			voiceSpeakingRef.current = true;
+			applyVoiceDuck();
+			return;
+		}
+		// Short pauses between words should not pump the music up and down.
+		duckReleaseTimerRef.current = setTimeout(() => {
+			duckReleaseTimerRef.current = null;
+			voiceSpeakingRef.current = false;
+			applyVoiceDuck();
+		}, DUCK_RELEASE_MS);
 	}
 
 	const changeValume = (value) => {
@@ -1330,10 +1416,13 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	}
 
 	const changeMicValume = (value) => {
-		console.log(value);
+		micVolumeRef.current = value;
 		if (micGainNodeRef.current?.gain) {
-			console.log('inside', value);
-			micGainNodeRef.current.gain.value = value;
+			const duck = autoAdjustRef.current && micOnRef.current && voiceSpeakingRef.current;
+			const gain = micGainNodeRef.current.gain;
+			const now = micAudioContextRef.current?.currentTime ?? 0;
+			gain.cancelScheduledValues(now);
+			gain.setValueAtTime(Number(value) * (duck ? MIC_BOOST : 1), now);
 		}
 	}
 
@@ -1344,10 +1433,14 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		if (micOn) {
 			localStreamRef.current.getTracks().forEach(track => track.enabled = false);
 			setMicOn(false);
+			micOnRef.current = false;
 		} else {
 			setMicOn(true);
+			micOnRef.current = true;
 			localStreamRef.current.getTracks().forEach(track => track.enabled = true);
 		}
+		// A muted mic must never keep the music ducked.
+		applyVoiceDuck();
 	}
 
 	useEffect(() => {
@@ -1563,18 +1656,20 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		speechEventsRef.current = hark(stream, { threshold: -50 });
 
 		speechEventsRef.current.on('speaking', () => {
-			console.log("🎤 User is speaking...");
 			setVoiceComing(true);
+			handleVoiceActivity(true);
 		});
 
 		speechEventsRef.current.on('stopped_speaking', () => {
-			console.log("🤫 User stopped speaking...");
 			setVoiceComing(false);
+			handleVoiceActivity(false);
 		});
 
 
 		micStreamRef.current = stream;
 		setMicOn(true);
+		micOnRef.current = true;
+		showLiveRef.current = true;
 
 		const audioContext = createLowLatencyContext();
 		micAudioContextRef.current = audioContext;
@@ -1586,7 +1681,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 		mic.connect(micGainNode);
 		micGainNode.connect(dest);
-		micGainNode.gain.value = micVolume;
+		micGainNode.gain.value = Number(micVolumeRef.current);
 		micGainNodeRef.current = micGainNode;
 		localStreamRef.current = dest.stream;
 
@@ -1627,7 +1722,20 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 		socketRef.current?.disconnect();
 		setMicOn(false);
+		micOnRef.current = false;
+		showLiveRef.current = false;
 		localStreamRef.current?.getTracks().forEach(track => track.enabled = false);
+
+		// Stop voice detection and release the ducking, or the next show
+		// starts with a stale "speaking" state and a second hark instance.
+		try { speechEventsRef.current?.stop(); } catch (e) { /* already stopped */ }
+		speechEventsRef.current = null;
+		if (duckReleaseTimerRef.current) {
+			clearTimeout(duckReleaseTimerRef.current);
+			duckReleaseTimerRef.current = null;
+		}
+		voiceSpeakingRef.current = false;
+		micStreamRef.current?.getTracks().forEach(track => track.stop());
 
 
 
@@ -1730,7 +1838,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 
-	return { socketRef, ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef: newUser, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef: mediaRecorderRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong }
+	return { socketRef, ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef: newUser, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef: mediaRecorderRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong, autoAdjust, setAutoAdjust }
 }
 
 export default useSocket;

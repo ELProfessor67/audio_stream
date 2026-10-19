@@ -8,7 +8,7 @@ import { BsMusicNoteList, BsMailbox, BsCloudUpload, BsCalendarDate } from 'react
 import { PiUsersThreeDuotone } from 'react-icons/pi'
 import { CiStreamOn } from 'react-icons/ci'
 import { GiLoveSong } from 'react-icons/gi'
-import { MdPlaylistAdd, MdOutlineLogout, MdOutlineAdminPanelSettings } from 'react-icons/md'
+import { MdPlaylistAdd, MdOutlineLogout, MdOutlineAdminPanelSettings, MdOutlineSecurity } from 'react-icons/md'
 import { LiaAdSolid } from 'react-icons/lia'
 import { usePathname } from 'next/navigation';
 import Link from 'next/link'
@@ -434,6 +434,15 @@ export default function Sidebar() {
             link: '/dashboard/ending-tone',
             show: true,
             desc: "You can create own ending tone"
+        },
+        {
+            icon: <MdOutlineSecurity size={30} />,
+            text: "Login Security",
+            alert: false,
+            active: pathname == '/dashboard/security',
+            link: '/dashboard/security',
+            show: true,
+            desc: "Connect an authenticator app for login"
         },
 
 

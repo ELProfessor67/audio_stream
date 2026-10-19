@@ -24,7 +24,7 @@ const page = () => {
         setLoading(true)
         try {
             const {data} = await axios.post('/api/v1/login',{email,password});
-            router.push("/verify")
+            router.push(data?.method === "app" ? "/verify?method=app" : "/verify")
             // dispatch({type: 'loadUserSuc',payload: data});
             await dispatch(showMessage(data.message));
             await dispatch(clearMessage());

@@ -41,7 +41,13 @@ const userSchema = new mongoose.Schema({
     jwt: {type: String,default: undefined},
     volunteerForm: {type: mongoose.Schema.Types.ObjectId,ref: 'volunteerForm',default: undefined},
     executiveLegalForm: {type: mongoose.Schema.Types.ObjectId,ref: 'executiveLegalForm',default: undefined},
-    contractAgreement: {type: mongoose.Schema.Types.ObjectId,ref: 'ContractAgreement',default: undefined}
+    contractAgreement: {type: mongoose.Schema.Types.ObjectId,ref: 'ContractAgreement',default: undefined},
+    // Authenticator app (TOTP) login. Secrets are never selected by default,
+    // so they do not reach /load-me or any other response.
+    twoFactorEnabled: {type: Boolean, default: false},
+    twoFactorSecret: {type: String, default: undefined, select: false},
+    twoFactorTempSecret: {type: String, default: undefined, select: false},
+    twoFactorLastStep: {type: Number, default: undefined, select: false}
 },{timestamps: true});
 
 

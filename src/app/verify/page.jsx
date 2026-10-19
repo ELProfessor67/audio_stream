@@ -12,6 +12,36 @@ const Page = () => {
   const inputsRef = useRef([]);
   const { isAuth, user } = useSelector(store => store.user);
   const dispatch = useDispatch();
+  // 'email' = code sent by email, 'app' = code from the authenticator app.
+  const [method, setMethod] = useState('email');
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('method') === 'app') {
+      setMethod('app');
+    }
+  }, []);
+
+  const clearInputs = () => {
+    setOTP(new Array(6).fill(''));
+    inputsRef.current.forEach((el) => { if (el) el.value = ''; });
+    inputsRef.current[0]?.focus();
+  };
+
+  const handleEmailInstead = async () => {
+    setSendingEmail(true);
+    try {
+      const { data } = await axios.post('/api/v1/login/email-code');
+      setMethod('email');
+      clearInputs();
+      await dispatch(showMessage(data.message));
+      await dispatch(clearMessage());
+    } catch (error) {
+      await dispatch(showError(error.response?.data?.message || error.message));
+      await dispatch(clearError());
+    }
+    setSendingEmail(false);
+  };
 
   const handleInput = (e, index) => {
     const value = e.target.value.replace(/\D/, '');
@@ -57,7 +87,7 @@ const Page = () => {
 
     setLoading(true);
     try {
-      const { data } = await axios.post('/api/v1/verify', { OTP: fullOTP });
+      const { data } = await axios.post('/api/v1/verify', { OTP: fullOTP, method });
       dispatch({ type: 'loadUserSuc', payload: data });
       await dispatch(showMessage(data.message));
       await dispatch(clearMessage());
@@ -101,7 +131,12 @@ const Page = () => {
           </div>
           <form className='p-3 px-6' onSubmit={handleSubmit}>
             <div className='mb-6'>
-              <label className='block text-gray-700 mb-2 text-center'>Enter OTP</label>
+              <label className='block text-gray-700 mb-1 text-center'>
+                {method === 'app' ? 'Enter the code from your authenticator app' : 'Enter OTP'}
+              </label>
+              <p className='text-gray-500 text-sm mb-3 text-center'>
+                {method === 'app' ? 'Open the app on your phone and type the 6-digit code shown for HGDJLive.' : 'We sent a 6-digit code to your email.'}
+              </p>
               <div
                 className='flex justify-center gap-2'
                 onPaste={handlePaste}
@@ -131,6 +166,19 @@ const Page = () => {
                 {!loading ? 'Verify' : 'Loading...'}
               </button>
             </div>
+
+            {method === 'app' && (
+              <div className='flex justify-center mt-4'>
+                <button
+                  type='button'
+                  onClick={handleEmailInstead}
+                  disabled={sendingEmail}
+                  className='text-blue-600 text-sm hover:underline disabled:opacity-50'
+                >
+                  {sendingEmail ? 'Sending…' : "Don't have your phone? Email me a code instead"}
+                </button>
+              </div>
+            )}
           </form>
         </div>
       </div>

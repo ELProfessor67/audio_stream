@@ -1,11 +1,7 @@
 import connectDB from "@/db/connectDB";
 import { NextResponse } from "next/server";
 import userModel from "@/models/user";
-import { generateOTP } from "@/utils/generateOTP";
-import { Resend } from "resend";
-import sendEmail from "@/utils/sendEmail";
-import axios from "axios";
-const resend = new Resend('re_6dwherEo_t9t4G217pFAK1hFfJajiWB5i');
+import { sendLoginOtp, setPendingLogin } from "@/utils/loginSession";
 
 export const POST = connectDB(async function (req) {
     try {
@@ -22,40 +18,22 @@ export const POST = connectDB(async function (req) {
 
         if (!isMatch) return NextResponse.json({ success: false, message: 'invalid details' }, { status: 401 });
 
-        const OTP = generateOTP();
-        user.OTP = OTP;
-        user.save();
-
-        //send otp
-        // sendEmail(user.email,"Verify OTP",`You OTP is <strong>${OTP}`,`<p>You OTP is <strong>${OTP}</strong></p>`)
-
-        try{
-            console.log('Sending email to', user.email);
-            const response = await axios.post('https://mail.hgdjlive.com/send-email', {
-                email: user.email,
-                subject: "Verify OTP",
-                message: `Your OTP is> ${OTP}`
-              }, {
-                headers: {
-                  'Content-Type': 'application/json'
-                }
-              });
-              console.log('Success:', response.data);
-        }catch(err){
-            console.error('Error:', err.response?.data || err.message);
+        // Authenticator app turned on: ask for its code, send no email.
+        // An old emailed code must not work in its place.
+        if (user.twoFactorEnabled) {
+            user.OTP = undefined;
+            await user.save();
+            const res = NextResponse.json({ success: true, method: 'app', message: 'Enter the code from your authenticator app' }, { status: 200 });
+            setPendingLogin(res, user._id);
+            return res;
         }
 
-        console.log(OTP)
-        const res = NextResponse.json({ success: true, message: 'OTP send to your email', user }, { status: 200 });
+        await sendLoginOtp(user);
 
-        // const token = await user.getJWTToken();
-        // res.cookies.set({
-        //     name: 'token',
-        //     value: token,
-        //     httpOnly: true,
-        //     expires: new Date(Date.now() + Number(process.env.TOEKN_EXPIRE) * 24 * 60 * 60 * 1000)
-        // });
-
+        // Only a message goes back. The response used to include the whole
+        // user record, which carried the emailed code and the password hash.
+        const res = NextResponse.json({ success: true, method: 'email', message: 'OTP send to your email' }, { status: 200 });
+        setPendingLogin(res, user._id);
         return res;
     } catch (err) {
         return NextResponse.json({ success: false, message: err.message || 'Internal Seerver Error' }, { status: 501 });

@@ -36,6 +36,7 @@ import RenamePlaylistComponents from '@/components/RenamePlaylistComponents';
 // import VolumePopup from '@/components/VolumePopup';
 // import VolumePopupsDeck from '@/components/VolumePopupsDeck';
 import AutoAdjustByBase from '@/components/AutoAdjustByBase';
+import IncomingCallBanner, { parseCaller } from '@/components/IncomingCallBanner';
 import DeckProgressBar from '@/components/DeckProgressBar';
 import { useLive } from '@/context/LiveContext';
 import { utcDayShift } from '@/utils/djTime';
@@ -630,7 +631,7 @@ export default function () {
 		const tick = setInterval(() => setLockClockTick(n => n + 1), 15000);
 		return () => clearInterval(tick);
 	}, [user, active]);
-	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd, handleWelcomeTonePlayed, handleEndTonePlayed, roomRef, setActive);
+	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong, autoAdjust, setAutoAdjust } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd, handleWelcomeTonePlayed, handleEndTonePlayed, roomRef, setActive);
 
 	const liveStartRef = useRef(false);
 	const liveActiveRef = useRef(false);
@@ -1613,6 +1614,14 @@ export default function () {
 								</div>
 							</div>
 
+							<label className="flex items-start gap-2 mt-3 px-1 cursor-pointer" title="When ticked, the song gets quieter and your voice louder while you speak. When you stop, the song returns to the Deck A level you set.">
+								<input type="checkbox" className="mt-1 cursor-pointer" checked={autoAdjust} onChange={(e) => setAutoAdjust(e.target.checked)} />
+								<span className="text-white text-sm">
+									<span className="font-semibold">Auto Adjust</span>
+									<span className="block text-white/80">{autoAdjust ? 'On: the song lowers while you speak, then returns to your Deck A level.' : 'Off: you set the song and mic volume yourself.'}</span>
+								</span>
+							</label>
+
 							{/* <VolumePopup deckname={'Microphone'} volume={micVolume} handleMicVolumeChange={handleMicVolumeChange}/> */}
 						</div>
 
@@ -2344,13 +2353,7 @@ export default function () {
 
 								{
 									callComing &&
-									<div className='flex items-center rounded-md py-2 my-4 shadow-sm justify-between'>
-										<h2 className='text-2xl text-gray-800'>{callerName}</h2>
-										<div className='flex items-center gap-10'>
-											<button className='p-2 text-green-600 rounded-full bg-gray-200' onClick={() => handleCallComing(true)}><MdCall size={23} /></button>
-											<button className='p-2 text-red-600 rounded-full bg-gray-200' onClick={() => handleCallComing(false)}><MdCall size={23} /></button>
-										</div>
-									</div>
+									<p className='text-gray-500 text-sm my-4'>{parseCaller(callerName).name} is calling. Answer or decline at the top of the page.</p>
 								}
 							</div>
 						</div>
@@ -2515,6 +2518,8 @@ export default function () {
 
 
 			</section>
+			<IncomingCallBanner open={callComing} callerName={callerName} onAnswer={() => handleCallComing(true)} onDecline={() => handleCallComing(false)} />
+
 			{/* {
 				callComing &&
 				<div className='w-[10rem] h-[10rem] absolute left-[calc(50%-5rem)] top-14 bg-white shadow-md rounded-md flex flex-col items-center justify-center gap-6'>

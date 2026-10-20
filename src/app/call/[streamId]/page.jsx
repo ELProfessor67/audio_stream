@@ -1,4 +1,5 @@
 "use client";
+import { useParams } from "next/navigation";
 import { useSocketUser } from '@/hooks'
 import { useRef } from 'react'
 import { FiMoreVertical } from 'react-icons/fi'
@@ -70,7 +71,8 @@ const Timer = ({ timerStart }) => {
 }
 
 
-export default function page({ params }) {
+export default function page() {
+    const params = useParams();
 	const [user, setUser] = useState(null);
 	const [schediles, setSchedules] = useState([]);
 	const [songs, setSongs] = useState([]);

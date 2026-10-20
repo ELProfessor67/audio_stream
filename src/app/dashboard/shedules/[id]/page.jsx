@@ -1,4 +1,5 @@
 "use client";
+import { useParams } from "next/navigation";
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { MdAlternateEmail, MdAudiotrack, MdKey, MdDateRange, MdPlaylistAdd, MdDelete } from 'react-icons/md'
@@ -26,7 +27,8 @@ const days = {
 };
 
 
-const page = ({ params }) => {
+const page = () => {
+    const params = useParams();
     const [selectedDay, setSelectedDay] = useState('0');
     const [open, setOpen] = useState(false);
     const [playlists, setPlaylists] = useState([]);

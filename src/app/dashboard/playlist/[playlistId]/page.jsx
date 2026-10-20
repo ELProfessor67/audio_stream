@@ -1,4 +1,5 @@
 "use client"
+import { useParams } from "next/navigation";
 
 import React,{useState,useEffect,useRef} from 'react'
 import axios from 'axios';
@@ -11,7 +12,8 @@ import {showMessage,showError,clearMessage,clearError} from '@/utils/showAlert';
 import {useDispatch} from 'react-redux';
 
 
-function page({params}){
+function page(){
+    const params = useParams();
   const [songs,setSongs] = useState([]);
   const [playSong,setPlaySong] = useState('');
 

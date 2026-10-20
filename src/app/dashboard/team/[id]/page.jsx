@@ -1,4 +1,5 @@
 "use client";
+import { useParams } from "next/navigation";
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { MdAlternateEmail, MdAudiotrack, MdKey } from 'react-icons/md'
@@ -31,7 +32,8 @@ const options = [
 
 
 
-const Page = ({ params }) => {
+const Page = () => {
+    const params = useParams();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [djEventName, setDjEventName] = useState('');

@@ -1,11 +1,11 @@
 "use client";
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from "next/navigation";
 import { toast } from 'react-toastify';
 
-const ResetPasswordPage = ({ params }) => {
-    const { token } = params;
+const ResetPasswordPage = () => {
+    const { token } = useParams();
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);

@@ -11,8 +11,11 @@ const LIVEKIT_URL = process.env.LIVEKIT_URL;
 export async function GET(request) {
   try {
     // Parse query parameters
-    const searchParams = new URLSearchParams(request.url.split('?')[1]);
-    const roomName = searchParams.get('room');
+    const searchParams = new URL(request.url).searchParams;
+    // Older website/app builds send "room=<id>?isAdmin=false". Room names are
+    // ids and never contain '?', so cut there or those listeners join the
+    // wrong room and never hear the DJ.
+    const roomName = searchParams.get('room')?.split('?')[0];
     const isAdmin = searchParams.get('isAdmin') == 'true' ? true : false;
     const isCall = searchParams.get('isCall') == 'true' ? true : false;
     const participantIdentity = isAdmin ? 'admin' : isCall ? `call-${uuidv4()}` : uuidv4();

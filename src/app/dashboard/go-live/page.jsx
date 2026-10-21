@@ -624,7 +624,8 @@ export default function () {
 		setIsEndTonePlaying(false);
 	}
 
-	const { participantCount, roomRef } = useLive();
+	const { participantCount, roomRef, connectForLive, connectionError } = useLive();
+	const goLivePendingRef = useRef(false);
 
 	useEffect(() => {
 		if (!user?.isDJ || active) return;
@@ -887,7 +888,7 @@ export default function () {
 		// console.log(data);
 	}
 
-	const handleStart = () => {
+	const handleStart = async () => {
 		if (!start) {
 			if (formChecking) return;
 			if (formBlocked) {
@@ -897,6 +898,17 @@ export default function () {
 			if (user?.isDJ && hasDjSlotEnded(user)) {
 				setActive(false);
 				toast.info('Your time is up');
+				return;
+			}
+			if (goLivePendingRef.current) return;
+			goLivePendingRef.current = true;
+			// Join LiveKit before anything else. Only once the audio connection
+			// is really up do we start the timer and tell the socket we're live;
+			// otherwise listeners get "DJ live" with dead air (Oct 21 2026).
+			const ok = await connectForLive().catch((err) => { console.error(err); return false; });
+			goLivePendingRef.current = false;
+			if (!ok) {
+				toast.error('Could not connect to the audio server. Check your internet and try again.');
 				return;
 			}
 			setTimerStart(true);
@@ -1788,6 +1800,12 @@ export default function () {
 										!formBlocked && missingTones.length > 0 && !start &&
 										<p className="text-xs text-amber-600 text-center max-w-[15rem] cursor-default">
 											{`No ${missingTones.join(' or ')} uploaded. You can still go live without ${missingTones.length > 1 ? 'them' : 'it'}.`}
+										</p>
+									}
+									{
+										start && connectionError &&
+										<p className="text-xs text-red-600 font-semibold text-center max-w-[15rem] cursor-default">
+											{`Listeners cannot hear you: ${connectionError}`}
 										</p>
 									}
 								</div>

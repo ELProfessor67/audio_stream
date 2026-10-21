@@ -10,7 +10,7 @@ const LiveContext = createContext();
 
 export const LiveProvider = ({ children, isAdmin = true, isCall = false }) => {
     const { user } = useSelector(store => store.user);
-    const { isConnected, roomRef, connect, participantCount, setParticipantCount } = useConnect(isAdmin);
+    const { isConnected, connectionError, roomRef, connect, disconnect, participantCount, setParticipantCount } = useConnect(isAdmin);
     const [isLive, setIsLive] = useState(false);
     const [roomActive, setRoomActive] = useState(false);
     const { streamId } = useParams();
@@ -67,18 +67,22 @@ export const LiveProvider = ({ children, isAdmin = true, isCall = false }) => {
         document.body.appendChild(audioElement);
     }
 
+    // Callers join their call room on mount. The DJ's Go Live page does NOT
+    // join on mount any more: every DJ of a station joins the same room as
+    // identity 'admin', and LiveKit allows one connection per identity, so a
+    // page merely being open kicked whoever was actually live (Oct 21 2026).
+    // ownerJoin in useSocket connects right before going live instead.
     useEffect(() => {
-        if (user) {
-            connect(user?._id.toString(), false);
-        }
-
         if (streamId) {
             connect(streamId, true);
         }
-    }, [user, streamId]);
+    }, [streamId]);
+
+    // Room the DJ publishes to; the auth middleware already maps DJs to their station owner.
+    const connectForLive = () => connect(user?._id.toString(), false);
 
     return (
-        <LiveContext.Provider value={{ isConnected, roomRef, participantCount, isLive, setIsLive, roomActive, setRoomActive }}>
+        <LiveContext.Provider value={{ isConnected, connectionError, connectForLive, disconnect, roomRef, participantCount, isLive, setIsLive, roomActive, setRoomActive }}>
             {children}
         </LiveContext.Provider>
     )

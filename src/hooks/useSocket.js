@@ -6,6 +6,7 @@ import axios from 'axios';
 import { data } from 'autoprefixer';
 import hark from 'hark';
 import { Track, AudioPresets } from 'livekit-client';
+import { useLive } from '@/context/LiveContext';
 
 
 // Track names used for the adaptive (per-listener network) music streams.
@@ -154,6 +155,7 @@ const DUCK_RELEASE_MS = 800;
 const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd, handleWelcomeTonePlayed, handleEndTonePlayed, roomRef, setActive) => {
 	const socketRef = useRef();
 	const { user } = useSelector(store => store.user);
+	const { connectForLive, disconnect: disconnectLiveKit } = useLive();
 	const peersRef = useRef({});
 	const localStreamRef = useRef();
 	const songSourceRef = useRef();
@@ -1631,6 +1633,14 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 	const ownerJoin = async (id = null) => {
 		console.log('join')
+		// Join LiveKit now, not on page load (see LiveProvider). If this fails
+		// the show must not start: the socket would tell listeners we're live
+		// while nothing is published (dead air, Oct 21 2026).
+		const connected = await connectForLive();
+		if (!connected) {
+			console.error('Go Live aborted: LiveKit not connected');
+			return false;
+		}
 		socketRef.current = socketInit();
 		// socketRef.current.on('offer', handleOffer);
 		let userTemp = JSON.parse(JSON.stringify(user));
@@ -1700,10 +1710,6 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			source: Track.Source.Microphone
 		});
 
-
-
-
-
 		//deteting the audio
 		// const analyser = audioContext.createAnalyser();
 		// const scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
@@ -1716,6 +1722,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		// analyser.connect(scriptProcessor);
 		// scriptProcessor.connect(audioContext.destination);
 		// scriptProcessorRef.current.addEventListener('audioprocess', AudioProcess);
+		return true;
 	}
 
 	const ownerLeft = async () => {
@@ -1754,6 +1761,8 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			console.log('publication', publication)
 			roomRef.current.localParticipant.unpublishTrack(publication.track);
 		});
+		// Leave the room so this tab no longer holds the 'admin' identity.
+		disconnectLiveKit();
 
 		stopLevelMeter(false);
 		stopLevelMeter(true);

@@ -354,7 +354,7 @@ export default function page() {
 
 			<ChatBox open={chatOpen} onClose={() => setChatOpen(false)} name={name} setName={setName} message={message} setMessage={setMessage} handleSendMessage={handleSendMessage}>
 				{
-					messageList.map(data => <Message {...data} />)
+					messageList.map((data, i) => <Message key={data.id || i} {...data} />)
 				}
 			</ChatBox>
 

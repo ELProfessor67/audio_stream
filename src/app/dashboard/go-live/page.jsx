@@ -632,7 +632,7 @@ export default function () {
 		const tick = setInterval(() => setLockClockTick(n => n + 1), 15000);
 		return () => clearInterval(tick);
 	}, [user, active]);
-	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong, autoAdjust, setAutoAdjust } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd, handleWelcomeTonePlayed, handleEndTonePlayed, roomRef, setActive);
+	const { ownerJoin, ownerLeft, micOn, micNotice, backendNotice, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong, autoAdjust, setAutoAdjust } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd, handleWelcomeTonePlayed, handleEndTonePlayed, roomRef, setActive);
 
 	const liveStartRef = useRef(false);
 	const liveActiveRef = useRef(false);
@@ -1808,6 +1808,12 @@ export default function () {
 											{`Listeners cannot hear you: ${connectionError}`}
 										</p>
 									}
+									{
+										start && !connectionError && backendNotice &&
+										<p className="text-xs text-red-600 font-semibold text-center max-w-[15rem] cursor-default">
+											{`Listeners cannot hear you: ${backendNotice}`}
+										</p>
+									}
 								</div>
 							</div>
 						</div>
@@ -1822,7 +1828,7 @@ export default function () {
 									<div className="flex justify-center mt-5">
 										<div className="flex flex-col items-center gap-3">
 
-											<button className="bg-none outline-none border-none text-black" onClick={SwitchOn}>
+											<button className={`bg-none outline-none border-none ${micNotice ? 'text-red-600' : 'text-black'}`} onClick={SwitchOn} title={micNotice || (micOn ? 'Mute microphone' : 'Unmute microphone')}>
 												{
 													micOn && voiceAcitce ? <BsSoundwave size={40} />
 														: micOn ? <IoMdMic size={40} />
@@ -1831,6 +1837,12 @@ export default function () {
 											</button>
 
 											<span className="text-black text-lg">{micOn ? 'Mute' : "Unmute"}</span>
+											{
+												micNotice &&
+												<p className="text-xs text-red-600 font-semibold text-center max-w-[16rem] cursor-default">
+													{`Microphone problem on your side: ${micNotice}`}
+												</p>
+											}
 										</div>
 									</div>
 
@@ -2524,7 +2536,7 @@ export default function () {
 
 				<ChatBox open={chatOpen} onClose={() => setChatOpen(false)} message={chatMessage} setMessage={setChatMessage} handleSendMessage={handleSendMessage}>
 					{
-						messageList.map(data => <Message {...data} />)
+						messageList.map((data, i) => <Message key={data.id || i} {...data} />)
 					}
 				</ChatBox>
 

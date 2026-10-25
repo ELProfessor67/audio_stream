@@ -125,6 +125,14 @@ function checkInTimeRangeForDay(startTime, endTime, user, seconds = 0) {
 
 
 
+// Same statuses and wording as the Go Live page.
+const BLOCKING_FORM_STATUSES = ['pending', 'rejected', 'terminated'];
+const FORM_BLOCK_MESSAGES = {
+	pending: 'Your form is still pending. Please contact the admin for approval of your form. You can test once it is approved.',
+	rejected: 'Your form was not approved. Please contact the admin. You can test once it is approved.',
+	terminated: 'Your DJ agreement has been terminated. Please contact the admin.',
+};
+
 const TimeRemaining = ({ setLeftSecond, user, setActive, ownerLeft, start, setStart, setTimerStart, handleStart, startFirstTimeRef, endingToneDuration, handlePlayWelcome, handlePlayEnd }) => {
 
 	const [remainingTime, setRemainingTime] = useState("00:00");
@@ -493,6 +501,19 @@ export default function () {
 	const [createPlaylistOpen, setCreatePlaylistOpen] = useState(false);
 	const [editPlaylistOpen, setEditPlaylistOpen] = useState(false);
 	const [active, setActive] = useState(false);
+	// Same approval gate as Go Live: a DJ whose form is pending/rejected cannot
+	// test either, and is told so here instead of hitting a silent failure.
+	const [formStatus, setFormStatus] = useState('loading');
+	const formBlocked = user?.isDJ && BLOCKING_FORM_STATUSES.includes(formStatus);
+	const formChecking = user?.isDJ && formStatus === 'loading';
+	useEffect(() => {
+		if (!user?.isDJ) return;
+		let cancelled = false;
+		axios.get('/api/v1/dj-forms/status')
+			.then(({ data }) => { if (!cancelled) setFormStatus(data?.data?.overallStatus || 'pending'); })
+			.catch((err) => { if (!cancelled) setFormStatus(err?.response?.status === 404 ? 'none' : null); });
+		return () => { cancelled = true; };
+	}, [user]);
 	const [songOpen, setSongOpen] = useState(false);
 	const [songTitle, setSongTitle] = useState("")
 	const [songAlbum, setSognAlbum] = useState("Unkown")
@@ -554,7 +575,7 @@ export default function () {
 	}
 
 	const { participantCount, roomRef } = useLive();
-	const { ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, isRecording, startSessionRecording, stopSessionRecording, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd, handleWelcomeTonePlayed, handleEndTonePlayed, roomRef, setActive);
+	const { ownerJoin, ownerLeft, micOn, micNotice, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef, recordReady, isRecording, startSessionRecording, stopSessionRecording, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong } = useSocket(setSongPlaying, songPlaying, selectPlayListSong, selectedSong, setSeletedSong, volume, micVolume, filterPlaying, chatMessage, setChatMessage, setUnread, chatOpen, nextSong, setHistory, handleSelectedSong, handlePlayWelcome, handlePlayEnd, handleWelcomeTonePlayed, handleEndTonePlayed, roomRef, setActive);
 
 	// console.info('voiceAcitce',voiceAcitce);
 
@@ -714,6 +735,11 @@ export default function () {
 
 	const handleStart = () => {
 		if (!start) {
+			if (formChecking) return;
+			if (formBlocked) {
+				toast.info(FORM_BLOCK_MESSAGES[formStatus]);
+				return;
+			}
 			setTimerStart(true);
 			setStart(true);
 			ownerJoin();
@@ -1489,11 +1515,18 @@ export default function () {
 							<div className="py-2 rounded-b-md flex justify-around items-center shadow-md">
 
 								<div className="flex flex-col items-center gap-3 relative cursor-pointer" onMouseEnter={() => setShowTitle(true)} onMouseLeave={() => setShowTitle(false)}>
-									<button onClick={handleStart} className={`bg-none hover-button outline-none border-none disabled:opacity-20 ${start ? 'text-green-400' : 'text-red-600'}`} disabled={false}><LuPower size={40} /></button>
+									<button onClick={handleStart} className={`bg-none hover-button outline-none border-none disabled:opacity-20 ${start ? 'text-green-400' : 'text-red-600'}`} disabled={user?.isDJ && (formBlocked || formChecking)}><LuPower size={40} /></button>
 
 
 
 									<span className="text-black text-2xl">{start ? 'ON' : "OFF"}</span>
+									{
+										formBlocked && !start &&
+										<p className="text-xs text-red-600 text-center max-w-[15rem] cursor-default">
+											{FORM_BLOCK_MESSAGES[formStatus]}{' '}
+											<Link href="/dashboard/my-form-status" className="underline">View form status</Link>
+										</p>
+									}
 								</div>
 							</div>
 						</div>
@@ -1508,7 +1541,7 @@ export default function () {
 									<div className="flex justify-center mt-5">
 										<div className="flex flex-col items-center gap-3">
 
-											<button className="bg-none outline-none border-none text-black" onClick={SwitchOn}>
+											<button className={`bg-none outline-none border-none ${micNotice ? 'text-red-600' : 'text-black'}`} onClick={SwitchOn} title={micNotice || (micOn ? 'Mute microphone' : 'Unmute microphone')}>
 												{
 													micOn && voiceAcitce ? <BsSoundwave size={40} />
 														: micOn ? <IoMdMic size={40} />
@@ -1517,6 +1550,12 @@ export default function () {
 											</button>
 
 											<span className="text-black text-lg">{micOn ? 'Mute' : "Unmute"}</span>
+											{
+												micNotice &&
+												<p className="text-xs text-red-600 font-semibold text-center max-w-[16rem] cursor-default">
+													{`Microphone problem on your side: ${micNotice}`}
+												</p>
+											}
 										</div>
 									</div>
 
@@ -2206,7 +2245,7 @@ export default function () {
 
 				<ChatBox open={chatOpen} onClose={() => setChatOpen(false)} message={chatMessage} setMessage={setChatMessage} handleSendMessage={handleSendMessage}>
 					{
-						messageList.map(data => <Message {...data} />)
+						messageList.map((data, i) => <Message key={data.id || i} {...data} />)
 					}
 				</ChatBox>
 

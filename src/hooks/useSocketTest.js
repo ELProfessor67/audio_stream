@@ -159,6 +159,8 @@ const useSocketTest = (setSongPlaying, songPlaying, selectPlayListSong, selected
 	const gainNodeRef = useRef();
 	const localTrackRef = useRef();
 	const [micOn, setMicOn] = useState(false);
+	// Why the microphone is not working, in the DJ's words; '' when fine.
+	const [micNotice, setMicNotice] = useState('');
 	const [requests, setRequests] = useState([]);
 	const [listners, setListners] = useState([]);
 	const [newUser, setNewUser] = useState([]);
@@ -1063,9 +1065,12 @@ const useSocketTest = (setSongPlaying, songPlaying, selectPlayListSong, selected
 
 
 	function handleReceiveMessage(data) {
-		setMessageList(prev => [...prev, { ...data }]);
-		if (chatOpenRef.current === false) {
+		const entry = { ...data, id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, date: Date.now() };
+		setMessageList(prev => [...prev, entry]);
+		if (chatOpenRef.current === false && !data?.isOwner) {
 			setUnread(prev => prev + 1);
+			// Same idea as the incoming-call banner: the DJ should not have to open the chat to know.
+			toast.info(`💬 ${data?.name || 'A listener'}: ${String(data?.message || '').slice(0, 140)}`, { autoClose: 7000, toastId: entry.id });
 		}
 	}
 
@@ -1344,7 +1349,8 @@ const useSocketTest = (setSongPlaying, songPlaying, selectPlayListSong, selected
 		if (nextSong) {
 			nextSongRef.current = nextSong;
 		}
-		nextSongRef.current.user = user;
+		// Only the DJ's name travels with the song (payload reaches every listener).
+		nextSongRef.current.user = user ? { _id: user._id, name: user.name, avatar: user.avatar } : undefined;
 
 		socketRef.current?.emit('next-song', {
 			roomId: testRoomId,
@@ -1514,9 +1520,84 @@ const useSocketTest = (setSongPlaying, songPlaying, selectPlayListSong, selected
 	}
 
 
+	// Why getUserMedia failed, in words the DJ can act on.
+	function micErrorMessage(err) {
+		const name = err?.name || '';
+		if (name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError') {
+			return 'Microphone permission was not given. Click the lock (or camera/mic) icon in the browser address bar, allow the microphone, then press the mic button here.';
+		}
+		if (name === 'NotFoundError' || name === 'DevicesNotFoundError') return 'No microphone was found on this device. Plug one in (or check your headset), then press the mic button.';
+		if (name === 'NotReadableError' || name === 'TrackStartError' || name === 'AbortError') return 'The microphone is busy or not working (another app may be using it). Close other apps using the mic, then press the mic button.';
+		if (name === 'OverconstrainedError') return 'The microphone does not support the requested settings. Try a different microphone.';
+		return `Microphone could not be started (${err?.message || name || 'unknown error'}). Press the mic button to try again.`;
+	}
+
+	async function requestMic() {
+		if (!navigator?.mediaDevices?.getUserMedia) {
+			return { stream: null, error: 'This browser cannot access the microphone (needs https and a modern browser).' };
+		}
+		try {
+			const stream = await navigator.mediaDevices.getUserMedia({
+				audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1, latency: 0 },
+			});
+			return { stream, error: null };
+		} catch (err) {
+			console.warn('getUserMedia failed:', err?.name, err?.message);
+			return { stream: null, error: micErrorMessage(err) };
+		}
+	}
+
+	// Wire a microphone stream into voice detection, the mic gain bus, the
+	// recording and the LiveKit publication. Used at Go Live and when the DJ
+	// turns the mic on later (e.g. after granting permission).
+	function attachMic(stream) {
+		try { speechEventsRef.current?.stop(); } catch (e) { /* none */ }
+		speechEventsRef.current = hark(stream, { threshold: -50 });
+		speechEventsRef.current.on('speaking', () => {
+			setVoiceComing(true);
+		});
+		speechEventsRef.current.on('stopped_speaking', () => {
+			setVoiceComing(false);
+		});
+
+		micStreamRef.current = stream;
+		const audioContext = createLowLatencyContext();
+		micAudioContextRef.current = audioContext;
+		const mic = audioContext.createMediaStreamSource(stream);
+		const dest = audioContext.createMediaStreamDestination();
+		const micGainNode = audioContext.createGain();
+		mic.connect(micGainNode);
+		micGainNode.connect(dest);
+		micGainNode.gain.value = Number(micVolume);
+		micGainNodeRef.current = micGainNode;
+		localStreamRef.current = dest.stream;
+		feedRecorder('mic', dest.stream);
+
+		const micTrack = dest.stream.getTracks().find((track) => track.kind === 'audio');
+		combinedStreamRef.current = dest.stream;
+		try { recordMediaRef.current?.addTrack(micTrack); } catch (e) { /* recorder not ready */ }
+
+		const lp = roomRef.current?.localParticipant;
+		if (lp && micTrack) {
+			lp.publishTrack(micTrack, { ...MIC_PUBLISH_OPTIONS, source: Track.Source.Microphone })
+				.catch((err) => {
+					console.error('mic publish failed:', err);
+					setMicNotice(`Microphone could not be sent to listeners (${err?.message || err}). Press the mic button to try again.`);
+				});
+		}
+		setMicOn(true);
+		setMicNotice('');
+	}
+
 	const SwitchOn = async () => {
-
-
+		if (!localStreamRef.current) {
+			// The show started without a microphone (permission refused, no device, busy). Try again now.
+			if (!showLiveRef.current) { toast.info('Press the power button to start first.'); return; }
+			const { stream, error } = await requestMic();
+			if (!stream) { setMicNotice(error); toast.error(error, { autoClose: 12000 }); return; }
+			attachMic(stream);
+			return;
+		}
 		if (micOn) {
 			localStreamRef.current.getTracks().forEach(track => track.enabled = false);
 			setMicOn(false);
@@ -1742,70 +1823,17 @@ const useSocketTest = (setSongPlaying, songPlaying, selectPlayListSong, selected
 		}
 
 		socketRef.current.emit('owner-join', { user: userTemp });
-		// localStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
-		const stream = await navigator.mediaDevices.getUserMedia({
-			audio: {
-				echoCancellation: true,
-				noiseSuppression: true,
-				autoGainControl: true,
-				channelCount: 1,
-				latency: 0,
-			},
-		});
-		
-
-
-		//when user speack
-		speechEventsRef.current = hark(stream, { threshold: -50 });
-
-		speechEventsRef.current.on('speaking', () => {
-			console.log("🎤 User is speaking...");
-			setVoiceComing(true);
-		});
-
-		speechEventsRef.current.on('stopped_speaking', () => {
-			console.log("🤫 User stopped speaking...");
-			setVoiceComing(false);
-		});
-
-
-		micStreamRef.current = stream;
-		setMicOn(true);
+		const { stream, error: micError } = await requestMic();
 		showLiveRef.current = true;
-
-		const audioContext = createLowLatencyContext();
-		micAudioContextRef.current = audioContext;
-		const mic = audioContext.createMediaStreamSource(stream);
-		const dest = audioContext.createMediaStreamDestination();
-		const micGainNode = audioContext.createGain();
-
-
-
-		mic.connect(micGainNode);
-		micGainNode.connect(dest);
-		micGainNode.gain.value = micVolume;
-		micGainNodeRef.current = micGainNode;
-		localStreamRef.current = dest.stream;
-		feedRecorder('mic', dest.stream);
-
-
-
-		// recording 
-		// combinedStreamRef.current = localStreamRef.current.getTracks().find((track) => track.kind === 'audio')
-		combinedStreamRef.current = localStreamRef.current
-		recordMediaRef.current.addTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'));
-
-		
-
-		//publishing the stream
-		roomRef.current.localParticipant.publishTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'),{
-			...MIC_PUBLISH_OPTIONS,
-			source: Track.Source.Microphone
-		});
-
-
-
-
+		if (!stream) {
+			// The show goes on without a microphone (songs still reach listeners);
+			// the DJ is told exactly why and can press the mic button once it is allowed.
+			setMicOn(false);
+			setMicNotice(micError);
+			toast.error(micError, { autoClose: 12000 });
+		} else {
+			attachMic(stream);
+		}
 
 		//deteting the audio
 		// const analyser = audioContext.createAnalyser();
@@ -1900,7 +1928,8 @@ const useSocketTest = (setSongPlaying, songPlaying, selectPlayListSong, selected
 	}
 
 	function handleSendMessage() {
-		if (message) {
+		// `message` did not exist in this scope (the prop is chatMessage): Send threw a ReferenceError.
+		if (chatMessage && String(chatMessage).trim()) {
 			socketRef.current?.emit('send-message', { message: chatMessage, roomId: testRoomId, name: user?.name || 'owner', isOwner: true });
 			setChatMessage('');
 		}
@@ -1932,7 +1961,7 @@ const useSocketTest = (setSongPlaying, songPlaying, selectPlayListSong, selected
 
 
 
-	return { socketRef, ownerJoin, ownerLeft, micOn, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef: newUser, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef: mediaRecorderRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong }
+	return { socketRef, ownerJoin, ownerLeft, micOn, micNotice, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef: newUser, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef: mediaRecorderRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong }
 }
 
 export default useSocketTest;

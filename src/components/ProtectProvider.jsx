@@ -8,8 +8,10 @@ const ProtectProvider = ({children}) => {
     console.info('user',user,'isAuth',isAuth);
     useLayoutEffect(() => {
         if(isAuth == false){
-           // window.location.pathname = '/login';
-            redirect('/login');
+           // Back to the login page this browser last used (admin or DJ).
+            let loginPath = '/login';
+            try { if (localStorage.getItem('hg_login_path') === '/admin/login') loginPath = '/admin/login'; } catch { }
+            redirect(loginPath);
         }else if (user && user?.isSubscriber === false){
             // window.location.pathname = '/subscribe';
             redirect('/subscribe');

@@ -1,10 +1,11 @@
 import connectDB from "@/db/connectDB";
 import { NextResponse } from "next/server";
 import userModel from "@/models/user";
-import { readPendingLogin, sendLoginOtp } from "@/utils/loginSession";
+import { readPendingLogin, sendLoginOtp, setPendingLogin } from "@/utils/loginSession";
 
-// "Email me a code instead": for a user with the authenticator app turned on
-// who does not have their phone. Only works after the password step.
+// Sends a new emailed login code. Used by "Resend code" on the OTP page and by
+// "Email me a code instead" for an authenticator-app user without their phone.
+// Only works after the password step. The new code replaces the old one.
 export const POST = connectDB(async function (req) {
     try {
         const pendingId = readPendingLogin(req);
@@ -14,7 +15,10 @@ export const POST = connectDB(async function (req) {
         if (!user) throw new Error("Your login expired. Please enter your email and password again.");
 
         await sendLoginOtp(user);
-        return NextResponse.json({ success: true, message: 'OTP send to your email' }, { status: 200 });
+        const res = NextResponse.json({ success: true, message: 'A new code was sent to your email' }, { status: 200 });
+        // Restart the 10-minute window so the new code has its full time.
+        setPendingLogin(res, user._id);
+        return res;
     } catch (err) {
         return NextResponse.json({ success: false, message: err.message || 'Internal Seerver Error' }, { status: 401 });
     }

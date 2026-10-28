@@ -5,7 +5,7 @@ import { sendLoginOtp, setPendingLogin } from "@/utils/loginSession";
 
 export const POST = connectDB(async function (req) {
     try {
-        const { email, password } = await req.json();
+        const { email, password, as } = await req.json();
 
 
         if (!email || !password) return NextResponse.json({ success: false, message: 'all fields are requiree' }, { status: 401 });
@@ -17,6 +17,15 @@ export const POST = connectDB(async function (req) {
         const isMatch = await user.comparePass(password);
 
         if (!isMatch) return NextResponse.json({ success: false, message: 'invalid details' }, { status: 401 });
+
+        // The admin and the DJs have separate login pages. A request without
+        // `as` (an old open tab) is still accepted.
+        if (as === 'dj' && !user.isDJ) {
+            return NextResponse.json({ success: false, message: 'This is the DJ login. Admins sign in at /admin/login.' }, { status: 403 });
+        }
+        if (as === 'admin' && user.isDJ) {
+            return NextResponse.json({ success: false, message: 'This is the admin login. DJs sign in at /login.' }, { status: 403 });
+        }
 
         // Authenticator app turned on: ask for its code, send no email.
         // An old emailed code must not work in its place.

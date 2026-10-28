@@ -6,6 +6,9 @@ import { useSelector, useDispatch } from 'react-redux';
 import { redirect } from 'next/navigation';
 import { showMessage, showError, clearMessage, clearError } from '@/utils/showAlert';
 
+// Wait between "Resend code" presses.
+const RESEND_SECONDS = 30;
+
 const Page = () => {
   const [OTP, setOTP] = useState(new Array(6).fill(''));
   const [loading, setLoading] = useState(false);
@@ -15,6 +18,15 @@ const Page = () => {
   // 'email' = code sent by email, 'app' = code from the authenticator app.
   const [method, setMethod] = useState('email');
   const [sendingEmail, setSendingEmail] = useState(false);
+  // Seconds until "Resend code" can be pressed again. The first code was just
+  // sent by the password step, so it starts counting from there.
+  const [resendIn, setResendIn] = useState(RESEND_SECONDS);
+
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendIn]);
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('method') === 'app') {
@@ -24,7 +36,6 @@ const Page = () => {
 
   const clearInputs = () => {
     setOTP(new Array(6).fill(''));
-    inputsRef.current.forEach((el) => { if (el) el.value = ''; });
     inputsRef.current[0]?.focus();
   };
 
@@ -34,6 +45,7 @@ const Page = () => {
       const { data } = await axios.post('/api/v1/login/email-code');
       setMethod('email');
       clearInputs();
+      setResendIn(RESEND_SECONDS);
       await dispatch(showMessage(data.message));
       await dispatch(clearMessage());
     } catch (error) {
@@ -43,37 +55,86 @@ const Page = () => {
     setSendingEmail(false);
   };
 
-  const handleInput = (e, index) => {
-    const value = e.target.value.replace(/\D/, '');
-    const newOTP = [...OTP];
+  // The boxes are controlled by OTP state. They used to keep their own value
+  // (defaultValue), so after a wrong digit the box and the state disagreed:
+  // Backspace moved focus before deleting, and a filled box (maxLength 1)
+  // refused a new digit. A wrong code could only be fixed by reloading.
+  const setDigits = (startIndex, digits) => {
+    const next = [...OTP];
+    let i = startIndex;
+    for (const d of digits) {
+      if (i > 5) break;
+      next[i] = d;
+      i += 1;
+    }
+    setOTP(next);
+    inputsRef.current[Math.min(i, 5)]?.focus();
+  };
 
+  const handleChange = (e, index) => {
+    const digits = e.target.value.replace(/\D/g, '');
+    if (!digits) {
+      const next = [...OTP];
+      next[index] = '';
+      setOTP(next);
+      return;
+    }
+    // Typing into a filled box replaces its digit (the new one is the last
+    // character); several digits at once (autofill) spread across the boxes.
+    if (digits.length === 2 && OTP[index]) setDigits(index, digits.slice(-1));
+    else setDigits(index, digits);
+  };
+
+  const handleKeyDown = (e, index) => {
     if (e.key === 'Backspace') {
-      newOTP[index] = '';
-      setOTP(newOTP);
-      if (index > 0) {
+      e.preventDefault();
+      const next = [...OTP];
+      if (next[index]) {
+        next[index] = '';
+        setOTP(next);
+      } else if (index > 0) {
+        next[index - 1] = '';
+        setOTP(next);
         inputsRef.current[index - 1]?.focus();
       }
-    } else if (value) {
-      newOTP[index] = value;
-      setOTP(newOTP);
-      if (index < 5) {
-        inputsRef.current[index + 1]?.focus();
-      }
+    } else if (e.key === 'Delete') {
+      e.preventDefault();
+      const next = [...OTP];
+      next[index] = '';
+      setOTP(next);
+    } else if (e.key === 'ArrowLeft' && index > 0) {
+      e.preventDefault();
+      inputsRef.current[index - 1]?.focus();
+    } else if (e.key === 'ArrowRight' && index < 5) {
+      e.preventDefault();
+      inputsRef.current[index + 1]?.focus();
     }
   };
 
   const handlePaste = (e) => {
     const paste = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    if (paste.length === 6) {
-      const newOTP = paste.split('');
-      setOTP(newOTP);
-      newOTP.forEach((_, i) => {
-        if (inputsRef.current[i]) {
-          inputsRef.current[i].value = newOTP[i];
-        }
-      });
-      inputsRef.current[5]?.focus();
+    if (!paste) return;
+    e.preventDefault();
+    const next = new Array(6).fill('');
+    paste.split('').forEach((d, i) => { next[i] = d; });
+    setOTP(next);
+    inputsRef.current[Math.min(paste.length, 5)]?.focus();
+  };
+
+  const handleResend = async () => {
+    if (resendIn > 0 || sendingEmail) return;
+    setSendingEmail(true);
+    try {
+      const { data } = await axios.post('/api/v1/login/email-code');
+      clearInputs();
+      setResendIn(RESEND_SECONDS);
+      await dispatch(showMessage(data.message));
+      await dispatch(clearMessage());
+    } catch (error) {
+      await dispatch(showError(error.response?.data?.message || error.message));
+      await dispatch(clearError());
     }
+    setSendingEmail(false);
   };
 
   const handleSubmit = async (e) => {
@@ -92,9 +153,10 @@ const Page = () => {
       await dispatch(showMessage(data.message));
       await dispatch(clearMessage());
     } catch (error) {
-      await dispatch(showError(error.response.data.message));
+      await dispatch(showError(error.response?.data?.message || error.message));
       await dispatch(clearError());
-      console.log(error.response.data.message);
+      // Wrong code: empty the boxes so it can be typed again straight away.
+      clearInputs();
     }
     setLoading(false);
   };
@@ -146,11 +208,13 @@ const Page = () => {
                     key={index}
                     type='text'
                     inputMode='numeric'
-                    maxLength={1}
-                    defaultValue={digit}
+                    autoComplete={index === 0 ? 'one-time-code' : 'off'}
+                    aria-label={`Digit ${index + 1}`}
+                    value={digit}
                     ref={(el) => (inputsRef.current[index] = el)}
-                    onChange={(e) => handleInput(e, index)}
-                    onKeyDown={(e) => handleInput(e, index)}
+                    onChange={(e) => handleChange(e, index)}
+                    onKeyDown={(e) => handleKeyDown(e, index)}
+                    onFocus={(e) => e.target.select()}
                     className='w-12 h-12 text-center text-xl border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500'
                   />
                 ))}
@@ -165,6 +229,26 @@ const Page = () => {
               >
                 {!loading ? 'Verify' : 'Loading...'}
               </button>
+            </div>
+
+            <div className='flex justify-center items-center gap-4 mt-4 text-sm'>
+              <button
+                type='button'
+                onClick={clearInputs}
+                className='text-gray-600 hover:underline'
+              >
+                Clear
+              </button>
+              {method === 'email' && (
+                <button
+                  type='button'
+                  onClick={handleResend}
+                  disabled={resendIn > 0 || sendingEmail}
+                  className='text-blue-600 hover:underline disabled:text-gray-400 disabled:no-underline'
+                >
+                  {sendingEmail ? 'Sending…' : resendIn > 0 ? `Resend code in ${resendIn}s` : 'Resend code'}
+                </button>
+              )}
             </div>
 
             {method === 'app' && (

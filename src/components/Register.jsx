@@ -151,7 +151,7 @@ const Register = ({SelectedPlan,setCname}) => {
                     }
 
                     <div className='input-group flex items-center justify-between mb-6'>
-                        <p className='text-lg text-black'>If you {`already`} have account <Link className='text-indigo-500 hover:underline' href={'/login'}>Sign In</Link></p>  
+                        <p className='text-lg text-black'>If you {`already`} have account <Link className='text-indigo-500 hover:underline' href={'/admin/login'}>Sign In</Link></p>  
                     </div>
                     
                     <div className='flex justify-center items-center'>

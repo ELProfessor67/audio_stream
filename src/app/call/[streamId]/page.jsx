@@ -215,23 +215,26 @@ export default function page() {
 		}
 	}, [isLive])
 
+	// A call that was in progress when the show ended never got 'admin-call-cut',
+	// so the caller sat on "Calling..." / the timer with no way back. Treat the
+	// DJ going off air as the end of the call.
+	const callStatusRef = useRef(callStatus);
+	callStatusRef.current = callStatus;
+	useEffect(() => {
+		if (isLive) return;
+		const s = callStatusRef.current;
+		if (s === 'processing' || s === 'accepted') setCallStatus('complete');
+	}, [isLive]);
+
+	// Call over: go straight back to the station website. The client asked for
+	// no wait here (it used to count down 5 s first). The app's Call screen
+	// watches for this navigation and returns the listener to the radio.
 	useEffect(() => {
 		if (callStatus === 'complete') {
-			setRedirectCountdown(5);
+			setRedirectCountdown(0);
+			window.location.replace('https://hgcradio.org/');
 		}
 	}, [callStatus]);
-
-	useEffect(() => {
-		if (redirectCountdown === null) return;
-		if (redirectCountdown === 0) {
-			window.location.href = 'https://hgcradio.org/';
-			return;
-		}
-		const timer = setTimeout(() => {
-			setRedirectCountdown(prev => prev - 1);
-		}, 1000);
-		return () => clearTimeout(timer);
-	}, [redirectCountdown]);
 
 	return (
 		<section className="flex justify-center items-center h-[100vh] w-full px-4 bg-[#1a1d22]">
@@ -387,7 +390,7 @@ export default function page() {
 						callStatus == 'complete' &&
 						<div className='flex flex-col items-center gap-1'>
 							<h3 className='text-lg text-white'>Call Complete</h3>
-							<p className='text-sm text-white/70'>Redirecting in <span className='text-white font-bold'>{redirectCountdown}s</span>...</p>
+							<p className='text-sm text-white/70'>Returning to HGC Radio...</p>
 						</div>
 					}
 					{

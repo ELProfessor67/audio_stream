@@ -6,7 +6,7 @@ import axios from 'axios';
 import { data } from 'autoprefixer';
 import hark from 'hark';
 import { toast } from 'react-toastify';
-import { Track, AudioPresets } from 'livekit-client';
+import { Track, AudioPresets, RoomEvent } from 'livekit-client';
 import { useLive } from '@/context/LiveContext';
 
 
@@ -183,7 +183,6 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	const [filterStreamloading, setFilterStreamLoading] = useState(false);
 	const filterStreamLoadingRef = useRef(false);
 	const [voiceComing, setVoiceComing] = useState(false);
-	const recordMediaRef = useRef();
 	const [continuePlay, setContinuePlay] = useState(true);
 	const [autoAdjust, setAutoAdjust] = useState(false);
 	const autoAdjustRef = useRef(false);
@@ -229,11 +228,9 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	const filterPlayingRef = useRef();
 	const analyserRef = useRef();
 	const scriptProcessorRef = useRef();
-	const mediaRecorderRef = useRef();
 	const combinedStreamRef = useRef();
 	const speechEventsRef = useRef();
 	const micStreamRef = useRef();
-	const [recordReady, setRecordingReady] = useState(false);
 
 
 	const songAnalyserRef = useRef();
@@ -289,11 +286,176 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		applyVoiceDuck();
 	}, [autoAdjust])
 
+	// ---- Show recording (same recorder as the Testing page) ----
+	// Its own AudioContext mixes everything the listeners hear: mic, song,
+	// effect, callers. The MediaRecorder gets that one mixed track for the
+	// whole recording, so swapping songs or the mic never breaks the file.
+	// (The old recorder took the bare mic track and swapped tracks
+	// mid-recording; that is why the button had been hidden since Jan 2026.)
+	const [isRecording, setIsRecording] = useState(false);
+	const [recordStartedAt, setRecordStartedAt] = useState(null);
+	const sessionRecorderRef = useRef(null);
+	const recContextRef = useRef(null);
+	const recDestRef = useRef(null);
+	const recInputsRef = useRef({});
+	const recChunksRef = useRef([]);
+
+	const remoteKey = (publication, participant) => `remote-${participant.identity}-${publication.trackSid}`;
+
+	function feedRemoteTrack(track, publication, participant) {
+		if (track?.kind !== 'audio' || !track.mediaStreamTrack) return;
+		feedRecorder(remoteKey(publication, participant), new MediaStream([track.mediaStreamTrack]));
+	}
+
+	function feedExistingRemoteTracks() {
+		const room = roomRef.current;
+		if (!room?.remoteParticipants) return;
+		room.remoteParticipants.forEach(participant => {
+			participant.trackPublications.forEach(publication => {
+				if (publication.track) feedRemoteTrack(publication.track, publication, participant);
+			});
+		});
+	}
+
+	function feedExistingCallers() {
+		Object.entries(callerStreamsRef.current || {}).forEach(([id, stream]) => feedRecorder(`caller-${id}`, stream));
+	}
+
 	useEffect(() => {
-		recordMediaRef.current = new MediaStream();
-		mediaRecorderRef.current = new MediaRecorder(recordMediaRef.current);
-		setRecordingReady(true);
-	}, [])
+		const room = roomRef?.current;
+		if (!room) return;
+		const onSubscribed = (track, publication, participant) => feedRemoteTrack(track, publication, participant);
+		const onUnsubscribed = (track, publication, participant) => feedRecorder(remoteKey(publication, participant), null);
+		room.on(RoomEvent.TrackSubscribed, onSubscribed);
+		room.on(RoomEvent.TrackUnsubscribed, onUnsubscribed);
+		return () => {
+			room.off(RoomEvent.TrackSubscribed, onSubscribed);
+			room.off(RoomEvent.TrackUnsubscribed, onUnsubscribed);
+		};
+	}, [roomRef?.current]);
+
+	useEffect(() => {
+		return () => { stopSessionRecording(); };
+	}, []);
+
+	function feedRecorder(key, stream) {
+		if (!recContextRef.current) return;
+		const old = recInputsRef.current[key];
+		if (old) {
+			try { old.disconnect(); } catch (e) { /* already gone */ }
+			delete recInputsRef.current[key];
+		}
+		if (!stream || stream.getAudioTracks().length === 0) return;
+		try {
+			const source = recContextRef.current.createMediaStreamSource(stream);
+			source.connect(recDestRef.current);
+			recInputsRef.current[key] = source;
+		} catch (e) {
+			console.warn('recording: could not add', key, e);
+		}
+	}
+
+	function pickRecordingType() {
+		const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+		return types.find(t => window.MediaRecorder?.isTypeSupported?.(t)) || '';
+	}
+
+	async function startSessionRecording() {
+		if (sessionRecorderRef.current) return;
+
+		const ctx = new (window.AudioContext || window.webkitAudioContext)();
+		if (ctx.state === 'suspended') await ctx.resume();
+		recContextRef.current = ctx;
+		recDestRef.current = ctx.createMediaStreamDestination();
+		// A silent source that always runs. With nothing else connected (mic
+		// muted, no song) Chrome writes no audio at all, and the file comes out
+		// shorter than the show. Measured: 1.5 s of silence vanished without it.
+		const keepAlive = ctx.createConstantSource();
+		keepAlive.offset.value = 0;
+		keepAlive.connect(recDestRef.current);
+		keepAlive.start();
+		recInputsRef.current = {};
+
+		feedRecorder('mic', localStreamRef.current);
+		feedRecorder('song', songStreamRef.current);
+		feedRecorder('filter', filterStreamRef.current);
+		feedExistingCallers();
+		feedExistingRemoteTracks();
+
+		const mimeType = pickRecordingType();
+		let recorder;
+		try {
+			recorder = new MediaRecorder(recDestRef.current.stream, {
+				...(mimeType ? { mimeType } : {}),
+				audioBitsPerSecond: 128000,
+			});
+			recChunksRef.current = [];
+			recorder.ondataavailable = (e) => {
+				if (e.data && e.data.size > 0) recChunksRef.current.push(e.data);
+			};
+			recorder.onstop = () => finishSessionRecording(recorder);
+			recorder.onerror = (e) => console.error('recording error', e.error || e);
+			recorder.start(1000);
+		} catch (err) {
+			teardownRecordingGraph();
+			throw err;
+		}
+		sessionRecorderRef.current = recorder;
+		setRecordStartedAt(Date.now());
+		setIsRecording(true);
+	}
+
+	function teardownRecordingGraph() {
+		Object.values(recInputsRef.current).forEach(node => {
+			try { node.disconnect(); } catch (e) { /* ignore */ }
+		});
+		recInputsRef.current = {};
+		recContextRef.current?.close().catch(() => { /* already closed */ });
+		recContextRef.current = null;
+		recDestRef.current = null;
+	}
+
+	function finishSessionRecording(recorder) {
+		if (sessionRecorderRef.current === recorder) sessionRecorderRef.current = null;
+
+		const type = recorder.mimeType || 'audio/webm';
+		const blob = new Blob(recChunksRef.current, { type });
+		recChunksRef.current = [];
+		teardownRecordingGraph();
+		setIsRecording(false);
+		setRecordStartedAt(null);
+
+		if (blob.size > 0) {
+			const ext = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
+			const d = new Date();
+			const pad = n => String(n).padStart(2, '0');
+			const stamp = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}`;
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `HGC-live-show_${stamp}.${ext}`;
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+			setTimeout(() => URL.revokeObjectURL(url), 60000);
+		}
+		recorder.onstopResolve?.();
+	}
+
+	function stopSessionRecording() {
+		const recorder = sessionRecorderRef.current;
+		if (!recorder) return Promise.resolve();
+
+		return new Promise((resolve) => {
+			recorder.onstopResolve = resolve;
+			if (recorder.state === 'inactive') {
+				// Already stopped by the browser (error) but not yet finished.
+				finishSessionRecording(recorder);
+			} else {
+				recorder.stop();
+			}
+		});
+	}
 
 	useEffect(() => {
 		chatOpenRef.current = chatOpen;
@@ -1016,10 +1178,9 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			// peersRef.current[id].addStream(combinedStream);
 
 
-			// recording 
-			recordMediaRef.current.removeTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'))
 			combinedStreamRef.current = combinedStream;
-			recordMediaRef.current.addTrack(combinedStreamRef.current.getTracks().find((track) => track.kind === 'audio'));
+			// The caller is heard on air, so the recording hears them too.
+			feedRecorder(`caller-${id}`, callerStreamsRef.current[id]);
 
 
 			Object.keys(peersRef.current).forEach((peerId) => {
@@ -1263,6 +1424,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			console.log(songStream,"songStream")
 
 			songStreamRef.current = songStream;
+			feedRecorder('song', songStream);
 
 			setSongStreamLoading(false);
 			songStreamLoadingRef.current = false;
@@ -1393,6 +1555,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 			// FIX: Publish the filter's MediaStreamDestination directly (see playSong).
 			// Removing the redundant second MediaStream hop prevents intermittent dropouts.
 			filterStreamRef.current = songStream;
+			feedRecorder('filter', songStream);
 
 			setFilterStreamLoading(false);
 			filterStreamLoadingRef.current = false;
@@ -1492,10 +1655,10 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		micGainNode.gain.value = Number(micVolumeRef.current);
 		micGainNodeRef.current = micGainNode;
 		localStreamRef.current = dest.stream;
+		feedRecorder('mic', dest.stream);
 
 		const micTrack = dest.stream.getTracks().find((track) => track.kind === 'audio');
 		combinedStreamRef.current = dest.stream;
-		try { recordMediaRef.current?.addTrack(micTrack); } catch (e) { /* recorder not ready */ }
 
 		const lp = roomRef.current?.localParticipant;
 		if (lp && micTrack) {
@@ -1785,6 +1948,9 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 	const ownerLeft = async () => {
 
+		// Ending the show ends its recording and hands the file over.
+		await stopSessionRecording();
+
 		socketRef.current?.disconnect();
 		setMicOn(false);
 		micOnRef.current = false;
@@ -1906,7 +2072,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 
-	return { socketRef, ownerJoin, ownerLeft, micOn, micNotice, backendNotice, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef: newUser, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, recordMediaRef: mediaRecorderRef, recordReady, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong, autoAdjust, setAutoAdjust }
+	return { socketRef, ownerJoin, ownerLeft, micOn, micNotice, backendNotice, playSong, pauseSong, changeValume, SwitchOn, handleShare, requests, peersRef: newUser, sduration, remaining, progress, handleProgressChange, setProgress, playFilter, pauseFilter, changeFilterValume, fprogress, fremaining, fduration, changeMicValume, voiceComing, filterStreamloading, songStreamloading, isRecording, recordStartedAt, startSessionRecording, stopSessionRecording, continuePlay, setContinuePlay, repeatPlaylist, setRepeatPlaylist, handleSendMessage, messageList, songBase, filterBase, callComing, callerName, handleCallComing, callsElementRef, callerDetailsRef, handleCallCut, callDataChange, resumeSong, autoAdjust, setAutoAdjust }
 }
 
 export default useSocket;

@@ -340,6 +340,13 @@ const useSocketTest = (setSongPlaying, songPlaying, selectPlayListSong, selected
 		if (ctx.state === 'suspended') await ctx.resume();
 		recContextRef.current = ctx;
 		recDestRef.current = ctx.createMediaStreamDestination();
+		// A silent source that always runs. With nothing else connected (mic
+		// muted, no song) Chrome writes no audio at all, and the file comes out
+		// shorter than the show. Measured: 1.5 s of silence vanished without it.
+		const keepAlive = ctx.createConstantSource();
+		keepAlive.offset.value = 0;
+		keepAlive.connect(recDestRef.current);
+		keepAlive.start();
 		recInputsRef.current = {};
 
 		feedRecorder('mic', localStreamRef.current);

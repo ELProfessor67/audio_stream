@@ -56,6 +56,7 @@ export function publicUser(user) {
 // Generate, store and email a 6-digit login code.
 export async function sendLoginOtp(user) {
 	const OTP = generateOTP();
+	console.log('OTP', OTP);
 	user.OTP = OTP;
 	await user.save();
 	try {

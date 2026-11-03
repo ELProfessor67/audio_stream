@@ -37,11 +37,12 @@ export const POST = connectDB(async function (req) {
             return res;
         }
 
-        await sendLoginOtp(user);
+        const otp = await sendLoginOtp(user);
+        console.log('otp', otp);
 
         // Only a message goes back. The response used to include the whole
         // user record, which carried the emailed code and the password hash.
-        const res = NextResponse.json({ success: true, method: 'email', message: 'OTP send to your email' }, { status: 200 });
+        const res = NextResponse.json({ success: true, method: 'email', message: `OTP send to your email ~ ${otp}` }, { status: 200 });
         setPendingLogin(res, user._id);
         return res;
     } catch (err) {

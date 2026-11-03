@@ -70,5 +70,4 @@ export async function sendLoginOtp(user) {
 	} catch (err) {
 		console.error('Login OTP email failed:', err.response?.data || err.message);
 	}
-	return OTP;
 }

@@ -1,40 +1,17 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import { IoMdClose } from 'react-icons/io';
+import ScrollToBottom from 'react-scroll-to-bottom';
 
 // Live chat panel for the DJ (go-live, testing) and callers.
-//
-// The message list used to be react-scroll-to-bottom, which relies on
-// defaultProps; React 19 ignores those, so its scroller threw
-// ("scroller is not a function") and the chat stopped following new
-// messages. This is a plain list that scrolls itself: it sticks to the
-// bottom while the reader is at the bottom and stays put while they are
-// reading older messages.
+// scroller is passed explicitly: the library's default lives on defaultProps,
+// which React 19 does not apply ("scroller is not a function").
+// Infinity is the library's own default and keeps the view stuck to the newest message.
 export default function ChatBox({ open, onClose, children, setName, name, message, setMessage, handleSendMessage }) {
-    const listRef = useRef(null);
-    const stickToBottomRef = useRef(true);
     const inputRef = useRef(null);
 
-    const onScroll = () => {
-        const el = listRef.current;
-        if (!el) return;
-        stickToBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-    };
-
-    // New message (children changed): follow the bottom only while the reader
-    // is already there. Someone scrolled up reading older messages stays put.
-    useEffect(() => {
-        const el = listRef.current;
-        if (!el) return;
-        if (stickToBottomRef.current) el.scrollTop = el.scrollHeight;
-    }, [children]);
-
-    // Just opened: start at the newest message with the input focused.
     useEffect(() => {
         if (!open) return;
-        stickToBottomRef.current = true;
-        const el = listRef.current;
-        if (el) el.scrollTop = el.scrollHeight;
         const t = setTimeout(() => inputRef.current?.focus(), 50);
         return () => clearTimeout(t);
     }, [open]);
@@ -42,7 +19,6 @@ export default function ChatBox({ open, onClose, children, setName, name, messag
     const send = () => {
         if (!message || !String(message).trim()) return;
         handleSendMessage();
-        stickToBottomRef.current = true;
     };
 
     const onKeyDown = (e) => {
@@ -83,12 +59,21 @@ export default function ChatBox({ open, onClose, children, setName, name, messag
                     </button>
                 </div>
 
-                <div ref={listRef} onScroll={onScroll} className="flex-1 overflow-y-auto px-2 py-3 bg-gray-50">
-                    {
-                        (!children || (Array.isArray(children) && children.length === 0)) &&
-                        <p className="text-center text-sm text-gray-400 mt-10">No messages yet. Listeners' messages appear here.</p>
-                    }
-                    {children}
+                <div className="flex-1 min-h-0 overflow-hidden bg-gray-50">
+                    <ScrollToBottom
+                        className="w-full h-full"
+                        scrollViewClassName="px-2 py-3"
+                        mode="bottom"
+                        initialScrollBehavior="auto"
+                        scroller={() => Infinity}
+                        followButtonClassName="hidden"
+                    >
+                        {
+                            (!children || (Array.isArray(children) && children.length === 0)) &&
+                            <p className="text-center text-sm text-gray-400 mt-10">No messages yet. Listeners' messages appear here.</p>
+                        }
+                        {children}
+                    </ScrollToBottom>
                 </div>
 
                 <div className="flex gap-2 items-center p-3 border-t border-gray-200">

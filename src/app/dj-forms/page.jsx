@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useSelector, useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { showMessage, showError, clearMessage, clearError } from '@/utils/showAlert';
+import { loadme } from '@/redux/action/user';
 
 const cloudName = "dclbdddu7";
 const cloudinaryApi = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
@@ -146,7 +147,10 @@ const DJFormsPage = () => {
             });
 
             setShowSuccessPopup(true);
-            setTimeout(() => {
+            setTimeout(async () => {
+                // Dashboard refuses entry until the loaded account shows the
+                // submitted form. Refresh used to be the only way that updated.
+                await dispatch(loadme());
                 router.push('/dashboard');
             }, 3000);
         } catch (error) {

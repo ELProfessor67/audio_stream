@@ -80,7 +80,6 @@ const DJFormsPage = () => {
         e.preventDefault();
         isDrawingRef.current = true;
         lastPointRef.current = getPoint(e);
-        setHasDrawn(true);
     }, [getPoint]);
 
     const draw = useCallback((e) => {
@@ -94,6 +93,7 @@ const DJFormsPage = () => {
         ctx.lineTo(currentPoint.x, currentPoint.y);
         ctx.stroke();
         lastPointRef.current = currentPoint;
+        setHasDrawn(true);
     }, [getPoint]);
 
     const stopDrawing = useCallback((e) => {
@@ -579,19 +579,19 @@ const DJFormsPage = () => {
                             <button
                                 type="button"
                                 onClick={handleSubmit}
-                                disabled={loading}
+                                disabled={loading || !contractorName.trim() || !hasDrawn}
                                 style={{
                                     padding: '14px 56px',
                                     fontSize: '16px',
                                     fontWeight: '700',
                                     fontFamily: "'Inter', sans-serif",
                                     color: '#ffffff',
-                                    background: loading
+                                    background: (loading || !contractorName.trim() || !hasDrawn)
                                         ? '#94a3b8'
                                         : 'linear-gradient(135deg, #4338ca, #6366f1)',
                                     border: 'none',
                                     borderRadius: '12px',
-                                    cursor: loading ? 'not-allowed' : 'pointer',
+                                    cursor: (loading || !contractorName.trim() || !hasDrawn) ? 'not-allowed' : 'pointer',
                                     transition: 'all 0.3s ease',
                                     boxShadow: loading
                                         ? 'none'

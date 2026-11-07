@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import userModel from "@/models/user";
 import { auth } from "@/middleswares/auth";
 import axios from "axios";
+import djFormsModels from "@/models/djForms";
 
 
 export const POST = connectDB(auth(async function (req) {
@@ -90,6 +91,11 @@ export const DELETE = connectDB(auth(async function (req) {
         }
 
         await userModel.findByIdAndDelete(id);
+        await Promise.all([
+            djFormsModels.ContractAgreement.deleteMany({ user: id }),
+            djFormsModels.VolunteerForm.deleteMany({ user: id }),
+            djFormsModels.ExecutiveLegalForm.deleteMany({ user: id }),
+        ]);
         return NextResponse.json({ success: true });
     } catch (err) {
         return NextResponse.json({ success: false, message: err.message }, { status: 501 });

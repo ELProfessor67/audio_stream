@@ -34,7 +34,12 @@ export const GET = connectDB(auth(async function (req) {
       .populate('user', 'name email isDJ createdAt')
       .sort({ createdAt: -1 });
 
-    const contractForms = contractAgreements.map((contract) => ({
+    const orphanContractIds = contractAgreements.filter((contract) => !contract.user).map((contract) => contract._id);
+    if (orphanContractIds.length) {
+      await djFormsModels.ContractAgreement.deleteMany({ _id: { $in: orphanContractIds } });
+    }
+
+    const contractForms = contractAgreements.filter((contract) => contract.user).map((contract) => ({
       _id: contract._id,
       user: contract.user,
       formType: 'contract',
@@ -57,8 +62,13 @@ export const GET = connectDB(auth(async function (req) {
     // Only include legacy forms for users who DON'T have a contract agreement
     const contractUserIds = contractAgreements.map(c => c.user?._id?.toString());
 
+    const orphanVolunteerIds = volunteerForms.filter((vf) => !vf.user).map((vf) => vf._id);
+    if (orphanVolunteerIds.length) {
+      await djFormsModels.VolunteerForm.deleteMany({ _id: { $in: orphanVolunteerIds } });
+    }
+
     const legacyFormsRaw = volunteerForms.filter(
-      vf => !contractUserIds.includes(vf.user?._id?.toString())
+      vf => vf.user && !contractUserIds.includes(vf.user?._id?.toString())
     );
 
     const legacyForms = await Promise.all(

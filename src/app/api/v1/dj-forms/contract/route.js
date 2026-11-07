@@ -25,7 +25,8 @@ export const POST = connectDB(auth(async function (req) {
 
     const body = await req.json();
 
-    const { contractorName, contractorSignatureUrl } = body;
+    const contractorName = String(body.contractorName || '').trim();
+    const contractorSignatureUrl = body.contractorSignatureUrl;
 
     if (!contractorName || !contractorSignatureUrl) {
       return NextResponse.json(
@@ -76,7 +77,8 @@ export const PUT = connectDB(auth(async function (req) {
     }
 
     const body = await req.json();
-    const { contractorName, contractorSignatureUrl } = body;
+    const contractorName = String(body.contractorName || '').trim();
+    const contractorSignatureUrl = body.contractorSignatureUrl;
 
     if (!contractorName || !contractorSignatureUrl) {
       return NextResponse.json(

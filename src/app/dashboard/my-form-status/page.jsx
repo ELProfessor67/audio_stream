@@ -6,7 +6,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { showMessage, showError, clearMessage, clearError } from '@/utils/showAlert';
 
-const cloudName = "ddlwhkn3b";
+const cloudName = "dclbdddu7";
 const cloudinaryApi = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
 
 const uploadSignatureToCloudinary = async (blob) => {

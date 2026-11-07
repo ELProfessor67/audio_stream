@@ -38,11 +38,14 @@ const DJFormsPage = () => {
     const lastPointRef = useRef(null);
 
     useEffect(() => {
+        // isAuth stays null until load-me finishes. Redirecting before that
+        // sent the DJ to /login, and the login page then opened the dashboard.
+        if (isAuth === null) return;
         if (!isAuth || !user) {
             router.push('/login');
         } else if (!user.isDJ) {
             router.push('/dashboard');
-        } else if (user.contractAgreement) {
+        } else if (user.contractAgreement || (user.volunteerForm && user.executiveLegalForm)) {
             router.push('/dashboard');
         }
     }, [isAuth, user, router]);

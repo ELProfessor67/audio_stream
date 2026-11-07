@@ -173,7 +173,7 @@ const Page = () => {
         }
       } else if (user?.isDJ === true) {
         // Is a DJ, check if forms are filled
-        if (user?.volunteerForm && user?.executiveLegalForm) {
+        if (user?.contractAgreement || (user?.volunteerForm && user?.executiveLegalForm)) {
           // Forms are filled, redirect to dashboard
           redirect('/dashboard');
         } else {

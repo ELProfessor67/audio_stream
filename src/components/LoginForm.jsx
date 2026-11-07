@@ -58,7 +58,9 @@ const LoginForm = ({ variant = 'dj' }) => {
 
     useEffect(() => {
         if (isAuth === true && user) {
-            if (user?.isSubscriber) {
+            if (user?.isDJ && !user.contractAgreement && !(user.volunteerForm && user.executiveLegalForm)) {
+                redirect('/dj-forms');
+            } else if (user?.isSubscriber) {
                 redirect('/dashboard');
             } else {
                 redirect('/subscribe');

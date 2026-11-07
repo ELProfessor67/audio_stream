@@ -12,6 +12,10 @@ const ProtectProvider = ({children}) => {
             let loginPath = '/login';
             try { if (localStorage.getItem('hg_login_path') === '/admin/login') loginPath = '/admin/login'; } catch { }
             redirect(loginPath);
+        }else if (user?.isDJ && !user.contractAgreement && !(user.volunteerForm && user.executiveLegalForm)){
+            // A DJ who has not submitted the application stays on the form,
+            // including after a refresh of any dashboard URL.
+            redirect('/dj-forms');
         }else if (user && user?.isSubscriber === false){
             // window.location.pathname = '/subscribe';
             redirect('/subscribe');

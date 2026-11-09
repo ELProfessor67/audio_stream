@@ -8,6 +8,7 @@ import hark from 'hark';
 import { toast } from 'react-toastify';
 import { Track, AudioPresets, RoomEvent } from 'livekit-client';
 import { useLive } from '@/context/LiveContext';
+import { stationRoomId } from '@/utils/stationRoom';
 
 
 // Track names used for the adaptive (per-listener network) music streams.
@@ -1389,7 +1390,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		nextSongRef.current.user = user ? { _id: user._id, name: user.name, avatar: user.avatar } : undefined;
 
 		socketRef.current?.emit('next-song', {
-			roomId: user?._id?.toString(),
+			roomId: stationRoomId(user),
 			nextSong: nextSongRef.current,
 			currentSong: selectedSongRef.current,
 		});
@@ -1752,12 +1753,13 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 
 
 	useEffect(() => {
+		const roomId = stationRoomId(user);
+		if (!roomId) return;
 		socketListnerRef.current = socketInit();
-		let userTemp = JSON.parse(JSON.stringify(user));
-		console.log(userTemp?._id,"roomiddddddddddd")
-		socketListnerRef.current.emit('user-join', { roomId: userTemp?._id },(data) => {
-			console.log("User joined!",data,userTemp.name);
-			if(data == userTemp.name){
+		console.log(roomId,"roomiddddddddddd")
+		socketListnerRef.current.emit('user-join', { roomId },(data) => {
+			console.log("User joined!",data,user?.name);
+			if(data == user?.name){
 				setActive(true);
 			}
 		});
@@ -1812,7 +1814,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	}, [])
 
 	const handleShare = async (id=null) => {
-		const url = `${window.location.origin}/public/${id ? id : user?._id}`;
+		const url = `${window.location.origin}/public/${id ? id : stationRoomId(user)}`;
 		await navigator.clipboard.writeText(url);
 	}
 
@@ -1895,9 +1897,11 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 		socketRef.current = socketInit();
 		// socketRef.current.on('offer', handleOffer);
 		let userTemp = JSON.parse(JSON.stringify(user));
-		if(id){
-			userTemp._id = id;
-		}
+		// Keep the DJ's name and tones; the room id must be the station, which
+		// is the only room hgcradio joins. An explicit id (test room) still wins.
+		userTemp._id = id || stationRoomId(user);
+		delete userTemp.password;
+		delete userTemp.jwt;
 
 		socketRef.current.emit('owner-join', { user: userTemp });
 		// The backend only knows a DJ is live through owner-join, and it forgets
@@ -2041,7 +2045,7 @@ const useSocket = (setSongPlaying, songPlaying, selectPlayListSong, selectedSong
 	function handleSendMessage() {
 		// `message` did not exist in this scope (the prop is chatMessage): Send threw a ReferenceError.
 		if (chatMessage && String(chatMessage).trim()) {
-			socketRef.current?.emit('send-message', { message: chatMessage, roomId: user?._id.toString(), name: user?.name || 'owner', isOwner: true });
+			socketRef.current?.emit('send-message', { message: chatMessage, roomId: stationRoomId(user), name: user?.name || 'owner', isOwner: true });
 			setChatMessage('');
 		}
 	}

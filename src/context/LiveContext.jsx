@@ -4,6 +4,7 @@ import useConnect from "@/hooks/useConnect";
 import { useSelector } from "react-redux";
 import { RoomEvent, Track } from "livekit-client";
 import { useParams } from "next/navigation";
+import { stationRoomId } from "@/utils/stationRoom";
 
 const LiveContext = createContext();
 
@@ -78,8 +79,13 @@ export const LiveProvider = ({ children, isAdmin = true, isCall = false }) => {
         }
     }, [streamId]);
 
-    // Room the DJ publishes to; the auth middleware already maps DJs to their station owner.
-    const connectForLive = () => connect(user?._id.toString(), false);
+    // Publish into the station room. A DJ's own _id is a different LiveKit room,
+    // and hgcradio only subscribes to the station, so a DJ show never appeared.
+    const connectForLive = () => {
+        const room = stationRoomId(user);
+        if (!room) return Promise.resolve(false);
+        return connect(room, false);
+    };
 
     return (
         <LiveContext.Provider value={{ isConnected, connectionError, connectForLive, disconnect, roomRef, participantCount, isLive, setIsLive, roomActive, setRoomActive }}>

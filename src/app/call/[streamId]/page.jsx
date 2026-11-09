@@ -96,6 +96,7 @@ export default function page() {
 	const downloadLink = useRef();
 	const [error, setError] = useState('');
 	const [redirectCountdown, setRedirectCountdown] = useState(null);
+	const [endConfirmOpen, setEndConfirmOpen] = useState(false);
 	// console.log('isPlay from components side', isPlay)
 	const { roomActive, handleRequestSong, isLive, autodj, messageList, handleSendMessage, callAdmin, cutCall, nextSong } = useSocketUser(params.streamId, audioRef, name, isPlay, setIsPlay, message, setMessage, setCallStatus, location, true);
 	// const [more,setMore] = useState(false);
@@ -179,6 +180,20 @@ export default function page() {
 			setRecord(true);
 			startRecording();
 		}
+	}
+
+	const requestEndCall = () => {
+		if (callStatus === 'processing' || callStatus === 'accepted') {
+			setEndConfirmOpen(true);
+			return;
+		}
+		setCallOpen(false);
+	}
+
+	const confirmEndCall = () => {
+		setEndConfirmOpen(false);
+		cutCall();
+		setCallOpen(false);
 	}
 
 	const handleCall = async () => {
@@ -361,7 +376,7 @@ export default function page() {
 				}
 			</ChatBox>
 
-			<CallComponents open={callOpen} onClose={() => { cutCall(); setCallOpen(false) }} name={name} setName={setName}>
+			<CallComponents open={callOpen} onClose={requestEndCall} name={name} setName={setName}>
 				<div className='w-full h-full flex flex-col gap-5 justify-center items-center'>
 					<h2 className='text-3xl text-white'>{name && toTitleCase(name)}</h2>
 					{
@@ -397,10 +412,23 @@ export default function page() {
 						callStatus == 'rejected' || callStatus == 'complete' ?
 							<button className='p-2 text-green-600 rounded-full bg-gray-200' onClick={handleCall}><MdCall size={23} /></button>
 							:
-							<button className='p-2 text-red-600 rounded-full bg-gray-200' onClick={cutCall}><MdCall size={23} /></button>
+							<button className='p-2 text-red-600 rounded-full bg-gray-200' onClick={requestEndCall}><MdCall size={23} /></button>
 					}
 				</div>
 			</CallComponents>
+
+			{endConfirmOpen && (
+				<div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-4">
+					<div className="w-full max-w-sm rounded-md bg-[#2f3237] p-6 text-center shadow-md" role="dialog" aria-modal="true" aria-labelledby="end-call-title">
+						<h2 id="end-call-title" className="text-xl text-white">End this call?</h2>
+						<p className="mt-2 text-sm text-white/70">You will be disconnected from the host.</p>
+						<div className="mt-6 flex justify-center gap-3">
+							<button type="button" className="rounded-md bg-gray-200 px-4 py-2 text-sm text-gray-800" onClick={() => setEndConfirmOpen(false)}>Cancel</button>
+							<button type="button" className="rounded-md bg-[#f00000] px-4 py-2 text-sm text-white" onClick={confirmEndCall}>End call</button>
+						</div>
+					</div>
+				</div>
+			)}
 
 
 			<CallComponents open={gedetailOpen} onClose={() => setGetDetailsOpne(false)}>
